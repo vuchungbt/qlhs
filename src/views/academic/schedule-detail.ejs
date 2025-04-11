@@ -1,0 +1,132 @@
+<%- include('../partials/header') %>
+
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Chi Tiết Lịch Học</h5>
+                    <div>
+                        <a href="/academic/schedule/<%= schedule._id %>/edit" class="btn btn-sm btn-light me-2">
+                            <i class="bi bi-pencil"></i> Chỉnh sửa
+                        </a>
+                        <button onclick="deleteSchedule('<%= schedule._id %>')" class="btn btn-sm btn-outline-light">
+                            <i class="bi bi-trash"></i> Xóa
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Tên lớp:</strong></p>
+                            <p><%= schedule.name %></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Địa điểm:</strong></p>
+                            <p><%= schedule.location || '(Chưa cập nhật)' %></p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Giáo viên:</strong></p>
+                            <p><%= schedule.teacher ? schedule.teacher.name : '(Chưa phân công)' %></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Lịch học:</strong></p>
+                            <p><%= schedule.scheduleDisplay %></p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Giờ bắt đầu:</strong></p>
+                            <p><%= schedule.startTime %></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Giờ kết thúc:</strong></p>
+                            <p><%= schedule.endTime %></p>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <p class="mb-1"><strong>Trạng thái:</strong></p>
+                        <p>
+                            <% if(schedule.status === 'active') { %>
+                                <span class="badge bg-success">Đang hoạt động</span>
+                            <% } else if(schedule.status === 'inactive') { %>
+                                <span class="badge bg-warning">Tạm dừng</span>
+                            <% } else if(schedule.status === 'completed') { %>
+                                <span class="badge bg-secondary">Đã kết thúc</span>
+                            <% } %>
+                        </p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="mb-3">Danh sách học sinh (<%= schedule.students.length %> học sinh)</h6>
+                        <% if (schedule.students && schedule.students.length > 0) { %>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Tên học sinh</th>
+                                            <th>Lớp</th>
+                                            <th>Ngày sinh</th>
+                                            <th>Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% schedule.students.forEach(function(student) { %>
+                                            <tr>
+                                                <td><%= student.name %></td>
+                                                <td><%= student.class %></td>
+                                                <td><%= student.dateOfBirth ? moment(student.dateOfBirth).format('DD/MM/YYYY') : 'Chưa cập nhật' %></td>
+                                                <td>
+                                                    <a href="/academic/students/<%= student._id %>" class="btn btn-sm btn-outline-primary">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <% } else { %>
+                            <div class="alert alert-info">
+                                Lớp học này chưa có học sinh nào.
+                            </div>
+                        <% } %>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="/academic/schedule" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Quay lại
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function deleteSchedule(id) {
+        if (confirm('Bạn có chắc chắn muốn xóa lịch học này? Thao tác này không thể hoàn tác.')) {
+            fetch(`/academic/schedule/${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/academic/schedule';
+                } else {
+                    alert('Lỗi khi xóa lịch học: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Đã xảy ra lỗi khi xóa lịch học');
+            });
+        }
+    }
+</script>
+
+<%- include('../partials/footer') %> 

@@ -1,0 +1,68 @@
+<%- include('../partials/header') %>
+
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Chỉnh Sửa Thông Tin Phụ Huynh</h5>
+                </div>
+                <div class="card-body">
+                    <form action="/academic/parents/<%= parent._id %>" method="POST">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">Tên phụ huynh <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" name="name" value="<%= parent.name %>" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                                <input type="tel" class="form-control" id="phone" name="phone" value="<%= parent.phone %>" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" value="<%= parent.email || '' %>">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="occupation" class="form-label">Nghề nghiệp</label>
+                                <input type="text" class="form-control" id="occupation" name="occupation" value="<%= parent.occupation || '' %>">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Địa chỉ <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="address" name="address" rows="2" required><%= parent.address %></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="children" class="form-label">Danh sách học sinh con</label>
+                            <select class="form-select" id="children" name="children" multiple>
+                                <% if (students && students.length > 0) { %>
+                                    <% students.forEach(function(student) { %>
+                                        <option value="<%= student._id %>" 
+                                            <%= parent.children.some(child => child._id.toString() === student._id.toString()) ? 'selected' : '' %>>
+                                            <%= student.name %> - <%= student.class %>
+                                        </option>
+                                    <% }); %>
+                                <% } else { %>
+                                    <option value="" disabled>Chưa có học sinh nào</option>
+                                <% } %>
+                            </select>
+                            <small class="text-muted">Giữ Ctrl để chọn nhiều học sinh.</small>
+                        </div>
+
+                        <div class="mt-4 d-flex justify-content-between">
+                            <a href="/academic/parents" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Quay lại
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Lưu thay đổi
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %> 

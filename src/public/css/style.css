@@ -1,0 +1,564 @@
+body {
+    background-color: #f8f9fa;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+.sidebar {
+    background-color: #0f172a !important;
+    width: 260px;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-heading {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #64748b;
+    margin-bottom: 0.5rem;
+    padding-left: 0.5rem;
+    font-weight: 600;
+}
+
+.sidebar .nav-link {
+    color: #94a3b8;
+    padding: 0.6rem 1rem;
+    margin-bottom: 0.3rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.sidebar .nav-link:hover {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar .nav-link.active {
+    background-color: #4f46e5;
+    color: #fff;
+    font-weight: 500;
+}
+
+.sidebar .nav-link.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background-color: #818cf8;
+    border-radius: 2px;
+}
+
+.sidebar .nav-link .bi {
+    margin-right: 0.75rem;
+    width: 20px;
+    text-align: center;
+    font-size: 1.1rem;
+    transition: transform 0.3s ease;
+}
+
+.sidebar .nav-link:hover .bi {
+    transform: translateX(3px);
+}
+
+.search-bar .input-group {
+    max-width: 300px;
+}
+
+.search-bar .form-control {
+    border-radius: 20px;
+    padding-left: 40px;
+}
+
+.search-bar .input-group-text {
+    border-radius: 20px 0 0 20px;
+    background: transparent;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+    border-radius: 0.75rem;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 1rem 1.25rem;
+}
+
+.club-image {
+    width: 300px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.main-content {
+    background-color: #f8fafc;
+    padding: 1.5rem;
+    flex: 1;
+    transition: all 0.3s ease;
+}
+
+h1 {
+    color: #1e293b;
+    font-weight: 600;
+    font-size: 1.75rem;
+}
+
+h2 {
+    color: #334155;
+    font-weight: 600;
+    font-size: 1.5rem;
+}
+
+h5 {
+    font-weight: 600;
+    color: #334155;
+}
+
+.btn-primary {
+    background-color: #4f46e5;
+    border-color: #4f46e5;
+}
+
+.btn-primary:hover {
+    background-color: #4338ca;
+    border-color: #4338ca;
+}
+
+.btn-dark {
+    background-color: #1e293b;
+    border-color: #1e293b;
+}
+
+.btn-dark:hover {
+    background-color: #334155;
+    border-color: #334155;
+}
+
+/* CSS mới cho menu */
+.nav-link {
+    position: relative;
+    overflow: hidden;
+    border-radius: 6px;
+    margin-bottom: 5px;
+    padding: 8px 15px;
+}
+
+.nav-link.active {
+    color: #fff;
+    font-weight: 500;
+}
+
+.nav-link .bi {
+    transition: transform 0.3s ease;
+}
+
+.nav-link:hover .bi {
+    transform: scale(1.2);
+}
+
+/* Hiệu ứng ripple khi click */
+.ripple {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: scale(0);
+    animation: ripple 0.6s linear;
+    pointer-events: none;
+    width: 100px;
+    height: 100px;
+}
+
+@keyframes ripple {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+/* Thêm badge thông báo cho menu items */
+.badge-notify {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #ef4444;
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+}
+
+/* Hiệu ứng cho menu khi collapse/expand */
+.sidebar {
+    transition: width 0.3s ease;
+}
+
+.sidebar.collapsed {
+    width: 70px;
+}
+
+.sidebar.collapsed .nav-link span,
+.sidebar.collapsed .sidebar-heading,
+.sidebar.collapsed .user-profile .text-info {
+    display: none;
+}
+
+.sidebar.collapsed .nav-link {
+    text-align: center;
+    padding: 0.75rem 0;
+}
+
+.sidebar.collapsed .nav-link .bi {
+    margin-right: 0;
+    font-size: 1.2rem;
+}
+
+/* CSS cho toast notification */
+.toast {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.toast.show {
+    opacity: 1;
+}
+
+#notificationContainer {
+    max-width: 280px;
+}
+
+/* CSS cho menu dropdown */
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    background-color: #1e293b;
+    min-width: 180px;
+    border-radius: 6px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    z-index: 2;
+    padding: 0.5rem 0;
+    margin: 0.125rem 0 0;
+}
+
+.dropdown-menu.show {
+    display: block;
+}
+
+.dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    color: #94a3b8;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+/* Hover hiệu ứng cho nút toggle sidebar */
+#toggleSidebar {
+    transition: transform 0.2s ease;
+}
+
+#toggleSidebar:hover {
+    transform: rotate(180deg);
+}
+
+/* Utilities */
+.text-primary {
+    color: #4f46e5 !important;
+}
+
+.bg-light {
+    background-color: #f1f5f9 !important;
+}
+
+/* Table styles */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    font-weight: 600;
+    color: #475569;
+    border-bottom-width: 2px;
+}
+
+.table td {
+    vertical-align: middle;
+    padding: 0.75rem 1rem;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+/* Class card styles for schedule */
+.class-card {
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    height: 100%;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.class-card.primary {
+    background-color: #ede9fe;
+    border: 1px solid #ddd6fe;
+}
+
+.class-card.secondary {
+    background-color: #fef3c7;
+    border: 1px solid #fde68a;
+}
+
+.class-card.tertiary {
+    background-color: #dbeafe;
+    border: 1px solid #bfdbfe;
+}
+
+.class-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.class-card .teacher-name,
+.class-card .class-schedule,
+.class-card .class-time {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.class-card .bi {
+    margin-right: 0.5rem;
+    font-size: 1rem;
+}
+
+/* Form controls */
+.form-control, .form-select {
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e2e8f0;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #a5b4fc;
+    box-shadow: 0 0 0 0.25rem rgba(79, 70, 229, 0.25);
+}
+
+.form-label {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #475569;
+}
+
+/* User profile */
+.user-profile {
+    padding: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Custom checkbox and radio */
+.form-check-input:checked {
+    background-color: #4f46e5;
+    border-color: #4f46e5;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Search bar */
+.search-input {
+    background-color: #f1f5f9;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem 0.5rem 2.5rem;
+    width: 100%;
+}
+
+.search-input-wrapper {
+    position: relative;
+    max-width: 300px;
+}
+
+.search-input-wrapper .bi-search {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+/* Add modal styles */
+.modal-content {
+    border-radius: 0.75rem;
+    border: none;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+    border-bottom: 1px solid #f1f5f9;
+    padding: 1.25rem 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid #f1f5f9;
+    padding: 1.25rem 1.5rem;
+}
+
+.modal-title {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* Action buttons */
+.btn-action {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    margin-right: 0.25rem;
+}
+
+/* Alert customization */
+.alert {
+    border-radius: 0.5rem;
+    border: none;
+}
+
+/* Schedule grid layout */
+.schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+/* Badge styles */
+.badge {
+    padding: 0.35em 0.65em;
+    font-weight: 500;
+}
+
+.badge.bg-info {
+    background-color: #3b82f6 !important;
+}
+
+/* Add schedule form */
+.schedule-form {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.schedule-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+/* Attendance status colors */
+.status-present {
+    color: #10b981;
+}
+
+.status-absent {
+    color: #ef4444;
+}
+
+.status-late {
+    color: #f59e0b;
+}
+
+/* Dashboard welcome section */
+.welcome-section {
+    background-color: #4f46e5;
+    color: white;
+    border-radius: 0.75rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.welcome-section::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 300px;
+    height: 100%;
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cGF0aCBkPSJNODAgNjBhNDAgNDAgMCAwMTQwLTQwYzIyLjA5IDAgNDAgMTcuOTEgNDAgNDBzLTE3LjkxIDQwLTQwIDQwYy0yMi4wOTEgMC00MC0xNy45MS00MC00MHptMCA4MGE0MCA0MCAwIDAxNDAtNDBjMjIuMDkgMCA0MCAxNy45MSA0MCA0MHMtMTcuOTEgNDAtNDAgNDBjLTIyLjA5MSAwLTQwLTE3LjkxLTQwLTQweiIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+PC9nPjwvc3ZnPg==');
+    background-position: right center;
+    background-repeat: no-repeat;
+    opacity: 0.3;
+}
+
+.welcome-section h1 {
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.welcome-section p {
+    max-width: 70%;
+    opacity: 0.9;
+}
+
+/* Course card */
+.course-card {
+    height: 100%;
+    transition: all 0.3s ease;
+}
+
+.course-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Actions dropdown */
+.dropdown-actions .dropdown-item {
+    display: flex;
+    align-items: center;
+}
+
+.dropdown-actions .dropdown-item i {
+    margin-right: 0.5rem;
+    width: 20px;
+}
+
+/* Navigation Pills */
+.nav-pills .nav-link.active {
+    background-color: #4f46e5;
+}
+
+.nav-pills .nav-link {
+    color: #4f46e5;
+}

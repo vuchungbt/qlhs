@@ -1,0 +1,161 @@
+<%- include('../partials/header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Thông Tin Phụ Huynh</h1>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addParentModal">
+        <i class="bi bi-plus-circle me-2"></i> Thêm phụ huynh mới
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Tên phụ huynh</th>
+                        <th>Số điện thoại</th>
+                        <th>Email</th>
+                        <th>Địa chỉ</th>
+                        <th>Nghề nghiệp</th>
+                        <th>Học sinh</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (parents && parents.length > 0) { %>
+                        <% parents.forEach(function(parent) { %>
+                            <tr>
+                                <td><%= parent.name %></td>
+                                <td><%= parent.phone %></td>
+                                <td><%= parent.email || 'Chưa cập nhật' %></td>
+                                <td><%= parent.address %></td>
+                                <td><%= parent.occupation || 'Chưa cập nhật' %></td>
+                                <td>
+                                    <% if (parent.children && parent.children.length > 0) { %>
+                                        <div class="d-flex flex-column">
+                                            <span class="badge bg-info mb-1"><%= parent.children.length %> học sinh</span>
+                                            <% parent.children.forEach(function(child) { %>
+                                                <small class="d-block text-muted"><%= child.name %> - <%= child.class %></small>
+                                            <% }); %>
+                                        </div>
+                                    <% } else { %>
+                                        <span class="badge bg-secondary">Chưa có</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="viewParent('<%= parent._id %>')">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-warning" onclick="editParent('<%= parent._id %>')">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteParent('<%= parent._id %>')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="7" class="text-center py-4">Chưa có thông tin phụ huynh nào. Nhấp vào nút "Thêm phụ huynh mới" để bắt đầu.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal thêm phụ huynh mới -->
+<div class="modal fade" id="addParentModal" tabindex="-1" aria-labelledby="addParentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addParentModalLabel">Thêm phụ huynh mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/academic/parents" method="POST" id="addParentForm">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">Tên phụ huynh <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                            <input type="tel" class="form-control" id="phone" name="phone" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="occupation" class="form-label">Nghề nghiệp</label>
+                            <input type="text" class="form-control" id="occupation" name="occupation">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Địa chỉ <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="address" name="address" rows="2" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="children" class="form-label">Học sinh</label>
+                        <select class="form-select" id="children" name="children" multiple>
+                            <% if (students && students.length > 0) { %>
+                                <% students.forEach(function(student) { %>
+                                    <option value="<%= student._id %>"><%= student.name %> - <%= student.class %></option>
+                                <% }); %>
+                            <% } else { %>
+                                <option value="" disabled>Chưa có học sinh nào</option>
+                            <% } %>
+                        </select>
+                        <small class="text-muted">Giữ Ctrl để chọn nhiều học sinh.</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="submit" form="addParentForm" class="btn btn-primary">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function viewParent(id) {
+        // Hiển thị thông tin chi tiết của phụ huynh
+        window.location.href = `/academic/parents/${id}`;
+    }
+    
+    function editParent(id) {
+        // Mở modal chỉnh sửa thông tin phụ huynh
+        window.location.href = `/academic/parents/${id}/edit`;
+    }
+    
+    function deleteParent(id) {
+        if (confirm('Bạn có chắc chắn muốn xóa phụ huynh này?')) {
+            // Gửi yêu cầu xóa phụ huynh
+            fetch(`/academic/parents/${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('Đã xảy ra lỗi khi xóa phụ huynh.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Đã xảy ra lỗi khi xóa phụ huynh.');
+            });
+        }
+    }
+</script>
+
+<%- include('../partials/footer') %> 

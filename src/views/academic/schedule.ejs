@@ -1,0 +1,190 @@
+<%- include('../partials/header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Lịch Học</h1>
+    <div>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addScheduleModal">
+            <i class="bi bi-plus-lg me-2"></i>
+            Thêm Lịch Học
+        </button>
+        <button class="btn btn-outline-secondary ms-2" id="editButton">
+            <i class="bi bi-pencil me-2"></i>
+            Chỉnh sửa
+        </button>
+    </div>
+</div>
+
+<div class="schedule-grid mb-4">
+    <% if (typeof schedules !== 'undefined' && schedules && schedules.length > 0) { %>
+        <% const cardStyles = ['primary', 'secondary', 'tertiary']; %>
+        <% schedules.forEach(function(schedule, index) { %>
+            <div class="class-card <%= cardStyles[index % cardStyles.length] %>">
+                <h5 class="mb-3"><%= schedule.name %></h5>
+                <div class="teacher-name">
+                    <i class="bi bi-person-circle"></i>
+                    <span><%= schedule.teacher.name %></span>
+                </div>
+                <div class="class-schedule">
+                    <i class="bi bi-calendar-event"></i>
+                    <span><%= schedule.scheduleDisplay %></span>
+                </div>
+                <div class="class-time">
+                    <i class="bi bi-clock"></i>
+                    <span><%= schedule.timeDisplay %></span>
+                </div>
+                <div class="class-location mt-2">
+                    <i class="bi bi-geo-alt"></i>
+                    <span><%= schedule.location %></span>
+                </div>
+                <div class="mt-3 d-flex justify-content-end">
+                    <a href="/academic/schedule/<%= schedule._id %>/edit" class="btn btn-sm btn-outline-light me-2">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    <button 
+                        class="btn btn-sm btn-outline-light"
+                        onclick="deleteSchedule('<%= schedule._id %>')"
+                    >
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        <% }); %>
+    <% } else { %>
+        <!-- Không có lịch học -->
+        <div class="col-12 text-center py-5">
+            <div class="alert alert-info">
+                Chưa có lịch học nào được tạo. Hãy thêm lịch học mới.
+            </div>
+        </div>
+    <% } %>
+
+    <!-- Add Schedule Card -->
+    <div class="class-card" style="border: 2px dashed #cbd5e1; background-color: #f8fafc; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#addScheduleModal">
+        <i class="bi bi-plus-circle" style="font-size: 2rem; color: #64748b; margin-bottom: 1rem;"></i>
+        <h6 class="text-center text-muted">Thêm lịch học mới</h6>
+    </div>
+</div>
+
+<!-- Add Schedule Modal -->
+<div class="modal fade" id="addScheduleModal" tabindex="-1" aria-labelledby="addScheduleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addScheduleModalLabel">Thêm lịch học mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/academic/schedule" method="POST" class="row g-3">
+                    <div class="col-md-6">
+                        <label for="name" class="form-label">Tên lớp</label>
+                        <input type="text" class="form-control" id="name" name="name" placeholder="Lớp thứ 2-4" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="teacherId" class="form-label">Giáo viên</label>
+                        <select class="form-select" id="teacherId" name="teacherId" required>
+                            <option value="">-- Chọn giáo viên --</option>
+                            <% if (typeof teachers !== 'undefined' && teachers && teachers.length > 0) { %>
+                                <% teachers.forEach(function(teacher) { %>
+                                    <option value="<%= teacher._id %>"><%= teacher.name %></option>
+                                <% }); %>
+                            <% } %>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Thứ</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="monday" name="dayOfWeek[]" value="Monday">
+                                <label class="form-check-label" for="monday">Thứ 2</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="tuesday" name="dayOfWeek[]" value="Tuesday">
+                                <label class="form-check-label" for="tuesday">Thứ 3</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="wednesday" name="dayOfWeek[]" value="Wednesday">
+                                <label class="form-check-label" for="wednesday">Thứ 4</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="thursday" name="dayOfWeek[]" value="Thursday">
+                                <label class="form-check-label" for="thursday">Thứ 5</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="friday" name="dayOfWeek[]" value="Friday">
+                                <label class="form-check-label" for="friday">Thứ 6</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="saturday" name="dayOfWeek[]" value="Saturday">
+                                <label class="form-check-label" for="saturday">Thứ 7</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="sunday" name="dayOfWeek[]" value="Sunday">
+                                <label class="form-check-label" for="sunday">Chủ nhật</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="row">
+                            <div class="col-6">
+                                <label for="startTime" class="form-label">Giờ bắt đầu</label>
+                                <input type="time" class="form-control" id="startTime" name="startTime" required>
+                            </div>
+                            <div class="col-6">
+                                <label for="endTime" class="form-label">Giờ kết thúc</label>
+                                <input type="time" class="form-control" id="endTime" name="endTime" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="location" class="form-label">Địa điểm</label>
+                        <input type="text" class="form-control" id="location" name="location" placeholder="Phòng học">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="studentIds" class="form-label">Học sinh</label>
+                        <select class="form-select" id="studentIds" name="studentIds" multiple>
+                            <% if (typeof students !== 'undefined' && students && students.length > 0) { %>
+                                <% students.forEach(function(student) { %>
+                                    <option value="<%= student._id %>"><%= student.name %> - <%= student.class %></option>
+                                <% }); %>
+                            <% } %>
+                        </select>
+                        <small class="form-text text-muted">Giữ Ctrl để chọn nhiều học sinh</small>
+                    </div>
+                    
+                    <div class="col-12 mt-4">
+                        <button type="submit" class="btn btn-primary">Lưu lịch học</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function deleteSchedule(id) {
+        if (confirm('Bạn có chắc chắn muốn xóa lịch học này?')) {
+            fetch(`/academic/schedule/${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Lỗi khi xóa lịch học: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Đã xảy ra lỗi khi xóa lịch học');
+            });
+        }
+    }
+</script>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,159 @@
+<%- include('./partials/header') %>
+
+<!-- Search Results -->
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Kết quả tìm kiếm</h1>
+        <div class="search-bar">
+            <form action="/search" method="GET" class="d-flex">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="q" class="form-control border-start-0" 
+                           placeholder="Tìm kiếm..." value="<%= query %>" autofocus>
+                    <button class="btn btn-primary" type="submit">Tìm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <% if (!query) { %>
+        <div class="alert alert-info">
+            Nhập từ khóa để tìm kiếm học sinh, phụ huynh hoặc giáo viên.
+        </div>
+    <% } else if (results && 
+          (results.students && results.students.length || 
+           results.parents && results.parents.length || 
+           results.teachers && results.teachers.length)) { %>
+        
+        <!-- Students Results -->
+        <% if (results.students && results.students.length > 0) { %>
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-mortarboard me-2"></i>
+                        Học sinh (<%= results.students.length %>)
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Tên</th>
+                                    <th>Lớp</th>
+                                    <th>Phụ huynh</th>
+                                    <th>Địa chỉ</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% results.students.forEach(function(student) { %>
+                                    <tr>
+                                        <td><%= student.name %></td>
+                                        <td><%= student.class %></td>
+                                        <td><%= student.parentName %></td>
+                                        <td><%= student.address %></td>
+                                        <td>
+                                            <a href="/academic/students/<%= student._id %>" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i> Xem
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Parents Results -->
+        <% if (results.parents && results.parents.length > 0) { %>
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-people me-2"></i>
+                        Phụ huynh (<%= results.parents.length %>)
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Tên</th>
+                                    <th>Số điện thoại</th>
+                                    <th>Email</th>
+                                    <th>Địa chỉ</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% results.parents.forEach(function(parent) { %>
+                                    <tr>
+                                        <td><%= parent.name %></td>
+                                        <td><%= parent.phone %></td>
+                                        <td><%= parent.email %></td>
+                                        <td><%= parent.address %></td>
+                                        <td>
+                                            <a href="/academic/parents/<%= parent._id %>" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i> Xem
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Teachers Results -->
+        <% if (results.teachers && results.teachers.length > 0) { %>
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-gear me-2"></i>
+                        Giáo viên (<%= results.teachers.length %>)
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Tên</th>
+                                    <th>Môn dạy</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% results.teachers.forEach(function(teacher) { %>
+                                    <tr>
+                                        <td><%= teacher.name %></td>
+                                        <td><%= teacher.subject %></td>
+                                        <td>
+                                            <a href="/administrative/teachers/<%= teacher._id %>" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i> Xem
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+
+    <% } else { %>
+        <div class="alert alert-warning">
+            Không tìm thấy kết quả nào cho từ khóa "<strong><%= query %></strong>".
+        </div>
+    <% } %>
+</div>
+
+<%- include('./partials/footer') %> 

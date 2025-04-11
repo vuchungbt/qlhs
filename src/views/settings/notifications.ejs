@@ -1,0 +1,141 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="mb-0">Cài Đặt Thông Báo</h1>
+            </div>
+        </div>
+    </div>
+
+    <% if (success) { %>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <%= success %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <% } %>
+
+    <% if (error) { %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <%= error %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <% } %>
+
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Menu Cài Đặt</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="/settings/account" class="list-group-item list-group-item-action">
+                            <i class="bi bi-person-fill me-2"></i> Thông tin tài khoản
+                        </a>
+                        <a href="/settings/notifications" class="list-group-item list-group-item-action active">
+                            <i class="bi bi-bell-fill me-2"></i> Cài đặt thông báo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Tùy chỉnh thông báo</h5>
+                </div>
+                <div class="card-body">
+                    <form action="/settings/notifications" method="POST">
+                        <div class="mb-4">
+                            <h6 class="mb-3">Kênh thông báo</h6>
+                            
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="emailNotifications" name="emailNotifications" 
+                                    <%= user.notificationPreferences && user.notificationPreferences.email ? 'checked' : '' %>>
+                                <label class="form-check-label" for="emailNotifications">
+                                    <i class="bi bi-envelope me-2"></i> Thông báo qua Email
+                                </label>
+                                <small class="text-muted d-block mt-1">Nhận thông báo qua email về các hoạt động, cập nhật và thông tin quan trọng.</small>
+                            </div>
+                            
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="browserNotifications" name="browserNotifications"
+                                    <%= user.notificationPreferences && user.notificationPreferences.browser ? 'checked' : '' %>>
+                                <label class="form-check-label" for="browserNotifications">
+                                    <i class="bi bi-globe me-2"></i> Thông báo trên trình duyệt
+                                </label>
+                                <small class="text-muted d-block mt-1">Nhận thông báo ngay trên trình duyệt khi bạn đang sử dụng hệ thống.</small>
+                            </div>
+                            
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="smsNotifications" name="smsNotifications"
+                                    <%= user.notificationPreferences && user.notificationPreferences.sms ? 'checked' : '' %>>
+                                <label class="form-check-label" for="smsNotifications">
+                                    <i class="bi bi-phone me-2"></i> Thông báo qua SMS
+                                </label>
+                                <small class="text-muted d-block mt-1">Nhận thông báo khẩn cấp qua tin nhắn SMS.</small>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="mb-4">
+                            <h6 class="mb-3">Loại thông báo</h6>
+                            
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">Điểm danh</h6>
+                                            <p class="mb-0 text-muted small">Nhận thông báo khi học sinh được điểm danh.</p>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="attendanceNotifications" name="attendanceNotifications" checked>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">Cập nhật lịch học</h6>
+                                            <p class="mb-0 text-muted small">Nhận thông báo khi có thay đổi về lịch học.</p>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="scheduleNotifications" name="scheduleNotifications" checked>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">Thông báo hệ thống</h6>
+                                            <p class="mb-0 text-muted small">Nhận thông báo về các cập nhật hệ thống và bảo trì.</p>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="systemNotifications" name="systemNotifications" checked>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 text-end">
+                            <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %> 

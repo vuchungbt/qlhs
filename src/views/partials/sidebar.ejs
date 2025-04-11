@@ -1,0 +1,145 @@
+<!-- Sidebar -->
+<div class="col-auto min-vh-100 bg-dark text-white sidebar" style="padding: 0;">
+    <div class="p-3">
+        <div class="d-flex align-items-center mb-4">
+            <i class="bi bi-grid-1x2-fill me-2"></i>
+            <span class="fs-4 fw-bold">Dashboard</span>
+            <button id="toggleSidebar" class="btn btn-sm text-white ms-auto">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
+
+        <!-- Search Form -->
+        <div class="mb-4">
+            <div class="search-input-wrapper">
+                <i class="bi bi-search"></i>
+                <input type="text" name="q" class="search-input" placeholder="Search" aria-label="Search">
+            </div>
+        </div>
+
+        <div class="mb-2">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a href="/" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Trang chủ">
+                        <i class="bi bi-house-door"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="mb-4">
+            <div class="sidebar-heading">ACADEMIC</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a href="/academic/schedule" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Xem lịch học các lớp">
+                        <i class="bi bi-book"></i>
+                        <span>Lịch Học</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/academic/students" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Quản lý thông tin học sinh">
+                        <i class="bi bi-info-circle"></i>
+                        <span>Thông Tin Học Sinh</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/academic/parents" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Quản lý thông tin phụ huynh">
+                        <i class="bi bi-people"></i>
+                        <span>Thông Tin Phụ Huynh</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/academic/attendance" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Điểm danh học sinh">
+                        <i class="bi bi-star"></i>
+                        <span>Điểm Danh</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="mb-4">
+            <div class="sidebar-heading">ADMINISTRATIVE</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a href="/administrative/teachers" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Quản lý thông tin giáo viên">
+                        <i class="bi bi-person-gear"></i>
+                        <span>Quản Lý Giáo Viên</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="mb-4">
+            <div class="sidebar-heading">SETTINGS</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a href="/settings/account" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Thay đổi cài đặt tài khoản">
+                        <i class="bi bi-gear"></i>
+                        <span>Account Settings</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/settings/notifications" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Điều chỉnh thông báo">
+                        <i class="bi bi-bell"></i>
+                        <span>Notification Preferences</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="mt-5">
+            <a href="/auth/logout" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Đăng xuất khỏi hệ thống">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+
+        <!-- User Profile Info -->
+        <% if (typeof user !== 'undefined' && user) { %>
+        <div class="user-profile mt-4 d-flex align-items-center">
+            <img src="<%= user.profileImage || '/images/default-avatar.png' %>" alt="<%= user.username %>" class="rounded-circle me-2" width="32" height="32">
+            <div>
+                <div class="fw-bold"><%= user.username %></div>
+                <small class="text-muted"><%= user.role %></small>
+            </div>
+        </div>
+        <% } %>
+    </div>
+</div>
+
+<script>
+    // Toggle sidebar collapse
+    document.getElementById('toggleSidebar').addEventListener('click', function() {
+        const sidebar = document.querySelector('.sidebar');
+        sidebar.classList.toggle('collapsed');
+        
+        // Lưu trạng thái sidebar vào localStorage
+        if (sidebar.classList.contains('collapsed')) {
+            localStorage.setItem('sidebarCollapsed', 'true');
+        } else {
+            localStorage.setItem('sidebarCollapsed', 'false');
+        }
+    });
+    
+    // Khôi phục trạng thái sidebar từ localStorage
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebarCollapsed = localStorage.getItem('sidebarCollapsed');
+        if (sidebarCollapsed === 'true') {
+            document.querySelector('.sidebar').classList.add('collapsed');
+        }
+        
+        // Đánh dấu menu active dựa trên URL hiện tại
+        const currentPath = window.location.pathname;
+        const menuLinks = document.querySelectorAll('.sidebar .nav-link');
+        
+        menuLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            if (!href || href === "#") return;
+            
+            if (href === currentPath || (currentPath.includes(href) && href !== '/')) {
+                link.classList.add('active');
+            }
+        });
+    });
+</script>

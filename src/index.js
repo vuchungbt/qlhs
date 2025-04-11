@@ -41,9 +41,15 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'school_dashboard_secret',
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/school_dashboard' }),
+  store: MongoStore.create({ 
+    mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/school_dashboard',
+    ttl: 24 * 60 * 60 // 1 day
+  }),
   cookie: {
-    maxAge: 1000 * 60 * 60 * 24 // 1 day
+    maxAge: 1000 * 60 * 60 * 24, // 1 day
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'strict'
   }
 }));
 
@@ -70,9 +76,10 @@ app.get('/', authController.isAuthenticated, homeController.getDashboard);
 
 // Xử lý 404
 app.use((req, res) => {
+  const username = req.session && req.session.user ? req.session.user.username : 'Người dùng';
   res.status(404).render('404', {
     title: 'Không tìm thấy trang',
-    username: req.session.user ? req.session.user.username : 'Người dùng',
+    username: username,
     currentDate: new Date()
   });
 });
@@ -80,9 +87,10 @@ app.use((req, res) => {
 // Xử lý lỗi server
 app.use((err, req, res, next) => {
   console.error(err.stack);
+  const username = req.session && req.session.user ? req.session.user.username : 'Người dùng';
   res.status(500).render('500', {
     title: 'Lỗi server',
-    username: req.session.user ? req.session.user.username : 'Người dùng',
+    username: username,
     currentDate: new Date(),
     error: err.message
   });

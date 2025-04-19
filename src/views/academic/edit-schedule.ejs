@@ -11,112 +11,199 @@
                     <form action="/academic/schedule/<%= schedule._id %>" method="POST">
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label for="name" class="form-label">Tên lớp <span class="text-danger">*</span></label>
+                                <label for="name" class="form-label">Tên lớp</label>
                                 <input type="text" class="form-control" id="name" name="name" value="<%= schedule.name %>" required>
                             </div>
                             <div class="col-md-6">
-                                <label for="teacherId" class="form-label">Giáo viên <span class="text-danger">*</span></label>
+                                <label for="teacherId" class="form-label">Giáo viên</label>
                                 <select class="form-select" id="teacherId" name="teacherId" required>
                                     <option value="">-- Chọn giáo viên --</option>
-                                    <% if (teachers && teachers.length > 0) { %>
-                                        <% teachers.forEach(function(teacher) { %>
-                                            <option value="<%= teacher._id %>" 
-                                                <%= schedule.teacher && schedule.teacher._id.toString() === teacher._id.toString() ? 'selected' : '' %>>
-                                                <%= teacher.name %>
-                                            </option>
-                                        <% }); %>
-                                    <% } %>
+                                    <% teachers.forEach(function(teacher) { %>
+                                        <option value="<%= teacher._id %>" 
+                                            <%= schedule.teacher && schedule.teacher._id.toString() === teacher._id.toString() ? 'selected' : '' %>>
+                                            <%= teacher.name %>
+                                        </option>
+                                    <% }); %>
                                 </select>
                             </div>
                         </div>
 
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label class="form-label">Thứ <span class="text-danger">*</span></label>
+                                <label class="form-label">Thứ</label>
                                 <div class="d-flex flex-wrap gap-2">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="monday" name="dayOfWeek[]" 
-                                            value="Monday" <%= schedule.dayOfWeek.includes('Monday') ? 'checked' : '' %>>
-                                        <label class="form-check-label" for="monday">Thứ 2</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="tuesday" name="dayOfWeek[]" 
-                                            value="Tuesday" <%= schedule.dayOfWeek.includes('Tuesday') ? 'checked' : '' %>>
-                                        <label class="form-check-label" for="tuesday">Thứ 3</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="wednesday" name="dayOfWeek[]" 
-                                            value="Wednesday" <%= schedule.dayOfWeek.includes('Wednesday') ? 'checked' : '' %>>
-                                        <label class="form-check-label" for="wednesday">Thứ 4</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="thursday" name="dayOfWeek[]" 
-                                            value="Thursday" <%= schedule.dayOfWeek.includes('Thursday') ? 'checked' : '' %>>
-                                        <label class="form-check-label" for="thursday">Thứ 5</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="friday" name="dayOfWeek[]" 
-                                            value="Friday" <%= schedule.dayOfWeek.includes('Friday') ? 'checked' : '' %>>
-                                        <label class="form-check-label" for="friday">Thứ 6</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="saturday" name="dayOfWeek[]" 
-                                            value="Saturday" <%= schedule.dayOfWeek.includes('Saturday') ? 'checked' : '' %>>
-                                        <label class="form-check-label" for="saturday">Thứ 7</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="sunday" name="dayOfWeek[]" 
-                                            value="Sunday" <%= schedule.dayOfWeek.includes('Sunday') ? 'checked' : '' %>>
-                                        <label class="form-check-label" for="sunday">Chủ nhật</label>
-                                    </div>
+                                    <% ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].forEach(function(day) { %>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" 
+                                                id="<%= day.toLowerCase() %>" 
+                                                name="dayOfWeek[]" 
+                                                value="<%= day %>"
+                                                <% 
+                                                // Kiểm tra nhiều trường hợp để tránh lỗi
+                                                let isChecked = false;
+                                                if (schedule.dayOfWeek && Array.isArray(schedule.dayOfWeek)) {
+                                                  isChecked = schedule.dayOfWeek.includes(day);
+                                                } else if (schedule.days && Array.isArray(schedule.days)) {
+                                                  // Convert 'monday' thành 'Monday' để so sánh
+                                                  const dayLower = day.toLowerCase();
+                                                  isChecked = schedule.days.includes(dayLower);
+                                                }
+                                                %>
+                                                <%= isChecked ? 'checked' : '' %>>
+                                            <label class="form-check-label" for="<%= day.toLowerCase() %>">
+                                                <%= day === 'Monday' ? 'Thứ 2' :
+                                                    day === 'Tuesday' ? 'Thứ 3' :
+                                                    day === 'Wednesday' ? 'Thứ 4' :
+                                                    day === 'Thursday' ? 'Thứ 5' :
+                                                    day === 'Friday' ? 'Thứ 6' :
+                                                    day === 'Saturday' ? 'Thứ 7' : 'Chủ nhật' %>
+                                            </label>
+                                        </div>
+                                    <% }); %>
                                 </div>
                             </div>
-
                             <div class="col-md-6">
                                 <div class="row">
                                     <div class="col-6">
-                                        <label for="startTime" class="form-label">Giờ bắt đầu <span class="text-danger">*</span></label>
-                                        <input type="time" class="form-control" id="startTime" name="startTime" value="<%= schedule.startTime %>" required>
+                                        <label for="startTime" class="form-label">Giờ bắt đầu</label>
+                                        <input type="time" class="form-control" id="startTime" name="startTime" 
+                                            value="<% 
+                                            // Kiểm tra cả cấu trúc mới (time.start) và cũ (startTime)
+                                            let startTimeValue = '';
+                                            if (schedule.time && schedule.time.start) {
+                                                startTimeValue = schedule.time.start;
+                                            } else if (schedule.startTime) {
+                                                startTimeValue = schedule.startTime;
+                                            }
+                                            %><%= startTimeValue %>" required>
                                     </div>
                                     <div class="col-6">
-                                        <label for="endTime" class="form-label">Giờ kết thúc <span class="text-danger">*</span></label>
-                                        <input type="time" class="form-control" id="endTime" name="endTime" value="<%= schedule.endTime %>" required>
+                                        <label for="endTime" class="form-label">Giờ kết thúc</label>
+                                        <input type="time" class="form-control" id="endTime" name="endTime" 
+                                            value="<% 
+                                            // Kiểm tra cả cấu trúc mới (time.end) và cũ (endTime)
+                                            let endTimeValue = '';
+                                            if (schedule.time && schedule.time.end) {
+                                                endTimeValue = schedule.time.end;
+                                            } else if (schedule.endTime) {
+                                                endTimeValue = schedule.endTime;
+                                            }
+                                            %><%= endTimeValue %>" required>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="location" class="form-label">Địa điểm</label>
-                                <input type="text" class="form-control" id="location" name="location" value="<%= schedule.location || '' %>" placeholder="Phòng học">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="status" class="form-label">Trạng thái</label>
-                                <select class="form-select" id="status" name="status">
-                                    <option value="active" <%= schedule.status === 'active' ? 'selected' : '' %>>Đang hoạt động</option>
-                                    <option value="inactive" <%= schedule.status === 'inactive' ? 'selected' : '' %>>Tạm dừng</option>
-                                    <option value="completed" <%= schedule.status === 'completed' ? 'selected' : '' %>>Đã kết thúc</option>
-                                </select>
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="studentIds" class="form-label">Học sinh</label>
-                            <select class="form-select" id="studentIds" name="studentIds" multiple>
-                                <% if (students && students.length > 0) { %>
-                                    <% students.forEach(function(student) { %>
-                                        <option value="<%= student._id %>" 
-                                            <%= schedule.students.some(s => s._id.toString() === student._id.toString()) ? 'selected' : '' %>>
-                                            <%= student.name %> - <%= student.class %>
-                                        </option>
-                                    <% }); %>
-                                <% } %>
-                            </select>
-                            <small class="text-muted">Giữ Ctrl để chọn nhiều học sinh.</small>
+                            <label for="location" class="form-label">Địa điểm</label>
+                            <input type="text" class="form-control" id="location" name="location" 
+                                value="<% 
+                                // Kiểm tra cả location và room
+                                let locationValue = '';
+                                if (schedule.location) {
+                                    locationValue = schedule.location;
+                                } else if (schedule.room) {
+                                    locationValue = schedule.room;
+                                }
+                                %><%= locationValue %>" placeholder="Phòng học">
                         </div>
 
-                        <div class="mt-4 d-flex justify-content-between">
+                        <div class="mb-3">
+                            <label class="form-label">Trạng thái</label>
+                            <select class="form-select" name="status">
+                                <option value="active" <%= schedule.status === 'active' ? 'selected' : '' %>>Đang hoạt động</option>
+                                <option value="inactive" <%= schedule.status === 'inactive' ? 'selected' : '' %>>Tạm dừng</option>
+                                <option value="completed" <%= schedule.status === 'completed' ? 'selected' : '' %>>Đã kết thúc</option>
+                            </select>
+                        </div>
+
+                        <!-- Phần quản lý danh sách học sinh -->
+                        <div class="mb-4">
+                            <label class="form-label">Danh Sách Học Sinh</label>
+                            <div class="row">
+                                <!-- Danh sách học sinh đã tham gia -->
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-header bg-success text-white">
+                                            <h6 class="mb-0">Học sinh đang tham gia</h6>
+                                        </div>
+                                        <div class="card-body" style="height: 300px; overflow-y: auto;">
+                                            <div class="list-group" id="enrolled-students">
+                                                <% students.filter(student => 
+                                                    schedule.students.some(s => s._id.toString() === student._id.toString())
+                                                ).forEach(function(student) { %>
+                                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <input type="checkbox" name="studentIds[]" 
+                                                                value="<%= student._id %>" checked hidden>
+                                                            <%= student.name %> <%= student.class ? '- ' + student.class : '' %>
+                                                        </div>
+                                                        <button type="button" class="btn btn-sm btn-outline-danger remove-student" 
+                                                            data-student-id="<%= student._id %>"
+                                                            data-student-name="<%= student.name %>"
+                                                            data-student-class="<%= student.class || '' %>">
+                                                            <i class="bi bi-dash-circle"></i>
+                                                        </button>
+                                                    </div>
+                                                <% }); %>
+                                                <% if(students.filter(student => 
+                                                    schedule.students.some(s => s._id.toString() === student._id.toString())
+                                                ).length === 0) { %>
+                                                    <div class="text-center py-3 text-muted">
+                                                        <i class="bi bi-info-circle"></i> Chưa có học sinh nào tham gia lớp này
+                                                    </div>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Danh sách học sinh chưa tham gia -->
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-header bg-secondary text-white">
+                                            <h6 class="mb-0">Học sinh chưa tham gia</h6>
+                                        </div>
+                                        <div class="card-body" style="height: 300px; overflow-y: auto;">
+                                            <div class="list-group" id="available-students">
+                                                <% 
+                                                // Lấy danh sách ID học sinh đã tham gia lớp này
+                                                const enrolledStudentIds = schedule.students.map(s => s._id.toString());
+                                                
+                                                // Lặp qua tất cả học sinh có trạng thái active
+                                                students.forEach(function(student) { 
+                                                    // Chỉ hiển thị những học sinh chưa tham gia lớp này
+                                                    if (!enrolledStudentIds.includes(student._id.toString())) { %>
+                                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <%= student.name %> <%= student.class ? '- ' + student.class : '' %>
+                                                            </div>
+                                                            <button type="button" class="btn btn-sm btn-outline-success add-student"
+                                                                data-student-id="<%= student._id %>"
+                                                                data-student-name="<%= student.name %>"
+                                                                data-student-class="<%= student.class || '' %>">
+                                                                <i class="bi bi-plus-circle"></i>
+                                                            </button>
+                                                        </div>
+                                                <% 
+                                                    }
+                                                }); %>
+                                                <% 
+                                                // Kiểm tra xem có học sinh nào chưa tham gia không
+                                                const availableStudentsCount = students.filter(student => !enrolledStudentIds.includes(student._id.toString())).length;
+                                                if(availableStudentsCount === 0) { %>
+                                                    <div class="text-center py-3 text-muted">
+                                                        <i class="bi bi-check-circle"></i> Không có học sinh nào khác (đang học) để thêm vào lớp này.
+                                                    </div>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
                             <a href="/academic/schedule" class="btn btn-secondary">
                                 <i class="bi bi-arrow-left"></i> Quay lại
                             </a>
@@ -130,5 +217,155 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Xử lý thêm học sinh vào lớp
+    document.querySelectorAll('.add-student').forEach(button => {
+        button.addEventListener('click', function() {
+            const studentId = this.dataset.studentId;
+            const studentName = this.dataset.studentName;
+            const studentClass = this.dataset.studentClass || '';
+            const displayName = studentClass ? `${studentName} - ${studentClass}` : studentName;
+            
+            // Tạo phần tử mới cho danh sách đã đăng ký
+            const newEnrolledItem = document.createElement('div');
+            newEnrolledItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+            newEnrolledItem.innerHTML = `
+                <div>
+                    <input type="checkbox" name="studentIds[]" value="${studentId}" checked hidden>
+                    ${displayName}
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-danger remove-student" 
+                    data-student-id="${studentId}"
+                    data-student-name="${studentName}"
+                    data-student-class="${studentClass}">
+                    <i class="bi bi-dash-circle"></i>
+                </button>
+            `;
+            
+            // Thêm vào danh sách đã đăng ký
+            document.getElementById('enrolled-students').appendChild(newEnrolledItem);
+            
+            // Xóa thông báo "Chưa có học sinh nào tham gia lớp này" nếu có
+            const noStudentsMsg = document.querySelector('#enrolled-students .text-center');
+            if (noStudentsMsg) {
+                noStudentsMsg.remove();
+            }
+            
+            // Xóa khỏi danh sách chưa đăng ký
+            this.closest('.list-group-item').remove();
+            
+            // Kiểm tra nếu danh sách chưa đăng ký trống thì hiển thị thông báo
+            if (document.querySelectorAll('#available-students .list-group-item').length === 0) {
+                const noAvailableStudents = document.createElement('div');
+                noAvailableStudents.className = 'text-center py-3 text-muted';
+                noAvailableStudents.innerHTML = '<i class="bi bi-people"></i> Tất cả học sinh đã tham gia lớp này';
+                document.getElementById('available-students').appendChild(noAvailableStudents);
+            }
+            
+            // Thêm event listener cho nút xóa
+            addRemoveEventListener(newEnrolledItem.querySelector('.remove-student'));
+        });
+    });
+    
+    // Hàm thêm event listener cho nút xóa
+    function addRemoveEventListener(button) {
+        button.addEventListener('click', function() {
+            const studentId = this.dataset.studentId;
+            const studentName = this.dataset.studentName;
+            const studentClass = this.dataset.studentClass || '';
+            const displayName = studentClass ? `${studentName} - ${studentClass}` : studentName;
+            
+            // Tạo phần tử mới cho danh sách chưa đăng ký
+            const newAvailableItem = document.createElement('div');
+            newAvailableItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+            newAvailableItem.innerHTML = `
+                <div>
+                    ${displayName}
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-success add-student"
+                    data-student-id="${studentId}"
+                    data-student-name="${studentName}"
+                    data-student-class="${studentClass}">
+                    <i class="bi bi-plus-circle"></i>
+                </button>
+            `;
+            
+            // Xóa thông báo "Tất cả học sinh đã tham gia lớp này" nếu có
+            const allEnrolledMsg = document.querySelector('#available-students .text-center');
+            if (allEnrolledMsg) {
+                allEnrolledMsg.remove();
+            }
+            
+            // Thêm vào danh sách chưa đăng ký
+            document.getElementById('available-students').appendChild(newAvailableItem);
+            
+            // Xóa khỏi danh sách đã đăng ký
+            this.closest('.list-group-item').remove();
+            
+            // Kiểm tra nếu danh sách đã đăng ký trống thì hiển thị thông báo
+            if (document.querySelectorAll('#enrolled-students .list-group-item').length === 0) {
+                const noEnrolledStudents = document.createElement('div');
+                noEnrolledStudents.className = 'text-center py-3 text-muted';
+                noEnrolledStudents.innerHTML = '<i class="bi bi-info-circle"></i> Chưa có học sinh nào tham gia lớp này';
+                document.getElementById('enrolled-students').appendChild(noEnrolledStudents);
+            }
+            
+            // Thêm event listener cho nút thêm
+            newAvailableItem.querySelector('.add-student').addEventListener('click', function() {
+                const studentId = this.dataset.studentId;
+                const studentName = this.dataset.studentName;
+                const studentClass = this.dataset.studentClass || '';
+                const displayName = studentClass ? `${studentName} - ${studentClass}` : studentName;
+                
+                // Tạo phần tử mới cho danh sách đã đăng ký
+                const newEnrolledItem = document.createElement('div');
+                newEnrolledItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                newEnrolledItem.innerHTML = `
+                    <div>
+                        <input type="checkbox" name="studentIds[]" value="${studentId}" checked hidden>
+                        ${displayName}
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-student" 
+                        data-student-id="${studentId}"
+                        data-student-name="${studentName}"
+                        data-student-class="${studentClass}">
+                        <i class="bi bi-dash-circle"></i>
+                    </button>
+                `;
+                
+                // Xóa thông báo "Chưa có học sinh nào tham gia lớp này" nếu có
+                const noStudentsMsg = document.querySelector('#enrolled-students .text-center');
+                if (noStudentsMsg) {
+                    noStudentsMsg.remove();
+                }
+                
+                // Thêm vào danh sách đã đăng ký
+                document.getElementById('enrolled-students').appendChild(newEnrolledItem);
+                
+                // Xóa khỏi danh sách chưa đăng ký
+                this.closest('.list-group-item').remove();
+                
+                // Kiểm tra nếu danh sách chưa đăng ký trống thì hiển thị thông báo
+                if (document.querySelectorAll('#available-students .list-group-item').length === 0) {
+                    const noAvailableStudents = document.createElement('div');
+                    noAvailableStudents.className = 'text-center py-3 text-muted';
+                    noAvailableStudents.innerHTML = '<i class="bi bi-people"></i> Tất cả học sinh đã tham gia lớp này';
+                    document.getElementById('available-students').appendChild(noAvailableStudents);
+                }
+                
+                // Thêm event listener cho nút xóa
+                addRemoveEventListener(newEnrolledItem.querySelector('.remove-student'));
+            });
+        });
+    }
+    
+    // Thêm event listener cho các nút xóa ban đầu
+    document.querySelectorAll('.remove-student').forEach(button => {
+        addRemoveEventListener(button);
+    });
+});
+</script>
 
 <%- include('../partials/footer') %> 

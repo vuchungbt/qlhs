@@ -1,0 +1,248 @@
+<%- include('../partials/header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Quản Lý Điểm Danh Theo Lớp</h1>
+    <a href="/academic/attendance" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left me-1"></i> Quay lại điểm danh
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm mb-4 rounded-3 overflow-hidden">
+    <div class="card-header bg-transparent py-3 border-bottom-0">
+        <h5 class="mb-0"><i class="bi bi-funnel me-2 text-primary"></i>Lọc dữ liệu</h5>
+    </div>
+    <div class="card-body">
+        <form id="filterForm" method="GET" class="row g-3">
+            <div class="col-md-4">
+                <label for="classFilter" class="form-label">Lớp học</label>
+                <select id="classFilter" name="classId" class="form-select">
+                    <option value="">-- Chọn lớp học --</option>
+                    <% if (schedules && schedules.length > 0) { %>
+                        <% schedules.forEach(function(schedule) { %>
+                            <option value="<%= schedule._id %>" <%= selectedClassId && selectedClassId === schedule._id.toString() ? 'selected' : '' %>><%= schedule.name %></option>
+                        <% }); %>
+                    <% } %>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="startDate" class="form-label">Từ ngày</label>
+                <input type="date" class="form-control" id="startDate" name="startDate" value="<%= startDate %>">
+            </div>
+            <div class="col-md-3">
+                <label for="endDate" class="form-label">Đến ngày</label>
+                <input type="date" class="form-control" id="endDate" name="endDate" value="<%= endDate %>">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-filter me-1"></i> Lọc
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<% if (selectedClassId) { %>
+    <div class="card border-0 shadow-sm mb-4 rounded-3 overflow-hidden">
+        <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3">
+            <h5 class="mb-0">
+                <% if (selectedClass) { %>
+                    <i class="bi bi-calendar3-week me-2 text-primary"></i>Lịch sử điểm danh lớp: <span class="text-primary"><%= selectedClass.name %></span>
+                <% } else { %>
+                    <i class="bi bi-calendar3-week me-2 text-primary"></i>Lịch sử điểm danh
+                <% } %>
+            </h5>
+            <div>
+                <button 
+                    class="btn btn-primary" 
+                    onclick="window.location.href='/academic/attendance/class/<%= selectedClassId %>?date=<%= moment().format('YYYY-MM-DD') %>'">
+                    <i class="bi bi-calendar-check me-1"></i> Điểm danh hôm nay
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="font-weight: 500">Ngày</th>
+                            <th style="font-weight: 500">Thông tin điểm danh</th>
+                            <th style="font-weight: 500" class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (attendanceRecords && attendanceRecords.length > 0) { %>
+                            <% // Gom nhóm các bản ghi theo ngày
+                            const recordsByDate = {};
+                            attendanceRecords.forEach(record => {
+                                const dateStr = moment(record.date).format('YYYY-MM-DD');
+                                if (!recordsByDate[dateStr]) {
+                                    recordsByDate[dateStr] = [];
+                                }
+                                recordsByDate[dateStr].push(record);
+                            });
+                            
+                            // Sắp xếp các ngày giảm dần và hiển thị
+                            Object.keys(recordsByDate).sort((a, b) => new Date(b) - new Date(a)).forEach(dateStr => {
+                                const records = recordsByDate[dateStr];
+                                const presentCount = records.filter(r => r.status === 'present').length;
+                                const absentCount = records.filter(r => r.status === 'absent').length;
+                                const lateCount = records.filter(r => r.status === 'late').length;
+                                const totalCount = records.length;
+                            %>
+                                <tr data-class-id="<%= selectedClassId %>" class="<%= absentCount > 0 ? 'absent-highlight' : '' %>">
+                                    <td>
+                                        <div class="fw-medium"><%= moment(dateStr).format('DD/MM/YYYY') %></div>
+                                        <small class="text-muted"><%= moment(dateStr).format('dddd') %></small>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center flex-wrap gap-3">
+                                            <div class="attendance-stat">
+                                                <span class="badge rounded-pill bg-success px-3 py-2"><%= presentCount %></span>
+                                                <small class="text-muted">Có mặt</small>
+                                            </div>
+                                            <div class="attendance-stat">
+                                                <span class="badge rounded-pill bg-danger px-3 py-2"><%= absentCount %></span>
+                                                <small class="text-muted">Vắng mặt</small>
+                                            </div>
+                                            <div class="attendance-stat">
+                                                <span class="badge rounded-pill bg-warning text-dark px-3 py-2"><%= lateCount %></span>
+                                                <small class="text-muted">Đi muộn</small>
+                                            </div>
+                                            <div class="attendance-stat">
+                                                <span class="badge rounded-pill bg-primary px-3 py-2"><%= totalCount %></span>
+                                                <small class="text-muted">Tổng</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="/academic/attendance/class/<%= selectedClassId %>?date=<%= dateStr %>" class="btn btn-sm btn-primary">
+                                            <i class="bi bi-eye me-1"></i> Xem chi tiết
+                                        </a>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="3" class="text-center py-5">
+                                    <div class="d-flex align-items-center justify-content-center py-3">
+                                        <i class="bi bi-calendar-x text-primary me-3 fs-4"></i>
+                                        <p class="mb-0">Không có dữ liệu điểm danh trong khoảng thời gian này</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+<% } else { %>
+    <div class="text-center py-5">
+        <div class="card border-0 shadow-sm bg-light-primary">
+            <div class="card-body py-5">
+                <i class="bi bi-filter-circle text-primary mb-3 fs-1"></i>
+                <h5 class="mb-3">Vui lòng chọn lớp học</h5>
+                <p class="mb-0 text-muted">Chọn một lớp học để xem lịch sử điểm danh</p>
+            </div>
+        </div>
+    </div>
+<% } %>
+
+<style>
+    .attendance-stat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .attendance-stat .badge {
+        min-width: 36px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+    }
+    
+    .badge.bg-success {
+        background-color: #2ecc71 !important;
+    }
+    
+    .badge.bg-danger {
+        background-color: #e74c3c !important;
+    }
+    
+    .badge.bg-warning {
+        background-color: #f39c12 !important;
+    }
+    
+    .badge.bg-primary {
+        background-color: #4361ee !important;
+    }
+    
+    .table tbody tr:hover {
+        background-color: rgba(67, 97, 238, 0.03);
+    }
+    
+    .table th {
+        font-weight: 500 !important;
+        color: #444 !important;
+        border-top: none;
+        background-color: #f8f9fa;
+    }
+    
+    .card {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .btn-primary {
+        background-color: #4361ee;
+        border-color: #4361ee;
+    }
+    
+    .btn-primary:hover {
+        background-color: #3a56d4;
+        border-color: #3a56d4;
+    }
+    
+    .btn-outline-primary {
+        color: #4361ee;
+        border-color: #4361ee;
+    }
+    
+    .btn-outline-primary:hover {
+        background-color: #4361ee;
+        border-color: #4361ee;
+    }
+    
+    /* Màu nền tùy chỉnh */
+    .bg-light-primary {
+        background-color: rgba(67, 97, 238, 0.05);
+    }
+    
+    /* Highlight lớp có học sinh vắng mặt */
+    tr.absent-highlight {
+        background-color: rgba(231, 76, 60, 0.15) !important;
+        border-left: 4px solid #e74c3c !important;
+        box-shadow: inset 0 0 5px rgba(231, 76, 60, 0.1) !important;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gửi form khi thay đổi lớp học
+        document.getElementById('classFilter').addEventListener('change', function() {
+            document.getElementById('filterForm').submit();
+        });
+        
+        // Xác nhận định dạng ngày
+        console.log('Selected date range:', {
+            startDate: document.getElementById('startDate').value,
+            endDate: document.getElementById('endDate').value
+        });
+    });
+</script>
+
+<%- include('../partials/footer') %> 

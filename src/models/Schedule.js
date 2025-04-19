@@ -1,35 +1,71 @@
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const scheduleSchema = new mongoose.Schema({
+const ScheduleSchema = new Schema({
   name: {
     type: String,
     required: true
   },
   teacher: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'Teacher',
     required: true
   },
-  dayOfWeek: {
-    type: [String],
-    required: true,
-    enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-  },
-  startTime: {
-    type: String,
-    required: true
-  },
-  endTime: {
-    type: String,
+  subject: {
+    type: Schema.Types.ObjectId,
+    ref: 'Subject',
     required: true
   },
   students: [{
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'Student'
   }],
+  days: {
+    type: [String],
+    enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+    required: true
+  },
+  dayOfWeek: {
+    type: [String] // Tương thích với phiên bản cũ
+  },
+  time: {
+    start: {
+      type: String,
+      required: true
+    },
+    end: {
+      type: String,
+      required: true
+    }
+  },
+  startTime: {
+    type: String
+  },
+  endTime: {
+    type: String
+  },
+  room: {
+    type: String
+  },
   location: {
-    type: String,
-    default: 'Phòng học chính'
+    type: String
+  },
+  academicYear: {
+    type: String
+  },
+  tuitionAmount: {
+    type: Number,
+    default: 0
+  },
+  tuitionDueDay: {
+    type: Number,
+    min: 1,
+    max: 31,
+    default: 10
+  },
+  active: {
+    type: Boolean,
+    default: true
   },
   status: {
     type: String,
@@ -43,17 +79,29 @@ const scheduleSchema = new mongoose.Schema({
 });
 
 // Hàm ảo để lấy thông tin lịch học hiển thị
-scheduleSchema.virtual('scheduleDisplay').get(function() {
-  return this.dayOfWeek.join(' & ');
+ScheduleSchema.virtual('scheduleDisplay').get(function() {
+  if (this.days && this.days.length > 0) {
+    return this.days.join(' & ');
+  }
+  if (this.dayOfWeek && this.dayOfWeek.length > 0) {
+    return this.dayOfWeek.join(' & ');
+  }
+  return 'Chưa có lịch';
 });
 
 // Hàm ảo để lấy thông tin thời gian hiển thị
-scheduleSchema.virtual('timeDisplay').get(function() {
-  return `${this.startTime} - ${this.endTime}`;
+ScheduleSchema.virtual('timeDisplay').get(function() {
+  if (this.time && this.time.start && this.time.end) {
+    return `${this.time.start} - ${this.time.end}`;
+  }
+  if (this.startTime && this.endTime) {
+    return `${this.startTime} - ${this.endTime}`;
+  }
+  return 'Chưa có thời gian';
 });
 
 // Cấu hình để include các trường ảo khi chuyển sang JSON
-scheduleSchema.set('toJSON', { virtuals: true });
-scheduleSchema.set('toObject', { virtuals: true });
+ScheduleSchema.set('toJSON', { virtuals: true });
+ScheduleSchema.set('toObject', { virtuals: true });
 
-module.exports = mongoose.model('Schedule', scheduleSchema); 
+module.exports = mongoose.model('Schedule', ScheduleSchema); 

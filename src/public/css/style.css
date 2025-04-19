@@ -101,8 +101,21 @@ body {
 .main-content {
     background-color: #f8fafc;
     padding: 1.5rem;
-    flex: 1;
+    padding-top: 1.5rem !important;
+    padding-left: 270px !important;
+    width: 100%;
+    min-height: 100vh;
     transition: all 0.3s ease;
+}
+
+@media (max-width: 991px) {
+    .main-content {
+        padding-left: 90px !important;
+    }
+}
+
+.main-content.sidebar-collapsed {
+    padding-left: 90px !important;
 }
 
 h1 {
@@ -343,7 +356,8 @@ h5 {
 }
 
 .class-card .bi {
-    margin-right: 0.5rem;
+    /* Form controls margin-right: 0.5rem;*/
+    
     font-size: 1rem;
 }
 

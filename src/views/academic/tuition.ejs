@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <%- include('../partials/header') %>
+  <title><%= title %></title>
+  <style>
+    .stats-card {
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s;
+      margin-bottom: 20px;
+    }
+    
+    .stats-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-tuition {
+      border-left: 4px solid #3498db;
+    }
+    
+    .card-paid {
+      border-left: 4px solid #2ecc71;
+    }
+    
+    .card-pending {
+      border-left: 4px solid #f39c12;
+    }
+    
+    .card-overdue {
+      border-left: 4px solid #e74c3c;
+    }
+    
+    .status-paid {
+      color: #2ecc71;
+      font-weight: bold;
+    }
+    
+    .status-pending {
+      color: #f39c12;
+      font-weight: bold;
+    }
+    
+    .status-overdue {
+      color: #e74c3c;
+      font-weight: bold;
+    }
+    
+    .btn-tuition {
+      margin-right: 5px;
+      margin-bottom: 5px;
+    }
+    
+    .month-selector {
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .table-hover tbody tr:hover {
+      background-color: rgba(52, 152, 219, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-money-bill-wave"></i> Quản Lý Học Phí</h2>
+    <div>
+      <a href="/academic/sync-enrollments" class="btn btn-warning me-2">
+        <i class="fas fa-sync"></i> Đồng Bộ Enrollment
+      </a>
+      <button class="btn btn-primary" data-toggle="modal" data-target="#generateTuitionModal">
+        <i class="fas fa-plus"></i> Tạo Học Phí Tháng
+      </button>
+    </div>
+  </div>
+  
+  <!-- Thẻ thống kê -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card stats-card card-tuition">
+        <div class="card-body">
+          <h5 class="card-title">Tổng Học Phí</h5>
+          <h3 class="card-text text-primary">
+            <%= stats.totalAmount.toLocaleString('vi-VN') %> ₫
+          </h3>
+          <p class="card-text text-muted">
+            <small>Tháng <%= selectedMonth %>/<%= selectedYear %></small>
+          </p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3">
+      <div class="card stats-card card-paid">
+        <div class="card-body">
+          <h5 class="card-title">Đã Thanh Toán</h5>
+          <h3 class="card-text text-success">
+            <%= stats.paidAmount.toLocaleString('vi-VN') %> ₫
+          </h3>
+          <p class="card-text text-muted">
+            <small><%= stats.paidCount %> phiếu học phí</small>
+          </p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3">
+      <div class="card stats-card card-pending">
+        <div class="card-body">
+          <h5 class="card-title">Chưa Thanh Toán</h5>
+          <h3 class="card-text text-warning">
+            <%= stats.pendingAmount.toLocaleString('vi-VN') %> ₫
+          </h3>
+          <p class="card-text text-muted">
+            <small><%= stats.pendingCount %> phiếu học phí</small>
+          </p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3">
+      <div class="card stats-card card-overdue">
+        <div class="card-body">
+          <h5 class="card-title">Quá Hạn</h5>
+          <h3 class="card-text text-danger">
+            <%= stats.overdueCount %>
+          </h3>
+          <p class="card-text text-muted">
+            <small>phiếu học phí</small>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Bộ lọc tháng/năm -->
+  <div class="month-selector">
+    <form id="monthYearForm" method="GET" action="/academic/tuition">
+      <div class="row">
+        <div class="col-md-4">
+          <div class="form-group">
+            <label for="month">Tháng</label>
+            <select class="form-control" id="month" name="month">
+              <% for(let i = 1; i <= 12; i++) { %>
+                <option value="<%= i %>" <%= selectedMonth == i ? 'selected' : '' %>>
+                  Tháng <%= i %>
+                </option>
+              <% } %>
+            </select>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="form-group">
+            <label for="year">Năm</label>
+            <select class="form-control" id="year" name="year">
+              <% 
+              const currentYear = new Date().getFullYear();
+              for(let i = currentYear - 2; i <= currentYear + 1; i++) { 
+              %>
+                <option value="<%= i %>" <%= selectedYear == i ? 'selected' : '' %>>
+                  <%= i %>
+                </option>
+              <% } %>
+            </select>
+          </div>
+        </div>
+        
+        <div class="col-md-4 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-search"></i> Xem
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Danh sách lớp học và học phí -->
+  <div class="card">
+    <div class="card-header bg-primary text-white">
+      <h5><i class="fas fa-list mr-2"></i> Danh Sách Lớp Học</h5>
+    </div>
+    <div class="card-body">
+      <% if (schedules && schedules.length > 0) { %>
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead class="thead-light">
+              <tr>
+                <th>Lớp</th>
+                <th>Giáo Viên</th>
+                <th>Học Phí Cơ Bản</th>
+                <th>Ngày Thanh Toán</th>
+                <th>Tổng Học Sinh</th>
+                <th>Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% schedules.forEach(schedule => { %>
+                <tr>
+                  <td><%= schedule.name %></td>
+                  <td><%= schedule.teacher ? schedule.teacher.name : 'Chưa phân công' %></td>
+                  <td><%= schedule.tuitionFee ? schedule.tuitionFee.toLocaleString('vi-VN') + ' ₫' : '0 ₫' %></td>
+                  <td>Ngày <%= schedule.paymentDay || 15 %> hàng tháng</td>
+                  <td>
+                    <% if (typeof schedule.studentCount !== 'undefined') { %>
+                      <%= schedule.studentCount %>
+                    <% } else { %>
+                      <%= schedule.students ? schedule.students.length : 0 %> 
+                      <small class="text-muted">(chưa cập nhật)</small>
+                    <% } %>
+                  </td>
+                  <td>
+                    <a href="/academic/tuition/class/<%= schedule._id %>?month=<%= selectedMonth %>&year=<%= selectedYear %>" 
+                       class="btn btn-sm btn-info">
+                      <i class="fas fa-eye"></i> Xem Chi Tiết
+                    </a>
+                    <button class="btn btn-sm btn-success generate-tuition-btn" 
+                            data-id="<%= schedule._id %>"
+                            data-name="<%= schedule.name %>"
+                            data-month="<%= selectedMonth %>"
+                            data-year="<%= selectedYear %>">
+                      <i class="fas fa-sync-alt"></i> Tạo Học Phí
+                    </button>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } else { %>
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle mr-2"></i> Chưa có lớp học nào được tạo.
+        </div>
+      <% } %>
+    </div>
+  </div>
+  
+  <!-- Modal Tạo Học Phí -->
+  <div class="modal fade" id="generateTuitionModal" tabindex="-1" role="dialog" aria-labelledby="generateTuitionModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="generateTuitionModalLabel">Tạo Học Phí Hàng Loạt</h5>
+          <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="generateTuitionForm">
+            <div class="form-group">
+              <label for="modalMonth">Tháng</label>
+              <select class="form-control" id="modalMonth" name="month">
+                <% for(let i = 1; i <= 12; i++) { %>
+                  <option value="<%= i %>" <%= selectedMonth == i ? 'selected' : '' %>>
+                    Tháng <%= i %>
+                  </option>
+                <% } %>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="modalYear">Năm</label>
+              <select class="form-control" id="modalYear" name="year">
+                <% 
+                for(let i = currentYear - 2; i <= currentYear + 1; i++) { 
+                %>
+                  <option value="<%= i %>" <%= selectedYear == i ? 'selected' : '' %>>
+                    <%= i %>
+                  </option>
+                <% } %>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="modalClass">Lớp Học</label>
+              <select class="form-control" id="modalClass" name="scheduleId">
+                <option value="">-- Chọn Lớp Học --</option>
+                <% schedules.forEach(schedule => { %>
+                  <option value="<%= schedule._id %>"><%= schedule.name %></option>
+                <% }) %>
+              </select>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+          <button type="button" class="btn btn-primary" id="confirmGenerateTuition">Tạo Học Phí</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <%- include('../partials/footer') %>
+  
+  <script>
+    $(document).ready(function() {
+      // Xử lý tạo học phí cho một lớp
+      $('.generate-tuition-btn').click(function() {
+        const scheduleId = $(this).data('id');
+        const className = $(this).data('name');
+        const month = $(this).data('month');
+        const year = $(this).data('year');
+        
+        if (confirm(`Bạn có chắc muốn tạo học phí cho lớp "${className}" tháng ${month}/${year}?`)) {
+          generateTuition(scheduleId, month, year);
+        }
+      });
+      
+      // Xử lý tạo học phí từ modal
+      $('#confirmGenerateTuition').click(function() {
+        const scheduleId = $('#modalClass').val();
+        const month = $('#modalMonth').val();
+        const year = $('#modalYear').val();
+        
+        if (!scheduleId) {
+          alert('Vui lòng chọn lớp học');
+          return;
+        }
+        
+        generateTuition(scheduleId, month, year);
+        $('#generateTuitionModal').modal('hide');
+      });
+      
+      // Hàm tạo học phí
+      function generateTuition(scheduleId, month, year) {
+        $.ajax({
+          url: '/academic/tuition/generate',
+          type: 'POST',
+          data: {
+            scheduleId: scheduleId,
+            month: month,
+            year: year
+          },
+          success: function(response) {
+            if (response.success) {
+              alert(response.message);
+              // Tải lại trang sau khi tạo thành công
+              location.reload();
+            } else {
+              alert('Lỗi: ' + response.message);
+            }
+          },
+          error: function(err) {
+            console.error('Lỗi khi tạo học phí:', err);
+            alert('Đã xảy ra lỗi khi tạo học phí');
+          }
+        });
+      }
+      
+      // Chọn tháng, năm tự động submit form
+      $('#month, #year').change(function() {
+        $('#monthYearForm').submit();
+      });
+    });
+  </script>
+</body>
+</html> 

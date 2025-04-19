@@ -1,62 +1,88 @@
 <%- include('../partials/header') %>
 
-<div class="col main-content p-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="mb-0">Thông Tin Học Sinh</h1>
-        <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addStudentModal">
-            <i class="bi bi-plus-lg me-2"></i>
-            Thêm Học Sinh
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Thông Tin Học Sinh</h1>
+    <div>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+            <i class="bi bi-plus-lg me-2"></i>Thêm Học Sinh
         </button>
     </div>
+</div>
 
-    <div class="card">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Họ Tên</th>
-                            <th>Ngày Sinh</th>
-                            <th>Các Lớp Tham Gia</th>
-                            <th>Phụ Huynh</th>
-                            <th>Số Điện Thoại</th>
-                            <th>Địa Chỉ</th>
-                            <th>Thao Tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+<div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="font-weight: 500">Họ Tên</th>
+                        <th style="font-weight: 500">Các Lớp Tham Gia</th>
+                        <th style="font-weight: 500">Số Điện Thoại</th>
+                        <th style="font-weight: 500">Trạng Thái</th>
+                        <th style="width: 120px; font-weight: 500">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (students && students.length > 0) { %>
                         <% students.forEach(function(student) { %>
+                            <tr class="<%= student.status === 'inactive' ? 'table-danger' : '' %>">
+                                <td class="fw-medium"><%= student.name %></td>
+                                <td>
+                                    <% if(student.schedules && student.schedules.length > 0) { %>
+                                        <% student.schedules.forEach(function(schedule, index) { %>
+                                            <span class="badge bg-primary rounded-pill">
+                                                <%= schedule.name %>
+                                            </span>
+                                            <%= index < student.schedules.length - 1 ? ' ' : '' %>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <span class="text-muted">Chưa tham gia lớp nào</span>
+                                    <% } %>
+                                </td>
+                                <td><%= student.parentPhone || (student.parent ? student.parent.phone : '-') %></td>
+                                <td>
+                                    <% if(student.status === 'active') { %>
+                                        <span class="badge bg-success rounded-pill">Đang học</span>
+                                    <% } else { %>
+                                        <span class="badge bg-danger rounded-pill">Đã nghỉ học</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <div class="d-flex">
+                                        <button class="btn btn-sm btn-outline-info rounded-circle me-1" 
+                                                onclick="openInfoModal('<%= student._id %>')"
+                                                data-bs-toggle="tooltip" 
+                                                title="Xem chi tiết">
+                                            <i class="bi bi-info-circle"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-primary rounded-circle me-1" 
+                                                onclick="openEditModal('<%= student._id %>')"
+                                                data-bs-toggle="tooltip" 
+                                                title="Chỉnh sửa">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger rounded-circle" 
+                                                onclick="deleteStudent('<%= student._id %>')"
+                                                data-bs-toggle="tooltip" 
+                                                title="Xóa">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
                         <tr>
-                            <td><%= student.name %></td>
-                            <td><%= student.dateOfBirth ? student.dateOfBirth.toLocaleDateString('vi-VN') : '-' %></td>
-                            <td>
-                                <% if(student.schedules && student.schedules.length > 0) { %>
-                                    <% student.schedules.forEach(function(schedule, index) { %>
-                                        <span class="badge bg-primary">
-                                            <%= schedule.name %>
-                                            <% if (index < student.schedules.length - 1) { %>, <% } %>
-                                        </span>
-                                    <% }); %>
-                                <% } else { %>
-                                    <span class="text-muted">Chưa tham gia lớp nào</span>
-                                <% } %>
-                            </td>
-                            <td><%= student.parentName || (student.parent ? student.parent.name : '-') %></td>
-                            <td><%= student.parentPhone || (student.parent ? student.parent.phone : '-') %></td>
-                            <td><%= student.address || '-' %></td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary me-2" onclick="openEditModal('<%= student._id %>')">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteStudent('<%= student._id %>')">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                            <td colspan="5" class="text-center py-4">
+                                <div class="py-5">
+                                    <i class="bi bi-people fs-1 text-muted"></i>
+                                    <p class="mt-3">Chưa có học sinh nào</p>
+                                </div>
                             </td>
                         </tr>
-                        <% }); %>
-                    </tbody>
-                </table>
-            </div>
+                    <% } %>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -86,7 +112,7 @@
                             <label for="parent" class="form-label">Phụ Huynh</label>
                             <select class="form-select" id="parent" name="parent">
                                 <option value="">-- Chọn Phụ Huynh --</option>
-                                <% if (parents && parents.length > 0) { %>
+                                <% if (typeof parents !== 'undefined' && parents && parents.length > 0) { %>
                                     <% parents.forEach(function(parent) { %>
                                         <option value="<%= parent._id %>"><%= parent.name %> - <%= parent.phone %></option>
                                     <% }); %>
@@ -95,27 +121,90 @@
                             <small class="form-text text-muted">Chọn phụ huynh đã có hoặc nhập thông tin mới</small>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="address" class="form-label">Địa Chỉ</label>
-                            <input type="text" class="form-control" id="address" name="address">
+                            <label for="status" class="form-label">Trạng Thái</label>
+                            <select class="form-select" id="status" name="status" onchange="handleStatusChange(this, 'add')">
+                                <option value="active">Đang học</option>
+                                <option value="inactive">Đã nghỉ học</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="startDate" class="form-label">Ngày Bắt Đầu Học</label>
+                            <input type="date" class="form-control" id="startDate" name="startDate">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="endDate" class="form-label">Ngày Nghỉ Học</label>
+                            <input type="date" class="form-control" id="endDate" name="endDate" disabled>
                         </div>
                     </div>
                     <div id="newParentInfo">
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="parentName" class="form-label">Tên Phụ Huynh <span class="text-danger">*</span></label>
+                                <label for="parentName" class="form-label">Tên Phụ Huynh</label>
                                 <input type="text" class="form-control" id="parentName" name="parentName">
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="parentPhone" class="form-label">Số Điện Thoại <span class="text-danger">*</span></label>
+                                <label for="parentPhone" class="form-label">Số Điện Thoại</label>
                                 <input type="text" class="form-control" id="parentPhone" name="parentPhone">
                             </div>
                         </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="note" class="form-label">Ghi chú</label>
+                        <textarea class="form-control" id="note" name="note" rows="3"></textarea>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
                 <button type="button" class="btn btn-primary" onclick="document.getElementById('addStudentForm').submit()">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Thông Tin Chi Tiết -->
+<div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="infoModalLabel">Thông Tin Chi Tiết</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <strong>Họ Tên:</strong>
+                    <p id="infoName"></p>
+                </div>
+                <div class="mb-3">
+                    <strong>Ngày Sinh:</strong>
+                    <p id="infoDateOfBirth"></p>
+                </div>
+                <div class="mb-3">
+                    <strong>Phụ Huynh:</strong>
+                    <p id="infoParent"></p>
+                </div>
+                <div class="mb-3">
+                    <strong>Số Điện Thoại:</strong>
+                    <p id="infoPhone"></p>
+                </div>
+                <div class="mb-3">
+                    <strong>Trạng Thái:</strong>
+                    <p id="infoStatus"></p>
+                </div>
+                <div class="mb-3">
+                    <strong>Ngày Bắt Đầu Học:</strong>
+                    <p id="infoStartDate"></p>
+                </div>
+                <div class="mb-3">
+                    <strong>Ngày Nghỉ Học:</strong>
+                    <p id="infoEndDate"></p>
+                </div>
+                <div class="mb-3">
+                    <strong>Ghi Chú:</strong>
+                    <p id="infoNote"></p>
+                </div>
             </div>
         </div>
     </div>
@@ -131,6 +220,7 @@
             </div>
             <div class="modal-body">
                 <form id="editStudentForm" method="POST">
+                    <input type="hidden" name="_method" value="PUT">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="editName" class="form-label">Họ Tên <span class="text-danger">*</span></label>
@@ -146,7 +236,7 @@
                             <label for="editParent" class="form-label">Phụ Huynh</label>
                             <select class="form-select" id="editParent" name="parent">
                                 <option value="">-- Chọn Phụ Huynh --</option>
-                                <% if (parents && parents.length > 0) { %>
+                                <% if (typeof parents !== 'undefined' && parents && parents.length > 0) { %>
                                     <% parents.forEach(function(parent) { %>
                                         <option value="<%= parent._id %>"><%= parent.name %> - <%= parent.phone %></option>
                                     <% }); %>
@@ -154,21 +244,38 @@
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="editAddress" class="form-label">Địa Chỉ</label>
-                            <input type="text" class="form-control" id="editAddress" name="address">
+                            <label for="editStatus" class="form-label">Trạng Thái</label>
+                            <select class="form-select" id="editStatus" name="status" onchange="handleStatusChange(this, 'edit')">
+                                <option value="active">Đang học</option>
+                                <option value="inactive">Đã nghỉ học</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editStartDate" class="form-label">Ngày Bắt Đầu Học</label>
+                            <input type="date" class="form-control" id="editStartDate" name="startDate">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editEndDate" class="form-label">Ngày Nghỉ Học</label>
+                            <input type="date" class="form-control" id="editEndDate" name="endDate">
                         </div>
                     </div>
                     <div id="editNewParentInfo">
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="editParentName" class="form-label">Tên Phụ Huynh <span class="text-danger">*</span></label>
+                                <label for="editParentName" class="form-label">Tên Phụ Huynh</label>
                                 <input type="text" class="form-control" id="editParentName" name="parentName">
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="editParentPhone" class="form-label">Số Điện Thoại <span class="text-danger">*</span></label>
+                                <label for="editParentPhone" class="form-label">Số Điện Thoại</label>
                                 <input type="text" class="form-control" id="editParentPhone" name="parentPhone">
                             </div>
                         </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editNote" class="form-label">Ghi chú</label>
+                        <textarea class="form-control" id="editNote" name="note" rows="3"></textarea>
                     </div>
                 </form>
             </div>
@@ -182,6 +289,12 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Khởi tạo tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+
         // Ẩn/hiện form thông tin phụ huynh mới
         const parentSelect = document.getElementById('parent');
         const newParentInfo = document.getElementById('newParentInfo');
@@ -191,82 +304,75 @@
         if (parentSelect && newParentInfo) {
             parentSelect.addEventListener('change', function() {
                 if (this.value) {
-                    // Đã chọn phụ huynh có sẵn
                     newParentInfo.style.display = 'none';
-                    parentNameInput.removeAttribute('required');
-                    parentPhoneInput.removeAttribute('required');
                 } else {
-                    // Chưa chọn phụ huynh hoặc chọn nhập mới
                     newParentInfo.style.display = 'block';
-                    parentNameInput.setAttribute('required', 'required');
-                    parentPhoneInput.setAttribute('required', 'required');
                 }
             });
             
-            // Kiểm tra khi trang load
             if (parentSelect.value) {
                 newParentInfo.style.display = 'none';
-                parentNameInput.removeAttribute('required');
-                parentPhoneInput.removeAttribute('required');
             } else {
                 newParentInfo.style.display = 'block';
-                parentNameInput.setAttribute('required', 'required');
-                parentPhoneInput.setAttribute('required', 'required');
             }
         }
         
         // Xử lý tương tự cho form chỉnh sửa
         const editParentSelect = document.getElementById('editParent');
         const editNewParentInfo = document.getElementById('editNewParentInfo');
-        const editParentNameInput = document.getElementById('editParentName');
-        const editParentPhoneInput = document.getElementById('editParentPhone');
         
         if (editParentSelect && editNewParentInfo) {
             editParentSelect.addEventListener('change', function() {
                 if (this.value) {
                     editNewParentInfo.style.display = 'none';
-                    editParentNameInput.removeAttribute('required');
-                    editParentPhoneInput.removeAttribute('required');
                 } else {
                     editNewParentInfo.style.display = 'block';
-                    editParentNameInput.setAttribute('required', 'required');
-                    editParentPhoneInput.setAttribute('required', 'required');
-                }
-            });
-        }
-        
-        // Xử lý submit form thêm học sinh
-        const addStudentForm = document.getElementById('addStudentForm');
-        if (addStudentForm) {
-            addStudentForm.addEventListener('submit', function(event) {
-                const parentSelectValue = parentSelect.value;
-                const parentNameValue = parentNameInput.value.trim();
-                const parentPhoneValue = parentPhoneInput.value.trim();
-                
-                // Nếu không chọn phụ huynh có sẵn và không nhập thông tin phụ huynh mới
-                if (!parentSelectValue && (!parentNameValue || !parentPhoneValue)) {
-                    event.preventDefault();
-                    alert('Vui lòng chọn phụ huynh có sẵn hoặc nhập đầy đủ thông tin phụ huynh mới');
-                }
-            });
-        }
-        
-        // Xử lý submit form sửa học sinh
-        const editStudentForm = document.getElementById('editStudentForm');
-        if (editStudentForm) {
-            editStudentForm.addEventListener('submit', function(event) {
-                const editParentSelectValue = editParentSelect.value;
-                const editParentNameValue = editParentNameInput.value.trim();
-                const editParentPhoneValue = editParentPhoneInput.value.trim();
-                
-                // Nếu không chọn phụ huynh có sẵn và không nhập thông tin phụ huynh mới
-                if (!editParentSelectValue && (!editParentNameValue || !editParentPhoneValue)) {
-                    event.preventDefault();
-                    alert('Vui lòng chọn phụ huynh có sẵn hoặc nhập đầy đủ thông tin phụ huynh mới');
                 }
             });
         }
     });
+    
+    // Xử lý thay đổi trạng thái học sinh
+    function handleStatusChange(selectElement, formType) {
+        const prefix = formType === 'edit' ? 'edit' : '';
+        const endDateInput = document.getElementById(prefix + 'EndDate');
+        
+        if (selectElement.value === 'inactive') {
+            endDateInput.disabled = false;
+            if (!endDateInput.value) {
+                endDateInput.value = new Date().toISOString().split('T')[0];
+            }
+        } else {
+            endDateInput.disabled = true;
+            endDateInput.value = '';
+        }
+    }
+    
+    // Mở modal thông tin chi tiết
+    function openInfoModal(studentId) {
+        fetch(`/academic/students/${studentId}/data`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const student = data.student;
+                    document.getElementById('infoName').textContent = student.name;
+                    document.getElementById('infoDateOfBirth').textContent = student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString('vi-VN') : 'Chưa cập nhật';
+                    document.getElementById('infoParent').textContent = student.parentName || (student.parent ? student.parent.name : 'Chưa cập nhật');
+                    document.getElementById('infoPhone').textContent = student.parentPhone || (student.parent ? student.parent.phone : 'Chưa cập nhật');
+                    document.getElementById('infoStatus').textContent = student.status === 'active' ? 'Đang học' : 'Đã nghỉ học';
+                    document.getElementById('infoStartDate').textContent = student.startDate ? new Date(student.startDate).toLocaleDateString('vi-VN') : 'Chưa cập nhật';
+                    document.getElementById('infoEndDate').textContent = student.endDate ? new Date(student.endDate).toLocaleDateString('vi-VN') : 'Chưa cập nhật';
+                    document.getElementById('infoNote').textContent = student.note || 'Không có ghi chú';
+                    
+                    const infoModal = new bootstrap.Modal(document.getElementById('infoModal'));
+                    infoModal.show();
+                }
+            })
+            .catch(error => {
+                console.error('Lỗi:', error);
+                alert('Đã xảy ra lỗi khi tải thông tin học sinh');
+            });
+    }
     
     // Mở modal chỉnh sửa và lấy dữ liệu học sinh
     function openEditModal(studentId) {
@@ -275,53 +381,83 @@
             .then(data => {
                 if (data.success) {
                     const student = data.student;
+                    const form = document.getElementById('editStudentForm');
                     
                     // Thiết lập action cho form
-                    document.getElementById('editStudentForm').action = `/academic/students/${studentId}`;
+                    form.action = `/academic/students/${studentId}`;
                     
                     // Điền dữ liệu vào form
                     document.getElementById('editName').value = student.name;
                     document.getElementById('editDateOfBirth').value = student.dateOfBirth ? new Date(student.dateOfBirth).toISOString().split('T')[0] : '';
-                    document.getElementById('editAddress').value = student.address || '';
+                    document.getElementById('editStatus').value = student.status || 'active';
+                    document.getElementById('editStartDate').value = student.startDate ? new Date(student.startDate).toISOString().split('T')[0] : '';
+                    document.getElementById('editEndDate').value = student.endDate ? new Date(student.endDate).toISOString().split('T')[0] : '';
+                    document.getElementById('editNote').value = student.note || '';
+                    
+                    // Cập nhật trạng thái của trường endDate
+                    const editEndDate = document.getElementById('editEndDate');
+                    editEndDate.disabled = student.status === 'active';
                     
                     if (student.parent) {
                         document.getElementById('editParent').value = student.parent;
                         document.getElementById('editNewParentInfo').style.display = 'none';
-                        document.getElementById('editParentName').removeAttribute('required');
-                        document.getElementById('editParentPhone').removeAttribute('required');
                     } else {
                         document.getElementById('editParent').value = '';
                         document.getElementById('editParentName').value = student.parentName || '';
                         document.getElementById('editParentPhone').value = student.parentPhone || '';
                         document.getElementById('editNewParentInfo').style.display = 'block';
-                        document.getElementById('editParentName').setAttribute('required', 'required');
-                        document.getElementById('editParentPhone').setAttribute('required', 'required');
                     }
                     
-                    // Mở modal
                     const editModal = new bootstrap.Modal(document.getElementById('editStudentModal'));
                     editModal.show();
                     
-                    // Xử lý nút lưu
+                    // Xử lý nút Lưu
                     document.getElementById('saveEditButton').onclick = function() {
-                        // Kiểm tra thông tin phụ huynh trước khi submit
-                        const editParentSelectValue = document.getElementById('editParent').value;
-                        const editParentNameValue = document.getElementById('editParentName').value.trim();
-                        const editParentPhoneValue = document.getElementById('editParentPhone').value.trim();
+                        // Tạo FormData từ form
+                        const formData = new FormData(form);
+                        const data = {};
                         
-                        if (!editParentSelectValue && (!editParentNameValue || !editParentPhoneValue)) {
-                            alert('Vui lòng chọn phụ huynh có sẵn hoặc nhập đầy đủ thông tin phụ huynh mới');
-                        } else {
-                            document.getElementById('editStudentForm').submit();
-                        }
+                        // Chuyển FormData thành object
+                        formData.forEach((value, key) => {
+                            // Chỉ thêm các trường có giá trị
+                            if (value !== '' && value !== null && value !== undefined) {
+                                data[key] = value;
+                            }
+                        });
+
+                        // Gửi request POST
+                        fetch(form.action, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify(data)
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                        .then(result => {
+                            if (result.success) {
+                                alert('Cập nhật thông tin học sinh thành công');
+                                window.location.reload();
+                            } else {
+                                alert('Lỗi khi cập nhật: ' + (result.message || 'Không xác định'));
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Lỗi:', error);
+                            alert('Đã xảy ra lỗi khi cập nhật thông tin học sinh. Vui lòng thử lại sau.');
+                        });
                     };
-                } else {
-                    alert('Không thể tải thông tin học sinh: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Lỗi:', error);
-                alert('Đã xảy ra lỗi khi tải thông tin học sinh.');
+                alert('Đã xảy ra lỗi khi tải thông tin học sinh');
             });
     }
     
@@ -342,10 +478,57 @@
             })
             .catch(error => {
                 console.error('Lỗi:', error);
-                alert('Đã xảy ra lỗi khi xóa học sinh.');
+                alert('Đã xảy ra lỗi khi xóa học sinh');
             });
         }
     }
 </script>
+
+<style>
+.card {
+    border-radius: 0;
+}
+
+.btn-outline-info, .btn-outline-primary, .btn-outline-danger {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.table th {
+    font-weight: 500;
+    color: #333;
+}
+
+.badge {
+    font-weight: 500;
+    font-size: 0.75rem;
+}
+
+.badge.bg-primary {
+    background-color: #4361ee !important;
+}
+
+.badge.bg-success {
+    background-color: #2ecc71 !important;
+}
+
+.badge.bg-danger {
+    background-color: #e74c3c !important;
+}
+
+.btn-primary {
+    background-color: #4361ee;
+    border-color: #4361ee;
+}
+
+.btn-primary:hover {
+    background-color: #3a56d4;
+    border-color: #3a56d4;
+}
+</style>
 
 <%- include('../partials/footer') %>

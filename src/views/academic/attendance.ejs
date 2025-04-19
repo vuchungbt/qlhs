@@ -1,166 +1,172 @@
 <%- include('../partials/header') %>
 
-<div class="col main-content p-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="mb-0">Điểm Danh - <%= moment(selectedDate).format('DD/MM/YYYY') %></h1>
-        <div class="d-flex">
-            <select id="classFilter" class="form-select me-2" style="width: 180px;">
-                <option value="">Tất cả học sinh</option>
-                <% if (schedules && schedules.length > 0) { %>
-                    <% schedules.forEach(function(schedule) { %>
-                        <option value="<%= schedule._id %>" <%= selectedClassId && selectedClassId === schedule._id.toString() ? 'selected' : '' %>><%= schedule.name %></option>
-                    <% }); %>
-                <% } %>
-            </select>
-            <input type="date" class="form-control" id="attendanceDate" value="<%= selectedDate.toISOString().split('T')[0] %>" style="width: 180px;">
-            <button class="btn btn-primary ms-2" id="saveAttendanceBtn">
-                <i class="bi bi-save me-1"></i> Lưu Điểm Danh
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Điểm Danh - <%= moment(selectedDate).format('DD/MM/YYYY') %></h1>
+    <div class="d-flex align-items-center">
+        <div class="dropdown me-2">
+            <button class="btn btn-outline-primary dropdown-toggle" type="button" id="viewOptions" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-eye me-1"></i> Xem điểm danh
             </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="viewOptions">
+                <li><a class="dropdown-item" href="/academic/attendance/class"><i class="bi bi-grid-3x3 me-2 text-primary"></i> Theo lớp học</a></li>
+                <li><a class="dropdown-item" href="/academic/attendance/student"><i class="bi bi-person-badge me-2 text-primary"></i> Theo học sinh</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="/academic/attendance"><i class="bi bi-calendar-date me-2 text-primary"></i> Điểm danh hôm nay</a></li>
+            </ul>
+        </div>
+        <select id="classFilter" class="form-select me-2" style="max-width: 200px;">
+            <option value="">Tất cả học sinh</option>
+            <% if (schedules && schedules.length > 0) { %>
+                <% schedules.forEach(function(schedule) { %>
+                    <option value="<%= schedule._id %>" <%= selectedClassId && selectedClassId === schedule._id.toString() ? 'selected' : '' %>><%= schedule.name %></option>
+                <% }); %>
+            <% } %>
+        </select>
+        <input type="date" class="form-control me-2" id="attendanceDate" value="<%= moment(selectedDate).format('YYYY-MM-DD') %>" style="max-width: 180px;">
+        <button class="btn btn-primary" id="saveAttendanceBtn">
+            <i class="bi bi-save me-1"></i> Lưu </button>
+    </div>
+</div>
+
+<!-- Các liên kết trực tiếp đến chức năng mới -->
+<div class="card border-0 shadow-sm mb-4 bg-light-primary">
+    <div class="card-body p-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+            </div>
+            <div class="d-flex">
+                <a href="/academic/attendance/class" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-grid-3x3 me-1"></i> Quản lý theo lớp học
+                </a>
+                <a href="/academic/attendance/student" class="btn btn-outline-primary">
+                    <i class="bi bi-person-badge me-1"></i> Quản lý theo học sinh
+                </a>
+            </div>
         </div>
     </div>
+</div>
 
-    <!-- Giao diện điểm danh dạng lưới -->
-    <div class="card mb-4">
-        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">
-                <% if (selectedClassId) { %>
-                    <% const selectedClass = schedules.find(s => s._id.toString() === selectedClassId); %>
-                    <%= selectedClass ? selectedClass.name : 'Danh sách học sinh' %>
-                <% } else { %>
-                    Danh sách học sinh
-                <% } %>
-            </h5>
-            <div class="d-flex align-items-center">
-                <div class="form-check form-switch me-3">
-                    <input class="form-check-input" type="checkbox" id="toggleAllBtn">
-                    <label class="form-check-label" for="toggleAllBtn">Chọn tất cả</label>
-                </div>
-                <div class="dropdown">
-                    <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="bulkActionBtn" data-bs-toggle="dropdown" aria-expanded="false">
-                        Trạng thái hàng loạt
-                    </button>
-                    <ul class="dropdown-menu" aria-labelledby="bulkActionBtn">
-                        <li><a class="dropdown-item bulk-status" data-status="present" href="#">
-                            <i class="bi bi-check-circle-fill text-success me-2"></i> Có mặt
-                        </a></li>
-                        <li><a class="dropdown-item bulk-status" data-status="absent" href="#">
-                            <i class="bi bi-x-circle-fill text-danger me-2"></i> Vắng mặt
-                        </a></li>
-                        <li><a class="dropdown-item bulk-status" data-status="late" href="#">
-                            <i class="bi bi-clock-fill text-warning me-2"></i> Đi muộn
-                        </a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" id="bulkClearStatus" href="#">
-                            <i class="bi bi-eraser me-2"></i> Xóa trạng thái
-                        </a></li>
-                        <li><a class="dropdown-item" id="bulkSelectNone" href="#">
-                            <i class="bi bi-square me-2"></i> Bỏ chọn tất cả
-                        </a></li>
-                    </ul>
-                </div>
-            </div>
+<!-- Giao diện điểm danh dạng lưới -->
+<div class="card border-0 shadow-sm mb-4 rounded-3 overflow-hidden">
+    <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3 border-bottom-0">
+        <h5 class="mb-0">
+            <% if (selectedClassId) { %>
+                <% const selectedClass = schedules.find(s => s._id.toString() === selectedClassId); %>
+                <%= selectedClass ? selectedClass.name : 'Danh sách học sinh' %>
+            <% } else { %>
+                Danh sách học sinh
+            <% } %>
+        </h5>
+    </div>
+    <div class="card-body pt-0">
+        <div class="attendance-legend d-flex mb-3">
+            <span class="me-3"><i class="bi bi-circle-fill text-success"></i> Có mặt</span>
+            <span class="me-3"><i class="bi bi-circle-fill text-danger"></i> Vắng mặt</span>
+            <span><i class="bi bi-circle-fill text-warning"></i> Đi muộn</span>
         </div>
-        <div class="card-body">
-            <div class="attendance-legend d-flex mb-3">
-                <span class="me-3"><i class="bi bi-circle-fill text-success"></i> Có mặt</span>
-                <span class="me-3"><i class="bi bi-circle-fill text-danger"></i> Vắng mặt</span>
-                <span><i class="bi bi-circle-fill text-warning"></i> Đi muộn</span>
-            </div>
-            
-            <div class="attendance-grid">
-                <% if (students && students.length > 0) { %>
-                    <% students.forEach(function(student) { 
-                        const studentAttendance = attendance && attendance.find(a => a.student && a.student._id && a.student._id.toString() === student._id.toString());
-                        const status = studentAttendance ? studentAttendance.status : null;
-                        let statusClass = '';
-                        if (status === 'present') statusClass = 'present';
-                        else if (status === 'absent') statusClass = 'absent';
-                        else if (status === 'late') statusClass = 'late';
-                    %>
-                        <div class="attendance-card <%= statusClass %>" data-student-id="<%= student._id %>">
-                            <div class="student-info">
-                                <div class="student-name"><%= student.name %></div>
-                            </div>
-                            <div class="attendance-actions">
-                                <button class="attendance-btn present-btn" data-status="present" title="Có mặt">
-                                    <i class="bi bi-check-circle-fill"></i>
-                                </button>
-                                <button class="attendance-btn absent-btn" data-status="absent" title="Vắng mặt">
-                                    <i class="bi bi-x-circle-fill"></i>
-                                </button>
-                                <button class="attendance-btn late-btn" data-status="late" title="Đi muộn">
-                                    <i class="bi bi-clock-fill"></i>
-                                </button>
-                            </div>
-                            <div class="note-container">
-                                <input type="text" class="form-control form-control-sm attendance-note" placeholder="Ghi chú" value="<%= studentAttendance && studentAttendance.note ? studentAttendance.note : '' %>">
-                            </div>
+        
+        <div class="attendance-grid">
+            <% if (students && students.length > 0) { %>
+                <% students.forEach(function(student) { 
+                    const studentAttendance = attendance && attendance.find(a => a.student && a.student._id && a.student._id.toString() === student._id.toString());
+                    const status = studentAttendance ? studentAttendance.status : null;
+                    let statusClass = '';
+                    if (status === 'present') statusClass = 'present';
+                    else if (status === 'absent') statusClass = 'absent';
+                    else if (status === 'late') statusClass = 'late';
+                %>
+                    <div class="attendance-card <%= statusClass %>" data-student-id="<%= student._id %>">
+                        <div class="student-info">
+                            <div class="student-name fw-medium"><%= student.name %></div>
                         </div>
-                    <% }); %>
-                <% } else { %>
-                    <div class="alert alert-info w-100 text-center">
-                        <i class="bi bi-info-circle me-2"></i> 
-                        <% if (selectedClassId) { %>
-                            Không có học sinh nào trong lớp này
-                        <% } else { %>
-                            Vui lòng chọn một lớp học để xem danh sách học sinh
-                        <% } %>
+                        <div class="attendance-actions">
+                            <button class="attendance-btn present-btn" data-status="present" title="Có mặt">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </button>
+                            <button class="attendance-btn absent-btn" data-status="absent" title="Vắng mặt">
+                                <i class="bi bi-x-circle-fill"></i>
+                            </button>
+                            <button class="attendance-btn late-btn" data-status="late" title="Đi muộn">
+                                <i class="bi bi-clock-fill"></i>
+                            </button>
+                        </div>
+                        <div class="note-container">
+                            <input type="text" class="form-control form-control-sm attendance-note" placeholder="Ghi chú" value="<%= studentAttendance && studentAttendance.note ? studentAttendance.note : '' %>">
+                        </div>
                     </div>
-                <% } %>
-            </div>
+                <% }); %>
+            <% } else { %>
+                <div class="alert alert-light w-100 text-center border">
+                    <div class="d-flex align-items-center justify-content-center py-3">
+                        <i class="bi bi-info-circle text-primary me-3 fs-4"></i>
+                        <p class="mb-0">
+                            <% if (selectedClassId) { %>
+                                Không có học sinh nào trong lớp này
+                            <% } else { %>
+                                Vui lòng chọn một lớp học để xem danh sách học sinh
+                            <% } %>
+                        </p>
+                    </div>
+                </div>
+            <% } %>
         </div>
     </div>
+</div>
 
-    <!-- Lịch sử điểm danh -->
-    <div class="card">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">Lịch Sử Điểm Danh</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Thời Gian</th>
-                            <th>Họ Tên</th>
-                            <th>Lớp</th>
-                            <th>Trạng Thái</th>
-                            <th>Ghi Chú</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% if (attendance && attendance.length > 0) { %>
-                            <% attendance.forEach(function(record) { %>
-                                <tr>
-                                    <td><%= moment(record.date).format('DD/MM/YYYY') %></td>
-                                    <td><%= record.student ? record.student.name : 'Không xác định' %></td>
-                                    <td>
-                                        <% if (record.student && record.student.schedules) { %>
-                                            <%= record.student.schedules.map(s => s.name).join(', ') %>
-                                        <% } else { %>
-                                            -
-                                        <% } %>
-                                    </td>
-                                    <td>
-                                        <% if (record.status === 'present') { %>
-                                            <span class="badge bg-success">Có mặt</span>
-                                        <% } else if (record.status === 'absent') { %>
-                                            <span class="badge bg-danger">Vắng mặt</span>
-                                        <% } else if (record.status === 'late') { %>
-                                            <span class="badge bg-warning">Đi muộn</span>
-                                        <% } %>
-                                    </td>
-                                    <td><%= record.note || '-' %></td>
-                                </tr>
-                            <% }); %>
-                        <% } else { %>
-                            <tr>
-                                <td colspan="5" class="text-center">Không có dữ liệu điểm danh cho ngày này</td>
+<!-- Lịch sử điểm danh -->
+<div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+    <div class="card-header bg-transparent py-3 border-bottom-0">
+        <h5 class="mb-0">Điểm Danh</h5>
+    </div>
+    <div class="card-body pt-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th style="font-weight: 500">Thời Gian</th>
+                        <th style="font-weight: 500">Họ Tên</th>
+                        <th style="font-weight: 500">Lớp</th>
+                        <th style="font-weight: 500">Trạng Thái</th>
+                        <th style="font-weight: 500">Ghi Chú</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (attendance && attendance.length > 0) { %>
+                        <% attendance.forEach(function(record) { %>
+                            <tr class="<%= record.status === 'absent' ? 'absent-highlight' : '' %>">
+                                <td><%= moment(record.date).format('DD/MM/YYYY') %></td>
+                                <td class="fw-medium"><%= record.student ? record.student.name : 'Không xác định' %></td>
+                                <td>
+                                    <% if (record.schedule && record.schedule.name) { %>
+                                        <%= record.schedule.name %>
+                                    <% } else { %>
+                                        -
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <% if (record.status === 'present') { %>
+                                        <span class="badge bg-success rounded-pill">Có mặt</span>
+                                    <% } else if (record.status === 'absent') { %>
+                                        <span class="badge bg-danger rounded-pill">Vắng mặt</span>
+                                    <% } else if (record.status === 'late') { %>
+                                        <span class="badge bg-warning text-dark rounded-pill">Đi muộn</span>
+                                    <% } %>
+                                </td>
+                                <td><%= record.note || '-' %></td>
                             </tr>
-                        <% } %>
-                    </tbody>
-                </table>
-            </div>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="5" class="text-center py-4">
+                                <div class="py-3">
+                                    <i class="bi bi-calendar-x fs-1 text-muted"></i>
+                                    <p class="mt-3">Không có dữ liệu điểm danh cho ngày này</p>
+                                </div>
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -174,49 +180,50 @@
     
     .attendance-card {
         border: 1px solid #dee2e6;
-        border-radius: 8px;
-        padding: 12px;
+        border-radius: 12px;
+        padding: 16px;
         background-color: #f8f9fa;
         transition: all 0.2s ease;
         position: relative;
         overflow: hidden;
         cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.04);
     }
     
     .attendance-card:hover {
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        box-shadow: 0 5px 12px rgba(0,0,0,0.08);
         transform: translateY(-2px);
     }
     
     .attendance-card.selected {
-        border: 2px solid #0d6efd !important;
-        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.2) !important;
+        border: 2px solid #4361ee !important;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2) !important;
     }
     
     .attendance-card.present {
-        border-left: 5px solid #28a745;
-        background-color: rgba(40, 167, 69, 0.05);
+        border-left: 5px solid #2ecc71;
+        background-color: rgba(46, 204, 113, 0.05);
     }
     
     .attendance-card.absent {
-        border-left: 5px solid #dc3545;
-        background-color: rgba(220, 53, 69, 0.05);
+        border-left: 5px solid #e74c3c;
+        background-color: rgba(231, 76, 60, 0.05);
     }
     
     .attendance-card.late {
-        border-left: 5px solid #ffc107;
-        background-color: rgba(255, 193, 7, 0.05);
+        border-left: 5px solid #f39c12;
+        background-color: rgba(243, 156, 18, 0.05);
     }
     
     .student-info {
-        margin-bottom: 10px;
+        margin-bottom: 12px;
         padding: 5px;
-        border-radius: 4px;
+        border-radius: 6px;
         transition: background-color 0.2s;
     }
     
     .attendance-card.selected .student-info {
-        background-color: rgba(13, 110, 253, 0.08);
+        background-color: rgba(67, 97, 238, 0.08);
         font-weight: bold;
     }
     
@@ -231,7 +238,7 @@
     .attendance-actions {
         display: flex;
         gap: 8px;
-        margin-bottom: 10px;
+        margin-bottom: 12px;
     }
     
     .attendance-btn {
@@ -239,15 +246,20 @@
         background: none;
         font-size: 1.2rem;
         cursor: pointer;
-        padding: 2px 6px;
-        border-radius: 4px;
+        padding: 5px 8px;
+        border-radius: 6px;
         color: #6c757d;
         transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
     }
     
     .attendance-btn:hover {
         background-color: rgba(0,0,0,0.05);
-        transform: scale(1.1);
+        transform: scale(1.05);
     }
     
     .attendance-btn.active {
@@ -255,26 +267,26 @@
     }
     
     .present-btn {
-        color: #28a745;
+        color: #2ecc71;
     }
     
     .absent-btn {
-        color: #dc3545;
+        color: #e74c3c;
     }
     
     .late-btn {
-        color: #ffc107;
+        color: #f39c12;
     }
     
     .present .present-btn,
     .absent .absent-btn,
     .late .late-btn {
         background-color: rgba(0,0,0,0.1);
-        transform: scale(1.1);
+        transform: scale(1.05);
     }
     
     .note-container {
-        margin-top: 5px;
+        margin-top: 8px;
     }
     
     .attendance-legend span {
@@ -294,7 +306,7 @@
     
     /* Đổi màu dropdown khi active */
     #bulkActionBtn.active {
-        background-color: #0d6efd;
+        background-color: #4361ee;
         color: white;
     }
     
@@ -308,64 +320,116 @@
     
     .attendance-note {
         cursor: text;
+        border-radius: 6px;
+    }
+    
+    /* Màu hiển thị trạng thái */
+    .badge.bg-success {
+        background-color: #2ecc71 !important;
+    }
+    
+    .badge.bg-danger {
+        background-color: #e74c3c !important;
+    }
+    
+    .badge.bg-warning {
+        background-color: #f39c12 !important;
+    }
+    
+    .badge.bg-primary {
+        background-color: #4361ee !important;
+    }
+    
+    .card {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .btn-primary {
+        background-color: #4361ee;
+        border-color: #4361ee;
+    }
+    
+    .btn-primary:hover {
+        background-color: #3a56d4;
+        border-color: #3a56d4;
+    }
+    
+    .btn-outline-primary {
+        color: #4361ee;
+        border-color: #4361ee;
+    }
+    
+    .btn-outline-primary:hover {
+        background-color: #4361ee;
+        border-color: #4361ee;
+    }
+    
+    /* Màu nền tùy chỉnh */
+    .bg-light-primary {
+        background-color: rgba(67, 97, 238, 0.08);
+    }
+    
+    /* Hiệu ứng hover cho các thẻ trong bảng */
+    .table tbody tr:hover {
+        background-color: rgba(67, 97, 238, 0.03);
+    }
+    
+    /* Highlight học sinh vắng mặt */
+    tr.absent-highlight {
+        background-color: rgba(231, 76, 60, 0.15) !important;
+        border-left: 4px solid #e74c3c !important;
+        box-shadow: inset 0 0 5px rgba(231, 76, 60, 0.1) !important;
     }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Xác định ngày hiện tại
+    // Đảm bảo Bootstrap dropdown hoạt động
+    const dropdownElementList = document.querySelectorAll('.dropdown-toggle');
+    dropdownElementList.forEach(function(dropdownToggleEl) {
+        new bootstrap.Dropdown(dropdownToggleEl);
+    });
+    
+    // Xác định ngày hiện tại và lớp đang chọn (nếu có)
     const currentDate = document.getElementById('attendanceDate').value;
+    const selectedClassId = document.getElementById('classFilter').value; // Lấy giá trị lớp đang chọn
     
-    // Nút chọn tất cả
-    document.getElementById('toggleAllBtn').addEventListener('change', function() {
-        const isChecked = this.checked;
-        
-        // Hiển thị dropdown nếu đã chọn
-        if (isChecked) {
-            document.getElementById('bulkActionBtn').classList.add('active');
-        } else {
-            document.getElementById('bulkActionBtn').classList.remove('active');
-        }
-        
-        // Thêm class selected vào tất cả card
-        const cards = document.querySelectorAll('.attendance-card');
-        console.log('Tìm thấy ' + cards.length + ' thẻ học sinh');
-        
-        cards.forEach(card => {
-            if (isChecked) {
-                card.classList.add('selected');
-            } else {
-                card.classList.remove('selected');
+    // *** NEW LOGIC START: Set default status if a class is selected ***
+    if (selectedClassId) { // Chỉ thực hiện khi có lớp được chọn
+        console.log('Setting default attendance status to present for class:', selectedClassId);
+        document.querySelectorAll('.attendance-card').forEach(card => {
+            // Chỉ đặt trạng thái nếu card chưa có trạng thái nào
+            if (!card.classList.contains('present') && !card.classList.contains('absent') && !card.classList.contains('late')) {
+                card.classList.add('present');
             }
         });
-    });
-    
-    // Bấm vào card để chọn
-    document.querySelectorAll('.attendance-card').forEach(card => {
-        card.addEventListener('click', function(e) {
-            // Chỉ xử lý khi click vào card, không phải các phần tử con như nút hoặc input
-            if (e.target === this || e.target.classList.contains('student-info') || e.target.classList.contains('student-name')) {
-                this.classList.toggle('selected');
-                console.log('Đã chọn/bỏ chọn học sinh: ' + this.querySelector('.student-name').textContent.trim());
-            }
-        });
-    });
+    }
+    // *** NEW LOGIC END ***
     
     // Bấm vào nút trạng thái (Có mặt, Vắng mặt, Đi muộn) cho từng học sinh
     document.querySelectorAll('.attendance-btn').forEach(button => {
         button.addEventListener('click', function(e) {
-            // Ngăn chặn sự kiện click lan đến thẻ cha (card)
             e.stopPropagation();
-            
             const card = this.closest('.attendance-card');
             const status = this.getAttribute('data-status');
             console.log('Đặt trạng thái ' + status + ' cho học sinh: ' + card.querySelector('.student-name').textContent.trim());
             
-            // Xóa class trạng thái cũ
-            card.classList.remove('present', 'absent', 'late');
-            
-            // Thêm class trạng thái mới
-            card.classList.add(status);
+            // Nếu nút đã active, nghĩa là đang bỏ chọn trạng thái đó
+            if (this.classList.contains('active')) {
+                 card.classList.remove('present', 'absent', 'late');
+                 this.classList.remove('active');
+                 // Tắt active của các nút khác trên cùng card
+                 card.querySelectorAll('.attendance-btn').forEach(btn => btn.classList.remove('active'));
+            } else {
+                // Xóa class trạng thái cũ trên card
+                card.classList.remove('present', 'absent', 'late');
+                // Thêm class trạng thái mới
+                card.classList.add(status);
+                // Tắt active của các nút khác và bật active cho nút này
+                 card.querySelectorAll('.attendance-btn').forEach(btn => btn.classList.remove('active'));
+                 this.classList.add('active');
+            }
             
             // Hiệu ứng trực quan
             card.style.transition = 'all 0.3s';
@@ -383,87 +447,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Đảm bảo rằng nút trạng thái hàng loạt được gán sự kiện đúng
-    document.querySelectorAll('.bulk-status').forEach(item => {
-        item.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const status = this.getAttribute('data-status');
-            const selectedCards = document.querySelectorAll('.attendance-card.selected');
-            
-            console.log('Hành động hàng loạt: Đặt trạng thái ' + status + ' cho ' + selectedCards.length + ' học sinh');
-            
-            if (selectedCards.length === 0) {
-                alert('Vui lòng chọn ít nhất một học sinh để thực hiện hành động này');
-                return;
-            }
-            
-            selectedCards.forEach(card => {
-                // Xóa class trạng thái cũ
-                card.classList.remove('present', 'absent', 'late');
-                
-                // Thêm class trạng thái mới
-                card.classList.add(status);
-                
-                // Hiệu ứng trực quan
-                card.style.transition = 'all 0.3s';
-                card.style.transform = 'scale(1.03)';
-                setTimeout(() => {
-                    card.style.transform = 'scale(1)';
-                }, 300);
-            });
-            
-            // Hiển thị thông báo
-            const statusText = status === 'present' ? 'có mặt' : (status === 'absent' ? 'vắng mặt' : 'đi muộn');
-            alert(`Đã đánh dấu ${selectedCards.length} học sinh là ${statusText}`);
-        });
-    });
-    
-    // Xóa trạng thái cho học sinh được chọn
-    document.getElementById('bulkClearStatus').addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const selectedCards = document.querySelectorAll('.attendance-card.selected');
-        
-        if (selectedCards.length === 0) {
-            alert('Vui lòng chọn ít nhất một học sinh để thực hiện hành động này');
-            return;
-        }
-        
-        selectedCards.forEach(card => {
-            // Xóa tất cả các class trạng thái
-            card.classList.remove('present', 'absent', 'late');
-            
-            // Hiệu ứng trực quan
-            card.style.transition = 'all 0.3s';
-            card.style.backgroundColor = '#f8f9fa';
-            setTimeout(() => {
-                card.style.backgroundColor = '';
-            }, 300);
-        });
-        
-        // Hiển thị thông báo
-        alert(`Đã xóa trạng thái điểm danh cho ${selectedCards.length} học sinh`);
-    });
-    
-    // Bỏ chọn tất cả
-    document.getElementById('bulkSelectNone').addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        document.querySelectorAll('.attendance-card.selected').forEach(card => {
-            card.classList.remove('selected');
-        });
-        
-        // Unchecked nút "Chọn tất cả"
-        document.getElementById('toggleAllBtn').checked = false;
-    });
-    
     // Lưu điểm danh
     document.getElementById('saveAttendanceBtn').addEventListener('click', function() {
         const attendanceDate = document.getElementById('attendanceDate').value;
+        const selectedClassId = document.getElementById('classFilter').value; // Lấy classId đang chọn
         const attendanceData = [];
         
         // Thu thập dữ liệu từ tất cả card có trạng thái
@@ -481,12 +468,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 studentId: studentId,
                 status: status,
                 note: noteInput ? noteInput.value : '',
-                date: attendanceDate
+                // date: attendanceDate // Sẽ gửi date chung ở ngoài
             });
         });
         
         // Gửi dữ liệu điểm danh lên server
         if (attendanceData.length > 0) {
+            console.log('Gửi dữ liệu điểm danh cho ngày:', attendanceDate);
+            
             fetch('/academic/attendance/batch', {
                 method: 'POST',
                 headers: {
@@ -494,6 +483,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({
                     date: attendanceDate,
+                    classId: selectedClassId || null, // Gửi classId, hoặc null nếu không chọn lớp
                     attendances: attendanceData
                 }),
             })
@@ -501,7 +491,6 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.success) {
                     alert('Đã lưu điểm danh thành công cho ' + attendanceData.length + ' học sinh!');
-                    // Có thể reload trang hoặc cập nhật UI
                     setTimeout(() => window.location.reload(), 1000);
                 } else {
                     alert('Lỗi: ' + data.message);
@@ -512,7 +501,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Có lỗi xảy ra khi lưu điểm danh!');
             });
         } else {
-            alert('Vui lòng chọn ít nhất một học sinh để điểm danh!');
+            alert('Vui lòng điểm danh ít nhất một học sinh trước khi lưu!'); 
         }
     });
     
@@ -531,6 +520,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Chuyển đến trang với lớp được chọn và ngày hiện tại
         window.location.href = '/academic/attendance?date=' + currentDate + (selectedClass ? '&classId=' + selectedClass : '');
+    });
+
+    // Debug - kiểm tra dropdown có hoạt động không
+    console.log('Đã khởi tạo dropdown cho viewOptions');
+    document.getElementById('viewOptions').addEventListener('click', function(e) {
+        console.log('Dropdown viewOptions được nhấp');
     });
 });
 </script>

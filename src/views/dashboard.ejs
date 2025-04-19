@@ -1,222 +1,257 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>School Dashboard</title>
+    <title>Bảng Điều Khiển | Quản Lý Học Sinh</title>
     <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="/icons/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <%- include('./partials/header') %>
+    <%- include('partials/header') %>
 
-    <!-- Main Content -->
-    <div class="container-fluid">
-        <!-- Welcome Section -->
-        <div class="welcome-section mb-4">
-            <h1 class="display-5 fw-bold">👋 Welcome, <%= username %>!</h1>
-            <p class="fs-5">Hôm nay là <%= currentDate.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %></p>
-            <div class="mt-3">
-                <a href="/academic/schedule" class="btn btn-light btn-lg">
-                    <i class="bi bi-calendar-check me-2"></i>
-                    Xem lịch học hôm nay
-                </a>
-            </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Bảng Điều Khiển</h1>
+        <div>
+            <span class="badge bg-primary rounded-pill px-3 py-2"><%= today %></span>
         </div>
-
-        <!-- Stats Cards -->
-        <div class="row mb-4">
-            <div class="col-md-3 mb-3">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0">Học sinh</h5>
-                            <div class="icon-bg bg-light-primary rounded-circle p-2">
-                                <i class="bi bi-mortarboard text-primary fs-4"></i>
-                            </div>
+    </div>
+            
+    <div class="row mb-4">
+        <!-- Thống kê số lượng học sinh -->
+        <div class="col-md-3 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Tổng Học Sinh</h6>
+                            <h2 class="mb-0"><%= stats.totalStudents || 0 %></h2>
                         </div>
-                        <h2 class="display-6 fw-bold"><%= stats.studentCount || 0 %></h2>
-                        <p class="text-muted mb-0">Tổng số học sinh đang học</p>
+                        <div class="bg-light rounded-circle p-3 text-primary">
+                            <i class="bi bi-people fs-2"></i>
+                        </div>
                     </div>
-                </div>
-            </div>
-            <div class="col-md-3 mb-3">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0">Phụ huynh</h5>
-                            <div class="icon-bg bg-light-warning rounded-circle p-2">
-                                <i class="bi bi-people text-warning fs-4"></i>
-                            </div>
-                        </div>
-                        <h2 class="display-6 fw-bold"><%= stats.parentCount || 0 %></h2>
-                        <p class="text-muted mb-0">Phụ huynh đã đăng ký</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 mb-3">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0">Lớp học</h5>
-                            <div class="icon-bg bg-light-success rounded-circle p-2">
-                                <i class="bi bi-book text-success fs-4"></i>
-                            </div>
-                        </div>
-                        <h2 class="display-6 fw-bold"><%= stats.classCount || 0 %></h2>
-                        <p class="text-muted mb-0">Số lớp đang hoạt động</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 mb-3">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0">Giáo viên</h5>
-                            <div class="icon-bg bg-light-info rounded-circle p-2">
-                                <i class="bi bi-person-badge text-info fs-4"></i>
-                            </div>
-                        </div>
-                        <h2 class="display-6 fw-bold"><%= stats.teacherCount || 0 %></h2>
-                        <p class="text-muted mb-0">Giáo viên đang giảng dạy</p>
+                    <div class="mt-3">
+                        <a href="/academic/students" class="text-decoration-none">Chi tiết <i class="bi bi-arrow-right"></i></a>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Class Schedule Section -->
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="mb-0">
-                <i class="bi bi-journal-text me-2"></i>
-                Lịch học của tôi
-            </h2>
-            <a href="/academic/schedule" class="text-primary text-decoration-none">Xem tất cả →</a>
-        </div>
-
-        <div class="row">
-            <% if (courses && courses.length > 0) { %>
-                <% courses.forEach(function(course, index) { 
-                    let cardClasses = ['primary', 'secondary', 'tertiary', 'primary'];
-                    let cardClass = cardClasses[index % 4];
-                %>
-                    <div class="col-md-3 mb-4">
-                        <div class="class-card <%= cardClass %> course-card">
-                            <h5 class="mb-3"><%= course.name %></h5>
-                            <div class="teacher-name">
-                                <i class="bi bi-person-circle"></i>
-                                <span><%= course.teacher %></span>
-                            </div>
-                            <div class="class-schedule">
-                                <i class="bi bi-calendar-event"></i>
-                                <span><%= course.schedule %></span>
-                            </div>
-                            <div class="class-time">
-                                <i class="bi bi-clock"></i>
-                                <span><%= course.time %></span>
-                            </div>
-                            <div class="text-end mt-3">
-                                <a href="/academic/schedule/<%= course.id %>" class="btn btn-sm btn-light">
-                                    <i class="bi bi-eye me-1"></i> Chi tiết
-                                </a>
-                            </div>
+        
+        <!-- Thống kê số lượng lớp học -->
+        <div class="col-md-3 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Lớp Học Hoạt Động</h6>
+                            <h2 class="mb-0"><%= stats.activeClasses || 0 %></h2>
+                        </div>
+                        <div class="bg-light rounded-circle p-3 text-success">
+                            <i class="bi bi-calendar3 fs-2"></i>
                         </div>
                     </div>
-                <% }); %>
-            <% } else { %>
-                <div class="col-12">
-                    <div class="alert alert-info">
-                        Chưa có lớp học nào được tạo. <a href="/academic/schedule" class="alert-link">Tạo lớp học mới</a>
+                    <div class="mt-3">
+                        <a href="/academic/schedule" class="text-decoration-none">Chi tiết <i class="bi bi-arrow-right"></i></a>
                     </div>
                 </div>
-            <% } %>
-        </div>
-
-        <!-- Recent Activity Section -->
-        <div class="card mt-4">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-activity me-2"></i>
-                    Hoạt động gần đây
-                </h5>
             </div>
-            <div class="card-body p-0">
-                <% if (recentActivities && recentActivities.length > 0) { %>
-                    <ul class="list-group list-group-flush">
-                        <% recentActivities.forEach(function(activity) { %>
-                            <li class="list-group-item d-flex align-items-center py-3">
-                                <% 
-                                    let bgClass = 'bg-light-primary';
-                                    if (activity.type === 'student_added') bgClass = 'bg-light-info';
-                                    else if (activity.type === 'parent_added') bgClass = 'bg-light-success';
-                                %>
-                                <div class="activity-icon <%= bgClass %> rounded-circle p-2 me-3">
-                                    <i class="bi bi-<%= activity.icon %>"></i>
+        </div>
+        
+        <!-- Thống kê số lượng giáo viên -->
+        <div class="col-md-3 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Giáo Viên</h6>
+                            <h2 class="mb-0"><%= stats.teachers || 0 %></h2>
+                        </div>
+                        <div class="bg-light rounded-circle p-3 text-info">
+                            <i class="bi bi-person-workspace fs-2"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <a href="/academic/teachers" class="text-decoration-none">Chi tiết <i class="bi bi-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Thống kê thanh toán -->
+        <div class="col-md-3 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Thu Tháng Này</h6>
+                            <h2 class="mb-0"><%= stats.monthlyPayments ? stats.monthlyPayments.toLocaleString('vi-VN') : 0 %> đ</h2>
+                        </div>
+                        <div class="bg-light rounded-circle p-3 text-warning">
+                            <i class="bi bi-cash-stack fs-2"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <a href="/billing" class="text-decoration-none">Chi tiết <i class="bi bi-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+            
+    <div class="row mb-4">
+        <!-- Lịch học hôm nay -->
+        <div class="col-lg-8 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0">Lịch Học Hôm Nay</h5>
+                </div>
+                <div class="card-body pt-0">
+                    <% if (todaySchedules && todaySchedules.length > 0) { %>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="font-weight: 500">Lớp Học</th>
+                                        <th style="font-weight: 500">Thời Gian</th>
+                                        <th style="font-weight: 500">Giáo Viên</th>
+                                        <th style="font-weight: 500">Phòng</th>
+                                        <th style="font-weight: 500">Trạng Thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% todaySchedules.forEach(function(schedule) { %>
+                                        <tr>
+                                            <td><a href="/academic/schedule/<%= schedule._id %>" class="text-decoration-none fw-medium"><%= schedule.name %></a></td>
+                                            <td><%= schedule.startTime %> - <%= schedule.endTime %></td>
+                                            <td><%= schedule.teacher ? schedule.teacher.name : 'Chưa phân công' %></td>
+                                            <td><%= schedule.location || 'Chưa cập nhật' %></td>
+                                            <td>
+                                                <span class="badge <%= schedule.status === 'completed' ? 'bg-success' : 'bg-primary' %> rounded-pill">
+                                                    <%= schedule.status === 'completed' ? 'Đã hoàn thành' : 'Đang diễn ra' %>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } else { %>
+                        <div class="alert alert-light border">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-info-circle text-primary me-3 fs-4"></i>
+                                <p class="mb-0">Không có lớp học nào vào hôm nay.</p>
+                            </div>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Thông báo mới nhất -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0 py-3">
+                    <h5 class="mb-0">Thông Báo Mới Nhất</h5>
+                </div>
+                <div class="card-body pt-0">
+                    <% if (notifications && notifications.length > 0) { %>
+                        <ul class="list-group list-group-flush">
+                            <% notifications.forEach(function(notification) { %>
+                                <li class="list-group-item border-0 border-bottom py-3 px-0">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1 fw-medium"><%= notification.title %></h6>
+                                        <small class="text-muted"><%= new Date(notification.date).toLocaleDateString('vi-VN') %></small>
+                                    </div>
+                                    <p class="mb-1 text-muted small"><%= notification.message %></p>
+                                    <% if (notification.actionLink) { %>
+                                        <a href="<%= notification.actionLink %>" class="btn btn-sm btn-outline-primary mt-2 rounded-pill">
+                                            <%= notification.actionText || 'Chi tiết' %>
+                                        </a>
+                                    <% } %>
+                                </li>
+                            <% }); %>
+                        </ul>
+                    <% } else { %>
+                        <div class="text-center py-4">
+                            <i class="bi bi-bell-slash fs-1 text-muted"></i>
+                            <p class="mt-2">Không có thông báo mới</p>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+            
+    <div class="row">
+        <!-- Quản lý nhanh -->
+        <div class="col-12 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 py-3">
+                    <h5 class="mb-0">Quản Lý Nhanh</h5>
+                </div>
+                <div class="card-body pt-0">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <a href="/academic/students/new" class="card h-100 border-0 shadow-sm text-center py-4 text-decoration-none">
+                                <div class="card-body">
+                                    <div class="bg-light rounded-circle d-inline-flex p-3 mb-3 text-primary">
+                                        <i class="bi bi-person-plus fs-3"></i>
+                                    </div>
+                                    <h6 class="mb-0">Thêm Học Sinh</h6>
                                 </div>
-                                <div>
-                                    <p class="mb-0"><%= activity.message %></p>
-                                    <small class="text-muted"><%= activity.date %></small>
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="/academic/schedule/new" class="card h-100 border-0 shadow-sm text-center py-4 text-decoration-none">
+                                <div class="card-body">
+                                    <div class="bg-light rounded-circle d-inline-flex p-3 mb-3 text-success">
+                                        <i class="bi bi-calendar-plus fs-3"></i>
+                                    </div>
+                                    <h6 class="mb-0">Tạo Lớp Mới</h6>
                                 </div>
-                            </li>
-                        <% }); %>
-                    </ul>
-                <% } else { %>
-                    <div class="p-4 text-center">
-                        <p class="text-muted">Chưa có hoạt động nào gần đây</p>
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="/academic/attendance" class="quick-link card">
+                                <div class="card-body d-flex align-items-center">
+                                    <div class="icon-wrapper bg-success">
+                                        <i class="bi bi-calendar-check text-white"></i>
+                                    </div>
+                                    <div class="ms-3">
+                                        <h5 class="mb-0">Điểm Danh</h5>
+                                        <div class="dropdown mt-2">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                Tùy chọn
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="/academic/attendance"><i class="bi bi-calendar-date me-2"></i>Điểm danh hôm nay</a></li>
+                                                <li><a class="dropdown-item" href="/academic/attendance/class"><i class="bi bi-grid me-2"></i>Quản lý theo lớp</a></li>
+                                                <li><a class="dropdown-item" href="/academic/attendance/student"><i class="bi bi-person me-2"></i>Quản lý theo học sinh</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="/billing/new" class="card h-100 border-0 shadow-sm text-center py-4 text-decoration-none">
+                                <div class="card-body">
+                                    <div class="bg-light rounded-circle d-inline-flex p-3 mb-3 text-danger">
+                                        <i class="bi bi-receipt fs-3"></i>
+                                    </div>
+                                    <h6 class="mb-0">Tạo Hóa Đơn</h6>
+                                </div>
+                            </a>
+                        </div>
                     </div>
-                <% } %>
+                </div>
             </div>
         </div>
     </div>
 
-    <style>
-        .bg-light-primary {
-            background-color: #e0e7ff;
-        }
-        
-        .bg-light-success {
-            background-color: #dcfce7;
-        }
-        
-        .bg-light-info {
-            background-color: #dbeafe;
-        }
-        
-        .bg-light-warning {
-            background-color: #fef3c7;
-        }
-        
-        .text-primary {
-            color: #4f46e5 !important;
-        }
-        
-        .text-success {
-            color: #10b981 !important;
-        }
-        
-        .text-info {
-            color: #3b82f6 !important;
-        }
-        
-        .text-warning {
-            color: #f59e0b !important;
-        }
-        
-        .icon-bg, .activity-icon {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .activity-icon {
-            width: 36px;
-            height: 36px;
-        }
-    </style>
-
-    <%- include('./partials/footer') %>
+    <%- include('partials/footer') %>
 
     <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -228,5 +263,37 @@
             }
         });
     </script>
+    
+    <style>
+    .badge.bg-primary {
+        background-color: #4361ee !important;
+    }
+    
+    .badge.bg-success {
+        background-color: #2ecc71 !important;
+    }
+    
+    .table th {
+        font-weight: 500;
+        color: #333;
+    }
+    
+    .card {
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    
+    .card-header {
+        background-color: transparent;
+    }
+    
+    .rounded-circle {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    </style>
 </body>
 </html>

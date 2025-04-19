@@ -21,12 +21,32 @@ exports.getDashboard = async (req, res) => {
     
     if (schedules && schedules.length > 0) {
       schedules.forEach(schedule => {
+        // Kiểm tra trường dayOfWeek và xử lý nếu không tồn tại hoặc undefined
+        let scheduleDisplay = '';
+        if (schedule.days && Array.isArray(schedule.days)) {
+          scheduleDisplay = schedule.days.join(' & ');
+        } else if (schedule.dayOfWeek && Array.isArray(schedule.dayOfWeek)) {
+          scheduleDisplay = schedule.dayOfWeek.join(' & ');
+        } else {
+          scheduleDisplay = 'Chưa cập nhật';
+        }
+
+        // Xử lý trường startTime và endTime
+        let timeDisplay = '';
+        if (schedule.time && schedule.time.start && schedule.time.end) {
+          timeDisplay = `${schedule.time.start} - ${schedule.time.end}`;
+        } else if (schedule.startTime && schedule.endTime) {
+          timeDisplay = `${schedule.startTime} - ${schedule.endTime}`;
+        } else {
+          timeDisplay = 'Chưa cập nhật';
+        }
+
         courses.push({
           id: schedule._id,
           name: schedule.name,
           teacher: schedule.teacher ? schedule.teacher.name : 'Chưa phân công',
-          schedule: schedule.dayOfWeek.join(' & '),
-          time: `${schedule.startTime} - ${schedule.endTime}`
+          schedule: scheduleDisplay,
+          time: timeDisplay
         });
       });
     } else {
@@ -62,7 +82,7 @@ exports.getDashboard = async (req, res) => {
       recentStudents.forEach(student => {
         recentActivities.push({
           type: 'student_added',
-          message: `Học sinh mới ${student.name} đã được thêm vào lớp ${student.class}`,
+          message: `Học sinh mới ${student.name} đã được thêm vào lớp ${student.class || 'chưa phân lớp'}`,
           time: moment(student.createdAt).format('HH:mm A'),
           date: moment(student.createdAt).calendar(),
           icon: 'person-plus'
@@ -88,6 +108,36 @@ exports.getDashboard = async (req, res) => {
 
     // Sắp xếp lại các hoạt động theo thời gian
     recentActivities.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    // Lấy lịch học hôm nay
+    const today = moment().locale('vi').format('DD/MM/YYYY');
+    const currentDay = moment().format('dddd').toLowerCase();
+    
+    // Lấy lịch học của ngày hôm nay - xử lý cả trường hợp days và dayOfWeek
+    const todaySchedules = await Schedule.find({
+      $or: [
+        { days: { $regex: new RegExp(currentDay, 'i') } },
+        { dayOfWeek: { $regex: new RegExp(currentDay, 'i') } }
+      ]
+    }).populate('teacher', 'name').limit(5);
+    
+    // Thêm dữ liệu thông báo mẫu
+    const notifications = [
+      {
+        title: 'Lịch khai giảng lớp mới',
+        message: 'Lớp Tiếng Anh cho học sinh tiểu học sẽ khai giảng vào ngày 15/09/2023',
+        date: new Date(),
+        actionLink: '/academic/schedule/new',
+        actionText: 'Xem lịch'
+      },
+      {
+        title: 'Nhắc nhở thanh toán học phí',
+        message: 'Học phí tháng 9 cần được thanh toán trước ngày 10/09/2023',
+        date: new Date(Date.now() - 86400000), // Hôm qua
+        actionLink: '/billing',
+        actionText: 'Thanh toán'
+      }
+    ];
 
     res.render('dashboard', { 
       title: 'Dashboard',
@@ -95,12 +145,15 @@ exports.getDashboard = async (req, res) => {
       courses: courses,
       currentDate: new Date(),
       stats: {
-        studentCount,
-        parentCount,
-        teacherCount,
-        classCount: courses.length
+        totalStudents: studentCount,
+        activeClasses: courses.length,
+        teachers: teacherCount,
+        monthlyPayments: 15000000 // Dữ liệu mẫu
       },
-      recentActivities
+      recentActivities,
+      today,
+      todaySchedules,
+      notifications
     });
   } catch (err) {
     console.error('Lỗi khi tải dữ liệu dashboard:', err);

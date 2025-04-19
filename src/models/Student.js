@@ -17,8 +17,21 @@ const studentSchema = new mongoose.Schema({
     type: String,
     required: false
   },
-  address: {
+  note: {
     type: String,
+    required: false
+  },
+  status: {
+    type: String,
+    enum: ['active', 'inactive'],
+    default: 'active'
+  },
+  startDate: {
+    type: Date,
+    required: false
+  },
+  endDate: {
+    type: Date,
     required: false
   },
   parent: {

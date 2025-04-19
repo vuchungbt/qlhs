@@ -1,0 +1,571 @@
+<%- include('../partials/header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-0">Lịch Sử Điểm Danh Học Sinh</h1>
+        <p class="text-muted mb-0">
+            <i class="bi bi-person-badge-fill me-2"></i>
+            <%= student ? student.name : 'Không tìm thấy học sinh' %>
+        </p>
+    </div>
+    <div>
+        <a href="/academic/attendance/student" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left me-1"></i> Quay lại
+        </a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4 rounded-3 overflow-hidden">
+    <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-calendar3 me-2 text-primary"></i>Thống kê theo tháng</h5>
+        <div class="d-flex">
+            <button class="btn btn-sm btn-outline-primary me-2" id="prevMonth">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <span class="current-month py-1 px-3 rounded-3 border">
+                <i class="bi bi-calendar3-week me-1"></i>
+                <span id="currentMonthText"><%= currentMonthName %> <%= currentYear %></span>
+            </span>
+            <button class="btn btn-sm btn-outline-primary ms-2" id="nextMonth">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-calendar mb-0">
+                <thead>
+                    <tr class="text-center">
+                        <th>CN</th>
+                        <th>T2</th>
+                        <th>T3</th>
+                        <th>T4</th>
+                        <th>T5</th>
+                        <th>T6</th>
+                        <th>T7</th>
+                    </tr>
+                </thead>
+                <tbody id="calendarBody">
+                    <% for(let i = 0; i < calendarDays.length; i += 7) { %>
+                        <tr>
+                            <% for(let j = 0; j < 7; j++) { %>
+                                <% if (i + j < calendarDays.length) { %>
+                                    <% const day = calendarDays[i + j]; %>
+                                    <td class="calendar-cell <%= day.currentMonth ? 'current-month' : 'other-month' %> <%= day.isToday ? 'today' : '' %>">
+                                        <div class="date-container">
+                                            <span class="day-number"><%= day.date.getDate() %></span>
+                                            <% if (day.attendance) { %>
+                                                <div class="attendance-indicator <%= day.attendance.status %>-indicator" 
+                                                     data-bs-toggle="popover" 
+                                                     data-bs-trigger="hover focus" 
+                                                     data-bs-placement="top" 
+                                                     data-bs-html="true"
+                                                     data-bs-content="<strong>Lớp:</strong> <%= day.attendance.schedule ? day.attendance.schedule.name : 'Không có thông tin' %><br><strong>Trạng thái:</strong> <%= day.attendance.status === 'present' ? 'Có mặt' : (day.attendance.status === 'absent' ? 'Vắng mặt' : 'Đi muộn') %><% if (day.attendance.note) { %><br><strong>Ghi chú:</strong> <%= day.attendance.note %><% } %>">
+                                                    <i class="bi <%= day.attendance.status === 'present' ? 'bi-check-circle-fill' : (day.attendance.status === 'absent' ? 'bi-x-circle-fill' : 'bi-clock-fill') %>"></i>
+                                                </div>
+                                            <% } %>
+                                        </div>
+                                    </td>
+                                <% } else { %>
+                                    <td></td>
+                                <% } %>
+                            <% } %>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-7">
+        <div class="card border-0 shadow-sm h-100 rounded-3 overflow-hidden">
+            <div class="card-header bg-transparent py-3">
+                <h5 class="mb-0"><i class="bi bi-person-check me-2 text-primary"></i>Thông tin học sinh</h5>
+            </div>
+            <div class="card-body">
+                <% if (student) { %>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <p class="mb-1"><strong>Họ tên:</strong> <%= student.name %></p>
+                                <% if (student.dateOfBirth) { %>
+                                    <p class="mb-1"><strong>Ngày sinh:</strong> <%= moment(student.dateOfBirth).format('DD/MM/YYYY') %></p>
+                                <% } %>
+                                <% if (student.email) { %>
+                                    <p class="mb-1"><strong>Email:</strong> <%= student.email %></p>
+                                <% } %>
+                                <% if (student.phone) { %>
+                                    <p class="mb-1"><strong>Điện thoại:</strong> <%= student.phone %></p>
+                                <% } %>
+                                <% if (student.address) { %>
+                                    <p class="mb-0"><strong>Địa chỉ:</strong> <%= student.address %></p>
+                                <% } %>
+                            </div>
+                            <div class="mt-4">
+                                <a href="/students/view/<%= student._id %>" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-file-earmark-text me-1"></i> Xem hồ sơ chi tiết
+                                </a>
+                                <a href="/academic/attendance/student?studentId=<%= student._id %>" class="btn btn-sm btn-outline-primary ms-2">
+                                    <i class="bi bi-table me-1"></i> Xem bảng điểm danh
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="student-avatar">
+                                <% if (student.avatar) { %>
+                                    <img src="<%= student.avatar %>" alt="<%= student.name %>" class="img-thumbnail rounded-circle">
+                                <% } else { %>
+                                    <div class="avatar-placeholder">
+                                        <i class="bi bi-person-circle"></i>
+                                    </div>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                <% } else { %>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Không tìm thấy thông tin học sinh
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="card border-0 shadow-sm h-100 rounded-3 overflow-hidden">
+            <div class="card-header bg-transparent py-3">
+                <h5 class="mb-0"><i class="bi bi-bar-chart-fill me-2 text-primary"></i>Thống kê điểm danh</h5>
+            </div>
+            <div class="card-body">
+                <div class="attendance-stats">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="attendance-stat present-stat">
+                                <div class="stat-value"><%= stats.present %></div>
+                                <div class="stat-icon"><i class="bi bi-check-circle-fill"></i></div>
+                                <div class="stat-label">Có mặt</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="attendance-stat absent-stat">
+                                <div class="stat-value"><%= stats.absent %></div>
+                                <div class="stat-icon"><i class="bi bi-x-circle-fill"></i></div>
+                                <div class="stat-label">Vắng mặt</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="attendance-stat late-stat">
+                                <div class="stat-value"><%= stats.late %></div>
+                                <div class="stat-icon"><i class="bi bi-clock-fill"></i></div>
+                                <div class="stat-label">Đi muộn</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="attendance-chart-container">
+                                <canvas id="attendanceChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4 rounded-3 overflow-hidden">
+    <div class="card-header bg-transparent py-3">
+        <h5 class="mb-0"><i class="bi bi-list-check me-2 text-primary"></i>Lịch sử điểm danh tháng này</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 50px; font-weight: 500">STT</th>
+                        <th style="width: 120px; font-weight: 500">Ngày</th>
+                        <th style="font-weight: 500">Lớp</th>
+                        <th style="width: 150px; font-weight: 500">Trạng thái</th>
+                        <th style="font-weight: 500">Ghi chú</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (filteredAttendance && filteredAttendance.length > 0) { %>
+                        <% filteredAttendance.forEach(function(record, index) { %>
+                            <tr class="<%= record.status === 'absent' ? 'absent-highlight' : '' %>">
+                                <td><%= index + 1 %></td>
+                                <td><%= moment(record.date).format('DD/MM/YYYY') %></td>
+                                <td>
+                                    <% if (record.schedule) { %>
+                                        <%= record.schedule.name %>
+                                    <% } else { %>
+                                        <span class="text-muted">-</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <% if (record.status === 'present') { %>
+                                        <span class="badge bg-success rounded-pill">Có mặt</span>
+                                    <% } else if (record.status === 'absent') { %>
+                                        <span class="badge bg-danger rounded-pill">Vắng mặt</span>
+                                    <% } else if (record.status === 'late') { %>
+                                        <span class="badge bg-warning text-dark rounded-pill">Đi muộn</span>
+                                    <% } %>
+                                </td>
+                                <td><%= record.note || '-' %></td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="5" class="text-center py-4">
+                                <i class="bi bi-calendar-x text-muted me-2"></i>
+                                Không có dữ liệu điểm danh trong tháng này
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Calendar styles */
+    .table-calendar {
+        border-collapse: separate;
+        border-spacing: 3px;
+    }
+    
+    .calendar-cell {
+        width: 14.285%;
+        height: 100px;
+        padding: 10px;
+        vertical-align: top;
+        border-radius: 8px;
+        position: relative;
+        border: 1px solid #e9ecef;
+        transition: all 0.2s ease;
+    }
+    
+    .calendar-cell:hover {
+        background-color: rgba(67, 97, 238, 0.05);
+    }
+    
+    .calendar-cell.today {
+        border: 2px solid #4361ee;
+    }
+    
+    .calendar-cell.other-month {
+        background-color: #f8f9fa;
+        color: #adb5bd;
+    }
+    
+    .day-number {
+        font-size: 1.1rem;
+        font-weight: 500;
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        line-height: 30px;
+        text-align: center;
+        border-radius: 50%;
+    }
+    
+    .today .day-number {
+        background-color: #4361ee;
+        color: white;
+    }
+    
+    .attendance-indicator {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        font-size: 1.2rem;
+        cursor: pointer;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .present-indicator {
+        background-color: rgba(46, 204, 113, 0.1);
+        color: #2ecc71;
+    }
+    
+    .absent-indicator {
+        background-color: rgba(231, 76, 60, 0.1);
+        color: #e74c3c;
+    }
+    
+    .late-indicator {
+        background-color: rgba(243, 156, 18, 0.1);
+        color: #f39c12;
+    }
+    
+    /* Student info and stats styles */
+    .student-avatar {
+        max-width: 120px;
+        margin: 0 auto;
+    }
+    
+    .student-avatar img {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+    }
+    
+    .avatar-placeholder {
+        width: 120px;
+        height: 120px;
+        background-color: #f8f9fa;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: #adb5bd;
+    }
+    
+    .attendance-stat {
+        padding: 15px 0;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+    
+    .attendance-stat:hover {
+        transform: translateY(-5px);
+    }
+    
+    .present-stat .stat-icon {
+        color: #2ecc71;
+    }
+    
+    .absent-stat .stat-icon {
+        color: #e74c3c;
+    }
+    
+    .late-stat .stat-icon {
+        color: #f39c12;
+    }
+    
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 600;
+    }
+    
+    .stat-icon {
+        font-size: 1.5rem;
+        margin: 5px 0;
+    }
+    
+    .stat-label {
+        font-size: 0.85rem;
+        color: #555;
+    }
+    
+    .attendance-status-badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 30px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    .present-badge {
+        background-color: rgba(46, 204, 113, 0.1);
+        color: #2ecc71;
+    }
+    
+    .absent-badge {
+        background-color: rgba(231, 76, 60, 0.1);
+        color: #e74c3c;
+    }
+    
+    .late-badge {
+        background-color: rgba(243, 156, 18, 0.1);
+        color: #f39c12;
+    }
+    
+    .attendance-chart-container {
+        height: 200px;
+        margin-top: 10px;
+    }
+    
+    /* General styles */
+    .current-month {
+        font-weight: 500;
+    }
+    
+    .table th {
+        font-weight: 500 !important;
+        color: #444 !important;
+        border-top: none;
+        background-color: #f8f9fa;
+    }
+    
+    .card {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .btn-primary {
+        background-color: #4361ee;
+        border-color: #4361ee;
+    }
+    
+    .btn-primary:hover {
+        background-color: #3a56d4;
+        border-color: #3a56d4;
+    }
+    
+    .btn-outline-primary {
+        color: #4361ee;
+        border-color: #4361ee;
+    }
+    
+    .btn-outline-primary:hover {
+        background-color: #4361ee;
+        border-color: #4361ee;
+    }
+    
+    .text-primary {
+        color: #4361ee !important;
+    }
+    
+    /* Highlight học sinh vắng mặt */
+    tr.absent-highlight {
+        background-color: rgba(231, 76, 60, 0.1) !important;
+    }
+    
+    .calendar-day.absent {
+        background-color: rgba(231, 76, 60, 0.1);
+        border-color: rgba(231, 76, 60, 0.3);
+    }
+    
+    .calendar-day.present {
+        background-color: rgba(46, 204, 113, 0.05);
+        border-color: rgba(46, 204, 113, 0.3);
+    }
+    
+    .calendar-day.late {
+        background-color: rgba(243, 156, 18, 0.05);
+        border-color: rgba(243, 156, 18, 0.3);
+    }
+    
+    .calendar-day .absent .attendance-status {
+        background-color: #e74c3c;
+    }
+    
+    .calendar-day .present .attendance-status {
+        background-color: #2ecc71;
+    }
+    
+    .calendar-day .late .attendance-status {
+        background-color: #f39c12;
+    }
+    
+    .calendar-wrapper {
+        margin-top: 20px;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Khởi tạo popovers
+        var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+        var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+            return new bootstrap.Popover(popoverTriggerEl)
+        });
+        
+        // Xử lý điều hướng tháng
+        const prevMonthBtn = document.getElementById('prevMonth');
+        const nextMonthBtn = document.getElementById('nextMonth');
+        const currentMonthText = document.getElementById('currentMonthText');
+        
+        let currentMonth = <%= currentMonth %>;
+        let currentYear = <%= currentYear %>;
+        
+        prevMonthBtn.addEventListener('click', function() {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            navigateToMonth(currentMonth, currentYear);
+        });
+        
+        nextMonthBtn.addEventListener('click', function() {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            navigateToMonth(currentMonth, currentYear);
+        });
+        
+        function navigateToMonth(month, year) {
+            window.location.href = `/academic/attendance/student/<%= student._id %>?month=${month + 1}&year=${year}`;
+        }
+        
+        // Biểu đồ thống kê
+        const ctx = document.getElementById('attendanceChart').getContext('2d');
+        const attendanceChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Có mặt', 'Vắng mặt', 'Đi muộn'],
+                datasets: [{
+                    data: [
+                        <%- stats.present ? stats.present : 0 %>, 
+                        <%- stats.absent ? stats.absent : 0 %>, 
+                        <%- stats.late ? stats.late : 0 %>
+                    ],
+                    backgroundColor: [
+                        'rgba(46, 204, 113, 0.7)',
+                        'rgba(231, 76, 60, 0.7)',
+                        'rgba(243, 156, 18, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(46, 204, 113, 1)',
+                        'rgba(231, 76, 60, 1)',
+                        'rgba(243, 156, 18, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                                const percentage = total > 0 ? Math.round(value / total * 100) : 0;
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+    });
+</script>
+
+<%- include('../partials/footer') %> 

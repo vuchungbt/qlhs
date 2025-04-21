@@ -63,24 +63,32 @@ const createUsers = async () => {
 // Tạo dữ liệu giáo viên mẫu
 const createTeachers = async () => {
   try {
+    // Mặc định mật khẩu cho tất cả giáo viên mẫu
+    const defaultPassword = 'teacher123';
+    // Mã hóa mật khẩu
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
     const teachers = [
       {
         name: 'Nguyễn Văn A',
         subject: 'Toán',
         email: 'teacher@example.com',
-        phone: '0123456789'
+        phone: '0123456789',
+        password: hashedPassword
       },
       {
         name: 'Trần Thị B',
         subject: 'Văn',
         email: 'teacher2@example.com',
-        phone: '0987654321'
+        phone: '0987654321',
+        password: hashedPassword
       },
       {
         name: 'Lê Văn C',
         subject: 'Tiếng Anh',
         email: 'teacher3@example.com',
-        phone: '0369852147'
+        phone: '0369852147',
+        password: hashedPassword
       }
     ];
 

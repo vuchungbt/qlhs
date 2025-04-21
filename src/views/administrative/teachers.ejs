@@ -8,26 +8,13 @@
     </button>
 </div>
 
-<div class="card">
+<div class="card"> 
     <div class="card-header bg-white p-3">
         <div class="row align-items-center">
-            <div class="col-md-6">
+            <div class="col">
                 <div class="search-input-wrapper w-100">
                     <i class="bi bi-search"></i>
                     <input type="text" id="searchTeacher" class="search-input" placeholder="Tìm kiếm giáo viên...">
-                </div>
-            </div>
-            <div class="col-md-6 text-md-end mt-3 mt-md-0">
-                <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-outline-secondary">
-                        <i class="bi bi-funnel"></i> Lọc
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary">
-                        <i class="bi bi-sort-down"></i> Sắp xếp
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary">
-                        <i class="bi bi-file-earmark-excel"></i> Xuất Excel
-                    </button>
                 </div>
             </div>
         </div>
@@ -37,12 +24,7 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="bg-light">
                     <tr>
-                        <th style="width: 50px;">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="selectAll">
-                                <label class="form-check-label" for="selectAll"></label>
-                            </div>
-                        </th>
+                        <th style="width: 50px;">STT</th>
                         <th>Họ Tên</th>
                         <th>Email</th>
                         <th>Số Điện Thoại</th>
@@ -52,55 +34,51 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <% teachers.forEach(function(teacher) { %>
-                    <tr>
-                        <td>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="teacher<%= teacher._id %>">
-                                <label class="form-check-label" for="teacher<%= teacher._id %>"></label>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <div class="avatar-circle me-2 bg-primary-light text-primary">
-                                    <%= teacher.name.charAt(0) %>
+                    <% if (teachers && teachers.length > 0) { %>
+                        <% teachers.forEach(function(teacher, index) { %>
+                        <tr>
+                            <td><%= (pagination.page - 1) * pagination.limit + index + 1 %></td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle me-2 bg-primary-light text-primary">
+                                        <%= teacher.name.charAt(0) %>
+                                    </div>
+                                    <div class="ms-2">
+                                        <h6 class="mb-0"><%= teacher.name %></h6>
+                                    </div>
                                 </div>
-                                <div class="ms-2">
-                                    <h6 class="mb-0"><%= teacher.name %></h6>
-                                </div>
-                            </div>
-                        </td>
-                        <td><%= teacher.email %></td>
-                        <td><%= teacher.phone %></td>
-                        <td><span class="badge bg-light text-dark"><%= teacher.subject %></span></td>
-                        <td><span class="badge bg-success">Đang dạy</span></td>
-                        <td>
-                            <div class="dropdown">
-                                <button class="btn btn-sm btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="bi bi-three-dots-vertical"></i>
+                            </td>
+                            <td><%= teacher.email %></td>
+                            <td><%= teacher.phone %></td>
+                            <td><span class="badge bg-light text-dark"><%= teacher.subject %></span></td>
+                            <td><span class="badge bg-success">Đang dạy</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary edit-teacher-btn" 
+                                        data-id="<%= teacher._id %>"
+                                        data-name="<%= teacher.name %>"
+                                        data-email="<%= teacher.email %>"
+                                        data-phone="<%= teacher.phone %>"
+                                        data-subject="<%= teacher.subject %>">
+                                    <i class="bi bi-pencil"></i>
                                 </button>
-                                <ul class="dropdown-menu dropdown-actions">
-                                    <li>
-                                        <a class="dropdown-item" href="#" onclick="viewTeacher('<%= teacher._id %>')">
-                                            <i class="bi bi-eye"></i> Xem
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="#" onclick="editTeacher('<%= teacher._id %>')">
-                                            <i class="bi bi-pencil"></i> Chỉnh sửa
-                                        </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <a class="dropdown-item text-danger" href="#" onclick="deleteTeacher('<%= teacher._id %>')">
-                                            <i class="bi bi-trash"></i> Xóa
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </td>
-                    </tr>
-                    <% }); %>
+                                <button class="btn btn-sm btn-outline-danger delete-teacher-btn" 
+                                        data-id="<%= teacher._id %>"
+                                        data-name="<%= teacher.name %>">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <div class="empty-state">
+                                    <i class="bi bi-person-x fs-2 text-muted"></i>
+                                    <p class="mt-2 mb-0">Không tìm thấy giáo viên nào</p>
+                                </div>
+                            </td>
+                        </tr>
+                    <% } %>
                 </tbody>
             </table>
         </div>
@@ -108,27 +86,66 @@
     <div class="card-footer bg-white p-3">
         <div class="d-flex justify-content-between align-items-center">
             <div>
-                <span class="text-muted">Hiển thị 1-<%= teachers.length %> của <%= teachers.length %> giáo viên</span>
+                <% if (pagination && pagination.totalTeachers > 0) { %>
+                    <span class="text-muted">
+                        Hiển thị <%= (pagination.page - 1) * pagination.limit + 1 %>-<%= Math.min(pagination.page * pagination.limit, pagination.totalTeachers) %> 
+                        của <%= pagination.totalTeachers %> giáo viên
+                    </span>
+                <% } else { %>
+                    <span class="text-muted">Chưa có giáo viên nào</span>
+                <% } %>
             </div>
-            <div>
-                <nav aria-label="Page navigation">
-                    <ul class="pagination pagination-sm mb-0">
-                        <li class="page-item disabled">
-                            <a class="page-link" href="#" aria-label="Previous">
-                                <span aria-hidden="true">&laquo;</span>
-                            </a>
-                        </li>
-                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link" href="#">3</a></li>
-                        <li class="page-item">
-                            <a class="page-link" href="#" aria-label="Next">
-                                <span aria-hidden="true">&raquo;</span>
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
-            </div>
+            <% if (pagination && pagination.totalPages > 1) { %>
+                <div>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item <%= !pagination.hasPrevPage ? 'disabled' : '' %>">
+                                <a class="page-link" href="?page=<%= pagination.prevPage %>" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            
+                            <% 
+                                let startPage = Math.max(1, pagination.page - 2);
+                                let endPage = Math.min(pagination.totalPages, pagination.page + 2);
+                                
+                                if (startPage > 1) { %>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1">1</a>
+                                    </li>
+                                    <% if (startPage > 2) { %>
+                                        <li class="page-item disabled">
+                                            <a class="page-link" href="#">...</a>
+                                        </li>
+                                    <% } %>
+                                <% } %>
+                                
+                                <% for (let i = startPage; i <= endPage; i++) { %>
+                                    <li class="page-item <%= i === pagination.page ? 'active' : '' %>">
+                                        <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+                                    </li>
+                                <% } %>
+                                
+                                <% if (endPage < pagination.totalPages) { %>
+                                    <% if (endPage < pagination.totalPages - 1) { %>
+                                        <li class="page-item disabled">
+                                            <a class="page-link" href="#">...</a>
+                                        </li>
+                                    <% } %>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=<%= pagination.totalPages %>"><%= pagination.totalPages %></a>
+                                    </li>
+                                <% } %>
+                                
+                            <li class="page-item <%= !pagination.hasNextPage ? 'disabled' : '' %>">
+                                <a class="page-link" href="?page=<%= pagination.nextPage %>" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            <% } %>
         </div>
     </div>
 </div>
@@ -142,7 +159,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="addTeacherForm" class="row g-3">
+                <form id="addTeacherForm" class="row g-3" method="POST" action="/administrative/teachers">
                     <div class="col-md-6">
                         <label for="name" class="form-label">Họ tên <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="name" name="name" required>
@@ -152,24 +169,45 @@
                         <input type="email" class="form-control" id="email" name="email" required>
                     </div>
                     <div class="col-md-6">
+                        <label for="password" class="form-label">Mật khẩu <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="password" name="password" required>
+                            <button class="btn btn-outline-secondary toggle-password" type="button" data-target="password">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">Mật khẩu dùng để đăng nhập vào hệ thống</small>
+                    </div>
+                    <div class="col-md-6">
                         <label for="phone" class="form-label">Số điện thoại <span class="text-danger">*</span></label>
                         <input type="tel" class="form-control" id="phone" name="phone" required>
                     </div>
                     <div class="col-md-6">
-                        <label for="subject" class="form-label">Môn dạy <span class="text-danger">*</span></label>
-                        <select class="form-select" id="subject" name="subject" required>
-                            <option value="" selected disabled>Chọn môn dạy</option>
-                            <option value="Toán">Toán</option>
-                            <option value="Văn">Văn</option>
-                            <option value="Tiếng Anh">Tiếng Anh</option>
-                            <option value="Vật lý">Vật lý</option>
-                            <option value="Hóa học">Hóa học</option>
-                            <option value="Sinh học">Sinh học</option>
-                        </select>
-                    </div>
-                    <div class="col-12">
-                        <label for="address" class="form-label">Địa chỉ</label>
-                        <textarea class="form-control" id="address" name="address" rows="2"></textarea>
+                        <label for="subject" class="form-label">Môn dạy</label>
+                        <input type="text" class="form-control" id="subject" name="subject" list="subjectOptions" placeholder="Nhập hoặc chọn từ gợi ý bên dưới">
+                        <datalist id="subjectOptions">
+                            <option value="Toán">
+                            <option value="Văn">
+                            <option value="Tiếng Anh">
+                            <option value="Vật lý">
+                            <option value="Hóa học">
+                            <option value="Sinh học">
+                        </datalist>
+                        <div class="subject-suggestions mt-2">
+                            <small class="text-muted mb-1 d-block">Nhấn để thêm:</small>
+                            <div class="d-flex flex-wrap gap-1">
+                                <span class="badge bg-light text-dark subject-badge" data-subject="Toán">Toán</span>
+                                <span class="badge bg-light text-dark subject-badge" data-subject="Văn">Văn</span>
+                                <span class="badge bg-light text-dark subject-badge" data-subject="Tiếng Anh">Tiếng Anh</span>
+                                <span class="badge bg-light text-dark subject-badge" data-subject="Vật lý">Vật lý</span>
+                                <span class="badge bg-light text-dark subject-badge" data-subject="Hóa học">Hóa học</span>
+                                <span class="badge bg-light text-dark subject-badge" data-subject="Sinh học">Sinh học</span>
+                                <span class="badge bg-light text-dark subject-badge" data-subject="Lịch sử">Lịch sử</span>
+                                <span class="badge bg-light text-dark subject-badge" data-subject="Địa lý">Địa lý</span>
+                                <span class="badge bg-light text-dark subject-badge" data-subject="Tin học">Tin học</span>
+                            </div>
+                            <small class="text-muted mt-1 d-block">Có thể nhập nhiều môn cách nhau bằng dấu phẩy</small>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -181,7 +219,86 @@
     </div>
 </div>
 
+<!-- Modal chỉnh sửa giáo viên -->
+<div class="modal fade" id="editTeacherModal" tabindex="-1" aria-labelledby="editTeacherModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTeacherModalLabel">Chỉnh sửa thông tin giáo viên</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editTeacherForm" class="row g-3" method="POST">
+                    <input type="hidden" id="editTeacherId" name="teacherId">
+                    <div class="col-md-6">
+                        <label for="editName" class="form-label">Họ tên <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="editName" name="name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="editEmail" class="form-label">Email <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" id="editEmail" name="email" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="editPassword" class="form-label">Mật khẩu</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="editPassword" name="password">
+                            <button class="btn btn-outline-secondary toggle-password" type="button" data-target="editPassword">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">Để trống nếu không muốn thay đổi mật khẩu</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="editPhone" class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                        <input type="tel" class="form-control" id="editPhone" name="phone" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="editSubject" class="form-label">Môn dạy</label>
+                        <input type="text" class="form-control" id="editSubject" name="subject" list="editSubjectOptions" placeholder="Nhập hoặc chọn từ gợi ý bên dưới">
+                        <datalist id="editSubjectOptions">
+                            <option value="Toán">
+                            <option value="Văn">
+                            <option value="Tiếng Anh">
+                            <option value="Vật lý">
+                            <option value="Hóa học">
+                            <option value="Sinh học">
+                        </datalist>
+                        <div class="subject-suggestions mt-2">
+                            <small class="text-muted mb-1 d-block">Nhấn để thêm:</small>
+                            <div class="d-flex flex-wrap gap-1">
+                                <span class="badge bg-light text-dark subject-badge" data-subject="Toán">Toán</span>
+                                <span class="badge bg-light text-dark subject-badge" data-subject="Văn">Văn</span>
+                                <span class="badge bg-light text-dark subject-badge" data-subject="Tiếng Anh">Tiếng Anh</span>
+                                <span class="badge bg-light text-dark subject-badge" data-subject="Vật lý">Vật lý</span>
+                                <span class="badge bg-light text-dark subject-badge" data-subject="Hóa học">Hóa học</span>
+                                <span class="badge bg-light text-dark subject-badge" data-subject="Sinh học">Sinh học</span>
+                                <span class="badge bg-light text-dark subject-badge" data-subject="Lịch sử">Lịch sử</span>
+                                <span class="badge bg-light text-dark subject-badge" data-subject="Địa lý">Địa lý</span>
+                                <span class="badge bg-light text-dark subject-badge" data-subject="Tin học">Tin học</span>
+                            </div>
+                            <small class="text-muted mt-1 d-block">Có thể nhập nhiều môn cách nhau bằng dấu phẩy</small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" id="saveEditTeacher" class="btn btn-primary">Lưu thay đổi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 0;
+        color: #6c757d;
+    }
+    
     .avatar-circle {
         width: 36px;
         height: 36px;
@@ -196,16 +313,6 @@
         background-color: rgba(79, 70, 229, 0.1);
     }
     
-    .btn-icon {
-        padding: 0.25rem 0.5rem;
-        color: #64748b;
-    }
-    
-    .btn-icon:hover {
-        color: #1e293b;
-        background-color: #f1f5f9;
-    }
-    
     .page-link {
         color: #4f46e5;
         border-color: #e2e8f0;
@@ -215,62 +322,193 @@
         background-color: #4f46e5;
         border-color: #4f46e5;
     }
+    
+    .search-input-wrapper {
+        position: relative;
+    }
+    
+    .search-input-wrapper i {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+    
+    .search-input {
+        padding-left: 30px;
+        border-radius: 5px;
+        border: 1px solid #ced4da;
+        padding: 8px 12px 8px 35px;
+        width: 100%;
+    }
+    
+    .subject-badge {
+        cursor: pointer;
+        padding: 6px 10px;
+        border-radius: 30px;
+        transition: all 0.2s;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .subject-badge:hover {
+        background-color: #4f46e5 !important;
+        color: white !important;
+    }
+    
+    .gap-1 {
+        gap: 0.25rem;
+    }
 </style>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Xử lý chọn tất cả
-        const selectAllCheckbox = document.getElementById('selectAll');
-        const checkboxes = document.querySelectorAll('.form-check-input:not(#selectAll)');
+        // Tìm kiếm
+        const searchInput = document.getElementById('searchTeacher');
+        if (searchInput) {
+            searchInput.addEventListener('keyup', function() {
+                const value = this.value.toLowerCase();
+                const rows = document.querySelectorAll('tbody tr');
+                
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(value) ? '' : 'none';
+                });
+            });
+        }
         
-        selectAllCheckbox.addEventListener('change', function() {
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = selectAllCheckbox.checked;
+        // Xử lý sự kiện chỉnh sửa giáo viên
+        const editButtons = document.querySelectorAll('.edit-teacher-btn');
+        if (document.getElementById('editTeacherModal')) {
+            const editModal = new bootstrap.Modal(document.getElementById('editTeacherModal'));
+            
+            editButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    const name = this.getAttribute('data-name');
+                    const email = this.getAttribute('data-email');
+                    const phone = this.getAttribute('data-phone');
+                    const subject = this.getAttribute('data-subject');
+                    
+                    document.getElementById('editTeacherId').value = id;
+                    document.getElementById('editName').value = name;
+                    document.getElementById('editEmail').value = email;
+                    document.getElementById('editPhone').value = phone;
+                    document.getElementById('editSubject').value = subject;
+                    
+                    // Cập nhật action form
+                    document.getElementById('editTeacherForm').action = `/administrative/teachers/${id}`;
+                    
+                    editModal.show();
+                });
+            });
+        }
+        
+        // Lưu chỉnh sửa giáo viên
+        const saveEditTeacher = document.getElementById('saveEditTeacher');
+        if (saveEditTeacher) {
+            saveEditTeacher.addEventListener('click', function() {
+                const form = document.getElementById('editTeacherForm');
+                const formData = new FormData(form);
+                const teacherId = document.getElementById('editTeacherId').value;
+                
+                fetch(`/administrative/teachers/${teacherId}`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        alert('Đã xảy ra lỗi khi cập nhật giáo viên.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Đã xảy ra lỗi khi cập nhật giáo viên.');
+                });
+            });
+        }
+        
+        // Xử lý sự kiện xóa giáo viên
+        const deleteButtons = document.querySelectorAll('.delete-teacher-btn');
+        
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const name = this.getAttribute('data-name');
+                
+                if (confirm(`Bạn có chắc chắn muốn xóa giáo viên "${name}"?`)) {
+                    fetch(`/administrative/teachers/${id}`, {
+                        method: 'DELETE'
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            window.location.reload();
+                        } else {
+                            alert('Đã xảy ra lỗi khi xóa giáo viên.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Đã xảy ra lỗi khi xóa giáo viên.');
+                    });
+                }
             });
         });
         
-        // Tìm kiếm
-        const searchInput = document.getElementById('searchTeacher');
-        searchInput.addEventListener('keyup', function() {
-            const value = this.value.toLowerCase();
-            const rows = document.querySelectorAll('tbody tr');
-            
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(value) ? '' : 'none';
+        // Xử lý thêm môn học từ gợi ý
+        const subjectBadges = document.querySelectorAll('.subject-badge');
+        
+        subjectBadges.forEach(badge => {
+            badge.addEventListener('click', function() {
+                const subject = this.getAttribute('data-subject');
+                
+                // Xác định ô input - kiểm tra xem badge nằm trong form nào
+                let inputField;
+                if (this.closest('form').id === 'addTeacherForm') {
+                    inputField = document.getElementById('subject');
+                } else {
+                    inputField = document.getElementById('editSubject');
+                }
+                
+                // Thêm môn học vào input
+                if (inputField.value.trim() === '') {
+                    // Nếu ô input trống, chỉ thêm môn học mới
+                    inputField.value = subject;
+                } else {
+                    // Nếu ô input đã có nội dung, kiểm tra xem môn học đã tồn tại chưa
+                    const subjects = inputField.value.split(',').map(s => s.trim());
+                    
+                    if (!subjects.includes(subject)) {
+                        // Chỉ thêm môn học nếu chưa tồn tại
+                        inputField.value += ', ' + subject;
+                    }
+                }
+                
+                // Focus vào input sau khi thêm
+                inputField.focus();
+            });
+        });
+        
+        // Xử lý hiển thị/ẩn mật khẩu
+        const togglePasswordButtons = document.querySelectorAll('.toggle-password');
+        togglePasswordButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const passwordInput = document.getElementById(targetId);
+                
+                // Đổi loại input
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    this.innerHTML = '<i class="bi bi-eye-slash"></i>';
+                } else {
+                    passwordInput.type = 'password';
+                    this.innerHTML = '<i class="bi bi-eye"></i>';
+                }
             });
         });
     });
-    
-    function viewTeacher(id) {
-        // Mở modal xem thông tin giáo viên
-        alert('Xem thông tin giáo viên: ' + id);
-    }
-    
-    function editTeacher(id) {
-        // Mở modal chỉnh sửa giáo viên
-        alert('Chỉnh sửa giáo viên: ' + id);
-    }
-    
-    function deleteTeacher(id) {
-        if (confirm('Bạn có chắc chắn muốn xóa giáo viên này không?')) {
-            // Gọi API xóa giáo viên
-            fetch(`/administrative/teachers/${id}`, {
-                method: 'DELETE'
-            })
-            .then(response => {
-                if (response.ok) {
-                    window.location.reload();
-                } else {
-                    alert('Đã xảy ra lỗi khi xóa giáo viên.');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Đã xảy ra lỗi khi xóa giáo viên.');
-            });
-        }
-    }
 </script>
 
 <%- include('../partials/footer') %>

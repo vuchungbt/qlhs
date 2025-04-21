@@ -4,84 +4,83 @@
   <%- include('../partials/header') %>
   <title><%= title %></title>
   <style>
-    .tuition-grid {
-      margin-top: 20px;
-    }
-    
     .tuition-card {
-      border-radius: 8px;
-      box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
-      transition: all 0.3s;
-      margin-bottom: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      transition: all 0.3s ease;
+      margin-bottom: 24px;
+      border: none;
     }
     
     .tuition-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-    }
-    
-    .tuition-header {
-      background-color: #f8f9fa;
-      padding: 15px;
-      border-radius: 8px 8px 0 0;
-      border-bottom: 1px solid #e9ecef;
+      transform: translateY(-5px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     }
     
     .status-paid {
-      color: #2ecc71;
-      font-weight: bold;
+      color: #10b981;
+      font-weight: 600;
     }
     
     .status-pending {
-      color: #f39c12;
-      font-weight: bold;
+      color: #f59e0b;
+      font-weight: 600;
     }
     
     .status-overdue {
-      color: #e74c3c;
-      font-weight: bold;
+      color: #ef4444;
+      font-weight: 600;
     }
     
     .filter-section {
-      background: #f8f9fa;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
+      background: #f9fafb;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     }
     
     .summary-card {
-      border-radius: 8px;
-      box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
-      margin-bottom: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      margin-bottom: 24px;
+      border: none;
+      transition: all 0.3s;
+    }
+    
+    .summary-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
     }
     
     .badge-custom {
-      padding: 5px 10px;
+      padding: 6px 12px;
       border-radius: 20px;
       font-size: 0.85em;
+      font-weight: 600;
     }
     
     .badge-paid {
-      background-color: #d4edda;
-      color: #155724;
+      background-color: #d1fae5;
+      color: #065f46;
     }
     
     .badge-pending {
-      background-color: #fff3cd;
-      color: #856404;
+      background-color: #fef3c7;
+      color: #92400e;
     }
     
     .badge-overdue {
-      background-color: #f8d7da;
-      color: #721c24;
+      background-color: #fee2e2;
+      color: #b91c1c;
     }
     
     .student-info {
-      padding: 20px;
-      background-color: #f8f9fa;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+      padding: 24px;
+      background-color: #f9fafb;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
     
     .student-avatar {
@@ -89,63 +88,200 @@
       height: 100px;
       border-radius: 50%;
       object-fit: cover;
-      border: 3px solid #fff;
-      box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+      border: 4px solid #fff;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
     
     .tuition-timeline {
       position: relative;
-      padding-left: 30px;
-      margin-top: 30px;
+      padding: 24px 0;
     }
     
     .tuition-timeline:before {
       content: '';
       position: absolute;
-      left: 15px;
+      left: 100px;
       top: 0;
-      height: 100%;
-      width: 2px;
-      background-color: #e9ecef;
+      bottom: 0;
+      width: 3px;
+      background: #e5e7eb;
     }
     
-    .timeline-item {
+    .tuition-item {
       position: relative;
-      margin-bottom: 30px;
+      margin-bottom: 32px;
+      display: flex;
     }
     
-    .timeline-item:before {
+    .tuition-date {
+      position: relative;
+      width: 100px;
+      text-align: right;
+      padding-right: 24px;
+    }
+    
+    .tuition-date:after {
       content: '';
       position: absolute;
-      left: -30px;
-      top: 0;
-      width: 15px;
-      height: 15px;
+      right: -9px;
+      top: 10px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
-      background-color: #6c757d;
-      border: 2px solid #fff;
+      background: #6b7280;
+      z-index: 1;
+      transition: all 0.3s;
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.2);
     }
     
-    .timeline-item.paid:before {
-      background-color: #28a745;
+    .tuition-item.paid .tuition-date:after {
+      background: #10b981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
     }
     
-    .timeline-item.pending:before {
-      background-color: #ffc107;
+    .tuition-item.pending .tuition-date:after {
+      background: #f59e0b;
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
     }
     
-    .timeline-item.overdue:before {
-      background-color: #dc3545;
+    .tuition-item.overdue .tuition-date:after {
+      background: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+    }
+    
+    .tuition-item:hover .tuition-date:after {
+      transform: scale(1.2);
+    }
+    
+    .tuition-content {
+      flex: 1;
+      padding-left: 24px;
+    }
+    
+    .tuition-actions {
+      margin-top: 16px;
+      display: flex;
+      gap: 8px;
+    }
+    
+    .tuition-actions .btn {
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+    
+    .tuition-actions .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .date-label {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #4b5563;
+    }
+    
+    .page-title {
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 8px;
+    }
+    
+    .breadcrumb {
+      background: transparent;
+      padding: 0;
+      margin-bottom: 24px;
+    }
+    
+    .breadcrumb-item {
+      font-size: 0.9rem;
+    }
+    
+    .breadcrumb-item a {
+      color: #6b7280;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    
+    .breadcrumb-item a:hover {
+      color: #4b5563;
+    }
+    
+    .breadcrumb-item.active {
+      color: #1f2937;
+    }
+    
+    .student-info-card, .tuition-stat-card {
+      border-radius: 12px;
+      transition: all 0.3s;
+      border: none;
+    }
+    
+    .student-details p {
+      margin-bottom: 8px;
+      color: #4b5563;
+    }
+    
+    .student-details i {
+      color: #6b7280;
+    }
+    
+    .modal-content {
+      border-radius: 12px;
+      border: none;
+      overflow: hidden;
+    }
+    
+    .modal-header {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px 24px;
+    }
+    
+    .modal-body {
+      padding: 24px;
+    }
+    
+    .modal-footer {
+      border-top: 1px solid #e5e7eb;
+      padding: 16px 24px;
+    }
+    
+    .form-control, .form-select {
+      border-radius: 8px;
+      padding: 10px 16px;
+      border: 1px solid #e5e7eb;
+      transition: all 0.3s;
+    }
+    
+    .form-control:focus, .form-select:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    }
+    
+    .form-label {
+      font-weight: 500;
+      color: #4b5563;
+      margin-bottom: 8px;
+    }
+    
+    .table-hover tbody tr:hover {
+      background-color: rgba(59, 130, 246, 0.05);
+    }
+    
+    .alert {
+      border-radius: 12px;
     }
   </style>
 </head>
 <body>
   
-  <div class="container-fluid">
+  <div class="container-fluid py-4">
     <div class="row mb-4">
         <div class="col-md-12">
             <h2 class="page-title">
-                <i class="fas fa-money-bill-wave me-2"></i>Quản lý học phí
+                <i class="fas fa-money-bill-wave me-2 text-primary"></i>Quản lý học phí
             </h2>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
@@ -164,17 +300,18 @@
     </div>
     <% } %>
 
+    <% if (student) { %>
     <div class="row mb-4">
         <div class="col-md-4">
             <div class="card student-info-card shadow-sm">
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-3">
                         <div class="student-avatar me-3">
-                            <img src="<%= student.avatar || '/assets/images/default-avatar.png' %>" alt="<%= student.name %>" class="rounded-circle" width="60" height="60">
+                            <img src="<%= student.avatar || '/images/default-avatar.png' %>" alt="<%= student.name %>" class="rounded-circle" width="60" height="60">
                         </div>
                         <div>
                             <h5 class="card-title mb-0"><%= student.name %></h5>
-                            <p class="text-muted mb-0">ID: <%= student.studentId %></p>
+                            <p class="text-muted mb-0 small">ID: <%= student.studentId || 'N/A' %></p>
                         </div>
                     </div>
                     <div class="student-details">
@@ -312,7 +449,7 @@
                                             <h5 class="card-title"><%= tuition.name %></h5>
                                             <h6 class="tuition-amount"><%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tuition.amount) %></h6>
                                         </div>
-                                        <p class="card-text"><i class="fas fa-book me-2"></i><%= tuition.class.name %></p>
+                                        <p class="card-text"><i class="fas fa-book me-2"></i><%= tuition.class ? tuition.class.name : 'Không có lớp' %></p>
                                         <p class="card-text"><i class="fas fa-calendar-day me-2"></i>Hạn thanh toán: <%= new Date(tuition.dueDate).toLocaleDateString('vi-VN') %></p>
                                         <% if (tuition.status === 'paid' && tuition.paymentDate) { %>
                                         <p class="card-text"><i class="fas fa-check-circle me-2 text-success"></i>Đã thanh toán vào: <%= new Date(tuition.paymentDate).toLocaleDateString('vi-VN') %></p>
@@ -331,7 +468,7 @@
                                                     data-tuition-id="<%= tuition._id %>"
                                                     data-tuition-name="<%= tuition.name %>"
                                                     data-tuition-amount="<%= tuition.amount %>"
-                                                    data-tuition-class="<%= tuition.class._id %>"
+                                                    data-tuition-class="<%= tuition.class ? tuition.class._id : '' %>"
                                                     data-tuition-due-date="<%= tuition.dueDate.toISOString().split('T')[0] %>"
                                                     data-bs-toggle="modal" 
                                                     data-bs-target="#editTuitionModal">
@@ -364,6 +501,51 @@
             </div>
         </div>
     </div>
+    <% } else { %>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">Danh sách học sinh</h5>
+                    <p>Vui lòng chọn một học sinh để xem thông tin học phí:</p>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Họ tên</th>
+                                    <th>Lớp</th>
+                                    <th>Ngày sinh</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if (students && students.length > 0) { %>
+                                    <% students.forEach(function(student) { %>
+                                        <tr>
+                                            <td><%= student.name %></td>
+                                            <td><%= student.class || 'Chưa phân lớp' %></td>
+                                            <td><%= new Date(student.dateOfBirth).toLocaleDateString('vi-VN') %></td>
+                                            <td>
+                                                <a href="/academic/tuition/student/<%= student._id %>" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-eye me-1"></i>Xem học phí
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    <% }); %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="4" class="text-center">Không có học sinh nào.</td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <% } %>
 </div>
 
 <!-- Modal Thêm học phí mới -->
@@ -515,108 +697,24 @@
     </div>
 </div>
 
-<style>
-    .student-info-card {
-        border-radius: 10px;
-        transition: all 0.3s;
-    }
-    
-    .student-info-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
-    }
-    
-    .tuition-stat-card {
-        border-radius: 10px;
-        transition: all 0.3s;
-    }
-    
-    .tuition-stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
-    }
-    
-    .tuition-amount {
-        font-weight: 700;
-    }
-    
-    .tuition-timeline {
-        position: relative;
-        padding: 20px 0;
-    }
-    
-    .tuition-timeline:before {
-        content: '';
-        position: absolute;
-        left: 100px;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background: #e9ecef;
-    }
-    
-    .tuition-item {
-        position: relative;
-        margin-bottom: 30px;
-        display: flex;
-    }
-    
-    .tuition-date {
-        position: relative;
-        width: 100px;
-        text-align: right;
-        padding-right: 20px;
-    }
-    
-    .tuition-date:after {
-        content: '';
-        position: absolute;
-        right: -6px;
-        top: 10px;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: #6c757d;
-        z-index: 1;
-    }
-    
-    .tuition-item:last-child {
-        margin-bottom: 0;
-    }
-    
-    .tuition-content {
-        flex: 1;
-        padding-left: 20px;
-    }
-    
-    .tuition-card {
-        border-radius: 10px;
-        transition: all 0.3s;
-    }
-    
-    .tuition-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
-    }
-    
-    .tuition-actions {
-        margin-top: 15px;
-        display: flex;
-        gap: 5px;
-    }
-    
-    .date-label {
-        font-weight: 500;
-        font-size: 0.85rem;
-    }
-    
-    .tuition-status {
-        margin-top: 5px;
-    }
-</style>
-
+<% if (student) { %>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Thêm class cho timeline item dựa trên trạng thái học phí
+        const tuitionItems = document.querySelectorAll('.tuition-item');
+        tuitionItems.forEach(item => {
+            const badgeEl = item.querySelector('.badge');
+            if (badgeEl) {
+                if (badgeEl.classList.contains('bg-success')) {
+                    item.classList.add('paid');
+                } else if (badgeEl.classList.contains('bg-warning')) {
+                    item.classList.add('pending');
+                } else if (badgeEl.classList.contains('bg-danger')) {
+                    item.classList.add('overdue');
+                }
+            }
+        });
+        
         // Xử lý khi nhấn nút thanh toán
         const recordPaymentBtns = document.querySelectorAll('.record-payment-btn');
         recordPaymentBtns.forEach(btn => {
@@ -675,5 +773,6 @@
         }
     });
 </script>
+<% } %>
 
 <%- include('../partials/footer') %> 

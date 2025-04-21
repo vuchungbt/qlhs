@@ -86,43 +86,51 @@
             </div>
             <div class="card-body">
                 <% if (student) { %>
-                    <div class="row">
-                        <div class="col-md-8">
-                            <div class="mb-3">
-                                <p class="mb-1"><strong>Họ tên:</strong> <%= student.name %></p>
-                                <% if (student.dateOfBirth) { %>
-                                    <p class="mb-1"><strong>Ngày sinh:</strong> <%= moment(student.dateOfBirth).format('DD/MM/YYYY') %></p>
-                                <% } %>
-                                <% if (student.email) { %>
-                                    <p class="mb-1"><strong>Email:</strong> <%= student.email %></p>
-                                <% } %>
-                                <% if (student.phone) { %>
-                                    <p class="mb-1"><strong>Điện thoại:</strong> <%= student.phone %></p>
-                                <% } %>
-                                <% if (student.address) { %>
-                                    <p class="mb-0"><strong>Địa chỉ:</strong> <%= student.address %></p>
-                                <% } %>
+                    <div class="student-profile mb-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-2 text-center mb-3 mb-md-0">
+                                <div class="student-avatar">
+                                    <img src="<%= student.avatar || '/images/default-avatar.png' %>" alt="<%= student.name %>" class="img-thumbnail rounded-circle">
+                                </div>
                             </div>
-                            <div class="mt-4">
-                                <a href="/students/view/<%= student._id %>" class="btn btn-sm btn-primary">
-                                    <i class="bi bi-file-earmark-text me-1"></i> Xem hồ sơ chi tiết
-                                </a>
-                                <a href="/academic/attendance/student?studentId=<%= student._id %>" class="btn btn-sm btn-outline-primary ms-2">
-                                    <i class="bi bi-table me-1"></i> Xem bảng điểm danh
-                                </a>
-                            </div>
-                        </div>
-                        <div class="col-md-4 text-center">
-                            <div class="student-avatar">
-                                <% if (student.avatar) { %>
-                                    <img src="<%= student.avatar %>" alt="<%= student.name %>" class="img-thumbnail rounded-circle">
-                                <% } else { %>
-                                    <div class="avatar-placeholder">
-                                        <i class="bi bi-person-circle"></i>
+                            <div class="col-md-10">
+                                <h4 class="mb-1"><%= student.name %></h4>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-2">
+                                            <i class="bi bi-calendar me-2"></i>
+                                            <span>Ngày sinh: <%= student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString('vi-VN') : 'Chưa cập nhật' %></span>
+                                        </div>
+                                        <div class="mb-2">
+                                            <i class="bi bi-person-vcard me-2"></i>
+                                            <span>Mã học sinh: #<%= student._id.toString().slice(-6).toUpperCase() %></span>
+                                        </div>
                                     </div>
-                                <% } %>
+                                    <div class="col-md-6">
+                                        <div class="mb-2">
+                                            <i class="bi bi-book me-2"></i>
+                                            <span>Số lớp tham gia: <%= student.schedules ? student.schedules.length : 0 %></span>
+                                        </div>
+                                        <div class="mb-2">
+                                            <i class="bi bi-person-badge me-2"></i>
+                                            <span>Trạng thái: 
+                                                <span class="badge bg-<%= student.status === 'active' ? 'success' : 'secondary' %>">
+                                                    <%= student.status === 'active' ? 'Đang học' : 'Không hoạt động' %>
+                                                </span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                    </div>
+                    <div class="mt-4">
+                        <a href="/students/view/<%= student._id %>" class="btn btn-sm btn-primary">
+                            <i class="bi bi-file-earmark-text me-1"></i> Xem hồ sơ chi tiết
+                        </a>
+                        <a href="/academic/attendance/student?studentId=<%= student._id %>" class="btn btn-sm btn-outline-primary ms-2">
+                            <i class="bi bi-table me-1"></i> Xem bảng điểm danh
+                        </a>
                     </div>
                 <% } else { %>
                     <div class="alert alert-warning">

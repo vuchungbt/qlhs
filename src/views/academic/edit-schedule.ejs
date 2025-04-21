@@ -32,32 +32,53 @@
                             <div class="col-md-6">
                                 <label class="form-label">Thứ</label>
                                 <div class="d-flex flex-wrap gap-2">
-                                    <% ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].forEach(function(day) { %>
+                                    <% 
+                                    // Danh sách các thứ trong tuần với định dạng viết thường
+                                    const weekDays = [
+                                        {value: 'monday', label: 'Thứ 2'},
+                                        {value: 'tuesday', label: 'Thứ 3'},
+                                        {value: 'wednesday', label: 'Thứ 4'},
+                                        {value: 'thursday', label: 'Thứ 5'},
+                                        {value: 'friday', label: 'Thứ 6'},
+                                        {value: 'saturday', label: 'Thứ 7'},
+                                        {value: 'sunday', label: 'Chủ nhật'}
+                                    ];
+                                    
+                                    // Helper function để kiểm tra xem một thứ đã được chọn hay chưa
+                                    const isDaySelected = (day) => {
+                                        // Kiểm tra trong cả schedule.days và schedule.dayOfWeek, đồng thời xử lý cả chữ hoa và chữ thường
+                                        let isSelected = false;
+                                        
+                                        // Kiểm tra trong schedule.days (ưu tiên)
+                                        if (schedule.days && Array.isArray(schedule.days)) {
+                                            // Chuyển đổi tất cả thành chữ thường để so sánh
+                                            const lowerCaseDays = schedule.days.map(d => typeof d === 'string' ? d.toLowerCase() : d);
+                                            isSelected = lowerCaseDays.includes(day);
+                                        }
+                                        
+                                        // Nếu không tìm thấy trong days, kiểm tra trong dayOfWeek
+                                        if (!isSelected && schedule.dayOfWeek && Array.isArray(schedule.dayOfWeek)) {
+                                            const lowerCaseDayOfWeek = schedule.dayOfWeek.map(d => typeof d === 'string' ? d.toLowerCase() : d);
+                                            isSelected = lowerCaseDayOfWeek.includes(day);
+                                            
+                                            // Kiểm tra cả trường hợp viết hoa đầu chữ (Monday, Tuesday, etc.)
+                                            const capitalizedDay = day.charAt(0).toUpperCase() + day.slice(1);
+                                            isSelected = isSelected || schedule.dayOfWeek.includes(capitalizedDay);
+                                        }
+                                        
+                                        return isSelected;
+                                    };
+                                    
+                                    // Hiển thị checkbox cho từng thứ trong tuần
+                                    weekDays.forEach(function(day) { 
+                                    %>
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" 
-                                                id="<%= day.toLowerCase() %>" 
+                                                id="<%= day.value %>" 
                                                 name="dayOfWeek[]" 
-                                                value="<%= day %>"
-                                                <% 
-                                                // Kiểm tra nhiều trường hợp để tránh lỗi
-                                                let isChecked = false;
-                                                if (schedule.dayOfWeek && Array.isArray(schedule.dayOfWeek)) {
-                                                  isChecked = schedule.dayOfWeek.includes(day);
-                                                } else if (schedule.days && Array.isArray(schedule.days)) {
-                                                  // Convert 'monday' thành 'Monday' để so sánh
-                                                  const dayLower = day.toLowerCase();
-                                                  isChecked = schedule.days.includes(dayLower);
-                                                }
-                                                %>
-                                                <%= isChecked ? 'checked' : '' %>>
-                                            <label class="form-check-label" for="<%= day.toLowerCase() %>">
-                                                <%= day === 'Monday' ? 'Thứ 2' :
-                                                    day === 'Tuesday' ? 'Thứ 3' :
-                                                    day === 'Wednesday' ? 'Thứ 4' :
-                                                    day === 'Thursday' ? 'Thứ 5' :
-                                                    day === 'Friday' ? 'Thứ 6' :
-                                                    day === 'Saturday' ? 'Thứ 7' : 'Chủ nhật' %>
-                                            </label>
+                                                value="<%= day.value %>"
+                                                <%= isDaySelected(day.value) ? 'checked' : '' %>>
+                                            <label class="form-check-label" for="<%= day.value %>"><%= day.label %></label>
                                         </div>
                                     <% }); %>
                                 </div>

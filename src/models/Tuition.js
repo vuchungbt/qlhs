@@ -36,7 +36,7 @@ const TuitionSchema = new Schema({
         enum: ['cash', 'transfer', 'card', 'other'],
         default: 'cash'
     },
-    note: {
+    notes: {
         type: String
     },
     academicYear: {
@@ -60,8 +60,16 @@ TuitionSchema.virtual('isOverdue').get(function() {
 
 // Middleware trước khi lưu để cập nhật trạng thái overdue
 TuitionSchema.pre('save', function(next) {
+    console.log('Đang lưu học phí với status: ' + this.status);
+    // Nếu status không được đặt, đảm bảo nó là 'pending'
+    if (!this.status) {
+        console.log('Status không được đặt, gán mặc định là pending');
+        this.status = 'pending';
+    }
+    
     const currentDate = new Date();
     if (this.status === 'pending' && this.dueDate < currentDate) {
+        console.log('Học phí quá hạn, cập nhật status từ pending thành overdue');
         this.status = 'overdue';
     }
     next();

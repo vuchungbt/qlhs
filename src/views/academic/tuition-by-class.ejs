@@ -9,15 +9,57 @@
     }
     
     .tuition-card {
-      border-radius: 8px;
-      box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
-      transition: all 0.3s;
-      margin-bottom: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      transition: all 0.2s;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
     }
     
     .tuition-card:hover {
       transform: translateY(-3px);
-      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .tuition-card .badge {
+      font-size: 0.7rem;
+      padding: 0.25rem 0.5rem;
+    }
+    
+    .student-info {
+      color: #6c757d;
+    }
+    
+    .tuition-actions .btn {
+      padding: 0.2rem 0.4rem;
+      margin-left: 0.25rem;
+    }
+    
+    .tuition-actions .btn i {
+      font-size: 0.9rem;
+    }
+    
+    .form-check-input:checked {
+      background-color: #28a745;
+      border-color: #28a745;
+    }
+    
+    .payment-status-checkbox {
+      cursor: pointer;
+    }
+    
+    /* Card colors based on payment status */
+    .status-paid-card {
+      border-left: 3px solid #28a745;
+    }
+    
+    .status-pending-card {
+      border-left: 3px solid #ffc107;
+    }
+    
+    .status-overdue-card {
+      border-left: 3px solid #dc3545;
     }
     
     .tuition-header {
@@ -98,7 +140,10 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h2><i class="fas fa-money-bill-wave mr-2"></i> Học Phí Lớp: <%= schedule.name %></h2>
-        <p class="text-muted">Tháng <%= selectedMonth %>/<%= selectedYear %></p>
+        <p class="text-muted">
+          Tháng <%= selectedMonth %>/<%= selectedYear %> 
+          | Giáo viên: <%= schedule.teacher ? schedule.teacher.name : 'Chưa phân công' %>
+        </p>
       </div>
       <div>
         <a href="/academic/tuition" class="btn btn-secondary">
@@ -110,6 +155,9 @@
                 data-month="<%= selectedMonth %>"
                 data-year="<%= selectedYear %>">
           <i class="fas fa-sync-alt"></i> Tạo Học Phí Tháng Này
+        </button>
+        <button class="btn btn-success" id="addManualTuitionBtn">
+          <i class="fas fa-plus-circle"></i> Thêm Học Phí Thủ Công
         </button>
       </div>
     </div>
@@ -150,8 +198,8 @@
         <div class="card summary-card">
           <div class="card-body text-center">
             <h5 class="card-title">Quá Hạn</h5>
-            <h3 class="text-danger"><%= tuitionStats.overdueCount %></h3>
-            <p class="text-muted mb-0">học sinh</p>
+            <h3 class="text-danger"><%= tuitionStats.overdue.toLocaleString('vi-VN') %> ₫</h3>
+            <p class="text-muted mb-0"><%= tuitionStats.overdueCount %> học sinh</p>
           </div>
         </div>
       </div>
@@ -180,7 +228,7 @@
               <select class="form-control" id="year" name="year">
                 <% 
                 const currentYear = new Date().getFullYear();
-                for(let i = currentYear - 2; i <= currentYear + 1; i++) { 
+                for(let i = currentYear - 3; i <= currentYear + 1; i++) { 
                 %>
                   <option value="<%= i %>" <%= selectedYear == i ? 'selected' : '' %>>
                     <%= i %>
@@ -216,18 +264,13 @@
       <div class="tuition-grid">
         <div class="row">
           <% tuitions.forEach(tuition => { %>
-            <div class="col-md-6">
-              <div class="card tuition-card">
-                <div class="tuition-header d-flex justify-content-between align-items-center">
-                  <div>
-                    <h5 class="mb-0">
+            <div class="col-md-3 col-sm-6 mb-4">
+              <div class="card tuition-card h-100">
+                <div class="card-body p-3">
+                  <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0 text-truncate" title="<%= tuition.student ? tuition.student.name : 'Học sinh không xác định' %>">
                       <%= tuition.student ? tuition.student.name : 'Học sinh không xác định' %>
-                    </h5>
-                    <small class="text-muted">
-                      ID: <%= tuition.student ? tuition.student.studentId : 'N/A' %>
-                    </small>
-                  </div>
-                  <div>
+                    </h6>
                     <% 
                     let statusClass = '';
                     let statusText = '';
@@ -235,7 +278,7 @@
                     
                     if (tuition.status === 'paid') {
                       statusClass = 'status-paid';
-                      statusText = 'Đã Thanh Toán';
+                      statusText = 'Đã TT';
                       badgeClass = 'badge-paid';
                     } else if (tuition.status === 'pending') {
                       const dueDate = new Date(tuition.year, tuition.month - 1, schedule.paymentDay || 15);
@@ -243,11 +286,11 @@
                       
                       if (today > dueDate) {
                         statusClass = 'status-overdue';
-                        statusText = 'Quá Hạn';
+                        statusText = 'Quá hạn';
                         badgeClass = 'badge-overdue';
                       } else {
                         statusClass = 'status-pending';
-                        statusText = 'Chưa Thanh Toán';
+                        statusText = 'Chưa TT';
                         badgeClass = 'badge-pending';
                       }
                     }
@@ -256,78 +299,44 @@
                       <%= statusText %>
                     </span>
                   </div>
-                </div>
-                
-                <div class="tuition-details">
-                  <div class="row">
-                    <div class="col-md-6">
-                      <p>
-                        <strong>Học Phí:</strong> 
-                        <%= tuition.amount.toLocaleString('vi-VN') %> ₫
-                      </p>
-                      <p>
-                        <strong>Tháng:</strong> 
-                        <%= tuition.month %>/<%= tuition.year %>
-                      </p>
-                      <p>
-                        <strong>Ngày Đến Hạn:</strong> 
-                        <%= tuition.year || '' %>-<%= tuition.month ? tuition.month.toString().padStart(2, '0') : '00' %>-<%= (schedule && schedule.paymentDay ? schedule.paymentDay.toString().padStart(2, '0') : '15') %>
-                      </p>
-                    </div>
-                    <div class="col-md-6">
-                      <% if (tuition.status === 'paid' && tuition.paymentDate) { %>
-                        <p>
-                          <strong>Ngày Thanh Toán:</strong> 
-                          <%= new Date(tuition.paymentDate).toLocaleDateString('vi-VN') %>
-                        </p>
-                        <p>
-                          <strong>Phương Thức:</strong> 
-                          <%= tuition.paymentMethod || 'Tiền mặt' %>
-                        </p>
-                        <p>
-                          <strong>Ghi Chú:</strong> 
-                          <%= tuition.notes || 'Không có' %>
-                        </p>
-                      <% } else { %>
-                        <p class="<%= statusClass %>">
-                          <strong>Trạng Thái:</strong> 
-                          <%= statusText %>
-                        </p>
+                  
+                  <div class="student-info small mb-2">
+                    <div><strong>Học phí:</strong> <%= tuition.amount.toLocaleString('vi-VN') %> ₫</div>
+                    <div class="mt-1">
+                      <strong>Ghi chú:</strong> 
+                      <% if (tuition.notes && tuition.notes.trim() !== '') { %>
+                        <span class="text-muted"><%= tuition.notes %></span> 
                       <% } %>
                     </div>
                   </div>
                   
-                  <div class="action-buttons">
-                    <% if (tuition.status === 'pending') { %>
-                      <button class="btn btn-sm btn-success record-payment-btn" 
+                  <div class="d-flex justify-content-between mt-3">
+                    <div class="form-check">
+                      <input class="form-check-input payment-status-checkbox" type="checkbox" 
+                             id="payment<%= tuition._id %>" 
+                             data-id="<%= tuition._id %>"
+                             data-student="<%= tuition.student ? tuition.student.name : 'Học sinh' %>"
+                             <%= tuition.status === 'paid' ? 'checked' : '' %>>
+                      <label class="form-check-label small" for="payment<%= tuition._id %>">
+                        Đã thanh toán
+                      </label>
+                    </div>
+                    
+                    <div class="tuition-actions">
+                      <button class="btn btn-sm btn-outline-primary note-btn" 
+                              data-id="<%= tuition._id %>"
+                              data-notes="<%= tuition.notes || '' %>"
+                              title="Ghi chú">
+                        <i class="bi bi-pencil-square"></i>
+                      </button>
+                      
+                      <button class="btn btn-sm btn-outline-danger delete-tuition-btn" 
                               data-id="<%= tuition._id %>"
                               data-student="<%= tuition.student ? tuition.student.name : 'Học sinh' %>"
-                              data-amount="<%= tuition.amount %>">
-                        <i class="fas fa-check-circle"></i> Ghi Nhận Thanh Toán
+                              title="Xóa">
+                        <i class="bi bi-trash"></i>
                       </button>
-                    <% } %>
-                    
-                    <button class="btn btn-sm btn-primary edit-tuition-btn"
-                            data-id="<%= tuition._id %>"
-                            data-student-id="<%= tuition.student ? tuition.student._id : '' %>"
-                            data-amount="<%= tuition.amount %>"
-                            data-month="<%= tuition.month %>"
-                            data-year="<%= tuition.year %>"
-                            data-status="<%= tuition.status %>"
-                            data-notes="<%= tuition.notes || '' %>">
-                      <i class="fas fa-edit"></i> Sửa
-                    </button>
-                    
-                    <button class="btn btn-sm btn-danger delete-tuition-btn" 
-                            data-id="<%= tuition._id %>"
-                            data-student="<%= tuition.student ? tuition.student.name : 'Học sinh' %>">
-                      <i class="fas fa-trash-alt"></i> Xóa
-                    </button>
-                    
-                    <a href="/academic/tuition/student/<%= tuition.student ? tuition.student._id : '' %>" 
-                       class="btn btn-sm btn-info">
-                      <i class="fas fa-history"></i> Lịch Sử Học Phí
-                    </a>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -385,9 +394,7 @@
       <div class="modal-content">
         <div class="modal-header bg-success text-white">
           <h5 class="modal-title" id="paymentModalLabel">Ghi Nhận Thanh Toán</h5>
-          <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <form id="paymentForm">
@@ -425,7 +432,7 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
           <button type="button" class="btn btn-success" id="confirmPayment">Xác Nhận Thanh Toán</button>
         </div>
       </div>
@@ -438,9 +445,7 @@
       <div class="modal-content">
         <div class="modal-header bg-primary text-white">
           <h5 class="modal-title" id="editTuitionModalLabel">Chỉnh Sửa Học Phí</h5>
-          <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <form id="editTuitionForm">
@@ -485,7 +490,7 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
           <button type="button" class="btn btn-primary" id="updateTuition">Cập Nhật</button>
         </div>
       </div>
@@ -498,9 +503,7 @@
       <div class="modal-content">
         <div class="modal-header bg-primary text-white">
           <h5 class="modal-title" id="generateTuitionModalLabel">Tạo Học Phí Lớp <%= schedule.name %></h5>
-          <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <form id="generateTuitionForm">
@@ -549,11 +552,136 @@
               <input type="text" class="form-control" id="modalName" 
                      value="Học phí tháng <%= selectedMonth %>/<%= selectedYear %> - <%= schedule.name %>">
             </div>
+            
+            <div class="form-group mt-3">
+              <label for="modalStatus">Trạng thái thanh toán</label>
+              <select class="form-control" id="modalStatus">
+                <option value="pending" selected>Chưa thanh toán</option>
+                <option value="paid">Đã thanh toán</option>
+              </select>
+              <small class="form-text text-muted">Chọn trạng thái thanh toán cho tất cả học phí được tạo</small>
+            </div>
+            
+            <div class="alert alert-info mt-3">
+              <i class="fas fa-info-circle me-2"></i> Học phí sẽ được tạo cho tất cả học sinh trong lớp với trạng thái đã chọn.
+            </div>
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
           <button type="button" class="btn btn-primary" id="confirmGenerateTuition">Tạo Học Phí</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Modal Ghi Chú -->
+  <div class="modal fade" id="noteModal" tabindex="-1" role="dialog" aria-labelledby="noteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="noteModalLabel">Ghi chú học phí</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="noteForm">
+            <input type="hidden" id="noteTuitionId" name="tuitionId">
+            
+            <div class="form-group">
+              <label for="tuitionNotes">Ghi chú</label>
+              <textarea class="form-control" id="tuitionNotes" name="notes" rows="4" placeholder="Nhập ghi chú cho khoản học phí này"></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+          <button type="button" class="btn btn-primary" id="saveNote">Lưu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Modal Thêm Học Phí Thủ Công -->
+  <div class="modal fade" id="manualTuitionModal" tabindex="-1" role="dialog" aria-labelledby="manualTuitionModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title" id="manualTuitionModalLabel">Thêm Học Phí Thủ Công</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="manualTuitionForm">
+            <input type="hidden" name="scheduleId" value="<%= schedule._id %>">
+            
+            <div class="form-group mb-3">
+              <label for="studentId">Học Sinh</label>
+              <select class="form-control" id="studentId" name="studentId" required>
+                <option value="">-- Chọn học sinh --</option>
+                <% if (enrollments && enrollments.length > 0) { %>
+                  <% enrollments.forEach(enrollment => { %>
+                    <option value="<%= enrollment.student._id %>"><%= enrollment.student.name %></option>
+                  <% }) %>
+                <% } %>
+              </select>
+            </div>
+            
+            <div class="form-group mb-3">
+              <label for="amount">Số Tiền</label>
+              <input type="number" class="form-control" id="amount" name="amount" value="<%= schedule.tuitionAmount || 0 %>" min="0" step="10000" required>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group mb-3">
+                  <label for="month">Tháng</label>
+                  <select class="form-control" id="month" name="month" required>
+                    <% for(let i = 1; i <= 12; i++) { %>
+                      <option value="<%= i %>" <%= selectedMonth == i ? 'selected' : '' %>>Tháng <%= i %></option>
+                    <% } %>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group mb-3">
+                  <label for="year">Năm</label>
+                  <select class="form-control" id="year" name="year" required>
+                    <% for(let i = currentYear - 2; i <= currentYear + 1; i++) { %>
+                      <option value="<%= i %>" <%= selectedYear == i ? 'selected' : '' %>><%= i %></option>
+                    <% } %>
+                  </select>
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-group mb-3">
+              <label for="dueDay">Ngày Đến Hạn</label>
+              <input type="number" class="form-control" id="dueDay" name="dueDay" value="<%= schedule.tuitionDueDay || 10 %>" min="1" max="31" required>
+            </div>
+            
+            <div class="form-group mb-3">
+              <label for="status">Trạng Thái</label>
+              <select class="form-control" id="status" name="status" required>
+                <option value="pending">Chưa Thanh Toán</option>
+                <option value="paid">Đã Thanh Toán</option>
+                <option value="overdue">Quá Hạn</option>
+              </select>
+            </div>
+            
+            <div class="form-group mb-3">
+              <label for="tuitionName">Tên Khoản Học Phí</label>
+              <input type="text" class="form-control" id="tuitionName" name="name" 
+                    value="Học phí tháng <%= selectedMonth %>/<%= selectedYear %> - <%= schedule.name %>" required>
+            </div>
+            
+            <div class="form-group mb-3">
+              <label for="notes">Ghi Chú</label>
+              <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Ghi chú (không bắt buộc)"></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+          <button type="button" class="btn btn-success" id="saveManualTuition">Lưu</button>
         </div>
       </div>
     </div>
@@ -574,8 +702,9 @@
       
       // Tạo học phí cho tháng hiện tại
       $('#generateTuitionBtn, #createTuitionsBtn, #createTuitionsBtn2').click(function() {
-        // Hiển thị modal thay vì hỏi confirm
-        $('#generateTuitionModal').modal('show');
+        // Hiển thị modal theo cách Bootstrap 5
+        const generateTuitionModal = new bootstrap.Modal(document.getElementById('generateTuitionModal'));
+        generateTuitionModal.show();
       });
       
       // Xác nhận tạo học phí từ modal
@@ -586,6 +715,7 @@
         const amount = $('#modalAmount').val();
         const dueDay = $('#modalDueDay').val();
         const name = $('#modalName').val();
+        const status = $('#modalStatus').val();
         
         if (!amount || amount <= 0) {
           alert('Vui lòng nhập số tiền học phí hợp lệ');
@@ -598,10 +728,11 @@
         }
         
         // Tạo học phí với dữ liệu từ form
-        generateTuition(scheduleId, month, year, amount, dueDay, name);
+        generateTuition(scheduleId, month, year, amount, dueDay, name, status);
         
-        // Đóng modal
-        $('#generateTuitionModal').modal('hide');
+        // Đóng modal Bootstrap 5
+        const generateTuitionModal = bootstrap.Modal.getInstance(document.getElementById('generateTuitionModal'));
+        generateTuitionModal.hide();
       });
       
       // Mở modal thanh toán
@@ -614,7 +745,8 @@
         $('#studentName').val(studentName);
         $('#paymentAmount').val(amount.toLocaleString('vi-VN') + ' ₫');
         
-        $('#paymentModal').modal('show');
+        const paymentModal = new bootstrap.Modal(document.getElementById('paymentModal'));
+        paymentModal.show();
       });
       
       // Xác nhận thanh toán
@@ -652,7 +784,8 @@
           }
         });
         
-        $('#paymentModal').modal('hide');
+        const paymentModal = bootstrap.Modal.getInstance(document.getElementById('paymentModal'));
+        paymentModal.hide();
       });
       
       // Mở modal chỉnh sửa học phí
@@ -673,7 +806,8 @@
         $('#editStatus').val(status);
         $('#editNotes').val(notes);
         
-        $('#editTuitionModal').modal('show');
+        const editTuitionModal = new bootstrap.Modal(document.getElementById('editTuitionModal'));
+        editTuitionModal.show();
       });
       
       // Cập nhật học phí
@@ -698,7 +832,8 @@
           }
         });
         
-        $('#editTuitionModal').modal('hide');
+        const editTuitionModal = bootstrap.Modal.getInstance(document.getElementById('editTuitionModal'));
+        editTuitionModal.hide();
       });
       
       // Xóa học phí
@@ -707,80 +842,343 @@
         const studentName = $(this).data('student');
         
         if (confirm(`Bạn có chắc muốn xóa học phí của học sinh "${studentName}"?`)) {
+          // Lấy phần tử card để có thể xóa nó sau này
+          const card = $(this).closest('.col-md-3');
+          
           $.ajax({
             url: '/academic/tuition/delete',
             type: 'POST',
             data: { tuitionId: tuitionId },
+            headers: {
+              'Accept': 'application/json'
+            },
             success: function(response) {
-              if (response.success) {
-                alert('Xóa học phí thành công');
-                location.reload();
+              console.log('Phản hồi khi xóa học phí:', response);
+              
+              if (response.success) { 
+                // Xóa card khỏi DOM
+                card.fadeOut(300, function() {
+                  $(this).remove();
+                  
+                  // Cập nhật thống kê sau khi xóa
+                  updateStats();
+                  
+                  // Nếu không còn card nào, hiển thị thông báo không có học phí
+                  if ($('.tuition-card').length === 0) {
+                    location.reload(); // Tải lại trang nếu đã xóa hết học phí
+                  }
+                });
               } else {
                 alert('Lỗi: ' + response.message);
               }
             },
-            error: function(err) {
+            error: function(xhr, status, err) {
               console.error('Lỗi khi xóa học phí:', err);
+              console.error('Chi tiết lỗi:', {
+                status: xhr.status,
+                statusText: xhr.statusText,
+                responseText: xhr.responseText
+              });
               alert('Đã xảy ra lỗi khi xóa học phí');
             }
           });
         }
       });
       
-      // Hàm tạo học phí
-      function generateTuition(scheduleId, month, year, amount, dueDay, name) {
-        // Log dữ liệu trước khi gửi để debug
-        console.log('Chuẩn bị tạo học phí với dữ liệu:', {
-          scheduleId: scheduleId,
-          month: parseInt(month),
-          year: parseInt(year),
-          amount: parseFloat(amount),
-          dueDay: parseInt(dueDay),
-          name: name
-        });
+      // Mở modal ghi chú
+      $('.note-btn').click(function() {
+        const tuitionId = $(this).data('id');
+        const notes = $(this).data('notes');
+        
+        $('#noteTuitionId').val(tuitionId);
+        $('#tuitionNotes').val(notes);
+        
+        const noteModal = new bootstrap.Modal(document.getElementById('noteModal'));
+        noteModal.show();
+      });
+      
+      // Lưu ghi chú
+      $('#saveNote').click(function() {
+        const tuitionId = $('#noteTuitionId').val();
+        const notes = $('#tuitionNotes').val();
         
         $.ajax({
-          url: '/academic/tuition/generate',
+          url: '/academic/tuition/update',
           type: 'POST',
           data: {
-            scheduleId: scheduleId,
-            month: parseInt(month),
-            year: parseInt(year),
-            amount: parseFloat(amount),
-            dueDay: parseInt(dueDay),
-            name: name
+            tuitionId: tuitionId,
+            notes: notes
           },
           success: function(response) {
-            if (response.success) {
-              alert(response.message);
-              location.reload();
+            if (response.success) { 
+              // Cập nhật data-notes cho nút ghi chú
+              $(`.note-btn[data-id="${tuitionId}"]`).data('notes', notes);
+              
+              // Cập nhật ghi chú hiển thị trong card
+              const card = $(`.note-btn[data-id="${tuitionId}"]`).closest('.card');
+              const notesElement = card.find('.student-info .mt-1 span');
+              
+              if (notes && notes.trim() !== '') {
+                // Nếu có ghi chú
+                if (notesElement.length) {
+                  // Nếu đã có element, cập nhật nội dung
+                  notesElement.text(notes);
+                } else {
+                  // Nếu chưa có element, tạo mới
+                  const notesHtml = `<span class="text-muted">${notes}</span>`;
+                  card.find('.student-info .mt-1 strong').after(notesHtml);
+                }
+              } else {
+                // Nếu không có ghi chú, đặt một chuỗi trống
+                if (notesElement.length) {
+                  notesElement.text('');
+                }
+              }
+              
+              const noteModal = bootstrap.Modal.getInstance(document.getElementById('noteModal'));
+              noteModal.hide();
             } else {
               alert('Lỗi: ' + response.message);
-              console.error('Chi tiết lỗi khi tạo học phí:', response);
+            }
+          },
+          error: function(err) {
+            console.error('Lỗi khi lưu ghi chú:', err);
+            alert('Đã xảy ra lỗi khi lưu ghi chú');
+          }
+        });
+      });
+      
+      // Xử lý checkbox trạng thái thanh toán
+      $('.payment-status-checkbox').change(function() {
+        const tuitionId = $(this).data('id');
+        const studentName = $(this).data('student');
+        const isChecked = $(this).is(':checked');
+        const status = isChecked ? 'paid' : 'pending';
+        const checkbox = $(this);
+        
+        // Xác nhận thay đổi trạng thái
+        if (isChecked) {
+          if (!confirm(`Xác nhận đánh dấu đã thanh toán cho học sinh "${studentName}"?`)) {
+            $(this).prop('checked', false);
+            return;
+          }
+        } else {
+          if (!confirm(`Xác nhận chuyển trạng thái thành chưa thanh toán cho học sinh "${studentName}"?`)) {
+            $(this).prop('checked', true);
+            return;
+          }
+        }
+        
+        // Hiển thị loading
+        const card = checkbox.closest('.tuition-card');
+        card.css('opacity', '0.6');
+        
+        // Thêm tham số ngăn cache
+        const timestamp = new Date().getTime();
+        
+        $.ajax({
+          url: '/academic/tuition/update?' + timestamp,
+          type: 'POST',
+          data: JSON.stringify({
+            tuitionId: tuitionId,
+            status: status,
+            paymentDate: isChecked ? new Date().toISOString().split('T')[0] : null,
+            paymentMethod: 'cash' // Mặc định là tiền mặt
+          }),
+          contentType: 'application/json',
+          dataType: 'json',
+          success: function(response) {
+            console.log('Phản hồi API:', response);
+            
+            // Khôi phục hiển thị card
+            card.css('opacity', '1');
+            
+            if (response && response.success) {
+              console.log('Cập nhật trạng thái thành công');
+              
+              // Cập nhật UI (card và badge)
+              const badge = card.find('.badge');
+              
+              if (isChecked) {
+                badge.removeClass('badge-pending badge-overdue').addClass('badge-paid');
+                badge.text('Đã TT');
+                card.removeClass('status-pending-card status-overdue-card').addClass('status-paid-card');
+              } else {
+                badge.removeClass('badge-paid').addClass('badge-pending');
+                badge.text('Chưa TT');
+                card.removeClass('status-paid-card').addClass('status-pending-card');
+              }
+              
+              // Cập nhật số liệu thống kê
+              updateStats();
+            } else {
+              console.error('Lỗi từ API:', response);
+              alert('Lỗi: ' + (response && response.message ? response.message : 'Không thể cập nhật trạng thái học phí'));
+              // Reset checkbox về trạng thái trước đó
+              checkbox.prop('checked', !isChecked);
             }
           },
           error: function(xhr, status, err) {
-            console.error('Lỗi khi tạo học phí:', {
+            console.error('Lỗi khi cập nhật trạng thái:', err);
+            console.error('Chi tiết lỗi:', {
               status: xhr.status,
               statusText: xhr.statusText,
               responseText: xhr.responseText
             });
             
-            let errorMessage = 'Đã xảy ra lỗi khi tạo học phí';
+            // Khôi phục hiển thị card
+            card.css('opacity', '1');
             
-            try {
-              const errorResponse = JSON.parse(xhr.responseText);
-              if (errorResponse && errorResponse.message) {
-                errorMessage = 'Lỗi: ' + errorResponse.message;
-              }
-            } catch (e) {
-              console.error('Không thể phân tích phản hồi lỗi:', e);
+            // Reset checkbox về trạng thái trước đó
+            checkbox.prop('checked', !isChecked);
+            
+            // Hiển thị thông báo lỗi
+            alert('Đã xảy ra lỗi khi cập nhật trạng thái. Vui lòng thử lại sau.');
+          }
+        });
+      });
+      
+      // Hàm cập nhật thống kê học phí sau khi thay đổi trạng thái
+      function updateStats() {
+        // Cập nhật số lượng đã thanh toán, chưa thanh toán, quá hạn
+        const paidCount = $('.badge-paid').length;
+        const overdueCount = $('.badge-overdue').length;
+        const totalCount = $('.tuition-card').length;
+        const pendingCount = totalCount - paidCount - overdueCount;
+        
+        // Tính tổng học phí đã thanh toán, chưa thanh toán và quá hạn
+        let paidAmount = 0;
+        let pendingAmount = 0;
+        let overdueAmount = 0;
+        
+        $('.tuition-card').each(function() {
+          const amountText = $(this).find('.student-info div:first-child').text();
+          const amount = parseInt(amountText.replace(/[^\d]/g, ''));
+          const badge = $(this).find('.badge');
+          
+          if (badge.hasClass('badge-paid')) {
+            paidAmount += amount;
+          } else if (badge.hasClass('badge-overdue')) {
+            overdueAmount += amount;
+          } else if (badge.hasClass('badge-pending')) {
+            pendingAmount += amount;
+          }
+        });
+        
+        // Cập nhật UI thống kê
+        $('.summary-card:nth-child(2) h3').text(paidAmount.toLocaleString('vi-VN') + ' ₫');
+        $('.summary-card:nth-child(2) p').text(paidCount + ' học sinh');
+        
+        $('.summary-card:nth-child(3) h3').text(pendingAmount.toLocaleString('vi-VN') + ' ₫');
+        $('.summary-card:nth-child(3) p').text(pendingCount + ' học sinh');
+        
+        $('.summary-card:nth-child(4) h3').text(overdueAmount.toLocaleString('vi-VN') + ' ₫');
+        $('.summary-card:nth-child(4) p').text(overdueCount + ' học sinh');
+      }
+      
+      // Hàm tạo học phí - Thêm để sửa lỗi "generateTuition is not defined"
+      function generateTuition(scheduleId, month, year, amount, dueDay, name, status) {
+        // Đảm bảo các tham số được gửi đi giống với trang danh sách lớp
+        $.ajax({
+          url: '/academic/tuition/generate',
+          type: 'POST',
+          data: {
+            scheduleId: scheduleId,
+            month: month,
+            year: year,
+            // Thêm các tham số này để đồng bộ với trang chính
+            amount: amount || null,
+            dueDay: dueDay || null,
+            name: name || 'Học phí tháng ' + month + '/' + year,
+            status: status || 'pending'
+          },
+          success: function(response) {
+            if (response.success) {
+              alert(response.message || 'Tạo học phí thành công');
+              location.reload();
+            } else {
+              alert('Lỗi: ' + (response.message || 'Không thể tạo học phí'));
             }
-            
-            alert(errorMessage);
+          },
+          error: function(err) {
+            console.error('Lỗi khi tạo học phí:', err);
+            alert('Đã xảy ra lỗi khi tạo học phí. Vui lòng thử lại sau.');
           }
         });
       }
+      
+      // Khởi tạo màu nền cho card dựa trên trạng thái thanh toán
+      $('.tuition-card').each(function() {
+        const badge = $(this).find('.badge');
+        
+        if (badge.hasClass('badge-paid')) {
+          $(this).addClass('status-paid-card');
+        } else if (badge.hasClass('badge-pending')) {
+          $(this).addClass('status-pending-card');
+        } else if (badge.hasClass('badge-overdue')) {
+          $(this).addClass('status-overdue-card');
+        }
+      });
+      
+      // Xử lý sự kiện thêm học phí thủ công
+      $('#addManualTuitionBtn').click(function() {
+        const manualTuitionModal = new bootstrap.Modal(document.getElementById('manualTuitionModal'));
+        manualTuitionModal.show();
+      });
+      
+      // Lưu học phí thủ công
+      $('#saveManualTuition').click(function() {
+        // Kiểm tra dữ liệu đầu vào
+        const studentId = $('#studentId').val();
+        const amount = $('#amount').val();
+        const dueDay = $('#dueDay').val();
+        
+        if (!studentId) {
+          alert('Vui lòng chọn học sinh');
+          return;
+        }
+        
+        if (!amount || amount <= 0) {
+          alert('Vui lòng nhập số tiền học phí hợp lệ');
+          return;
+        }
+        
+        if (!dueDay || dueDay < 1 || dueDay > 31) {
+          alert('Vui lòng nhập ngày đến hạn hợp lệ (1-31)');
+          return;
+        }
+        
+        // Thu thập dữ liệu từ form
+        const formData = $('#manualTuitionForm').serialize();
+        
+        // Gửi yêu cầu AJAX tạo học phí thủ công
+        $.ajax({
+          url: '/academic/tuition/create-manual',
+          type: 'POST',
+          data: formData,
+          success: function(response) {
+            if (response.success) {
+              alert(response.message || 'Thêm học phí thủ công thành công');
+              location.reload(); // Tải lại trang để hiển thị học phí mới
+            } else {
+              alert('Lỗi: ' + (response.message || 'Không thể thêm học phí thủ công'));
+            }
+          },
+          error: function(xhr, status, err) {
+            console.error('Lỗi khi thêm học phí thủ công:', err);
+            console.error('Chi tiết lỗi:', {
+              status: xhr.status,
+              statusText: xhr.statusText,
+              responseText: xhr.responseText
+            });
+            alert('Đã xảy ra lỗi khi thêm học phí thủ công. Vui lòng thử lại sau.');
+          }
+        });
+        
+        // Đóng modal
+        const manualTuitionModal = bootstrap.Modal.getInstance(document.getElementById('manualTuitionModal'));
+        manualTuitionModal.hide();
+      });
     });
   </script>
 </body>

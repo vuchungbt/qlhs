@@ -14,9 +14,12 @@ const teacherSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  subject: {
+  password: {
     type: String,
     required: true
+  },
+  subject: {
+    type: String
   },
   createdAt: {
     type: Date,

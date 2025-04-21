@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <%- include('../partials/header') %>
+  <title><%= title %></title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .report-header {
+      background-color: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .stats-card {
+      border-radius: 8px;
+      transition: all 0.3s;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+    }
+    
+    .stats-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+    }
+    
+    .card-paid {
+      border-left: 4px solid #28a745;
+    }
+    
+    .card-pending {
+      border-left: 4px solid #ffc107;
+    }
+    
+    .card-overdue {
+      border-left: 4px solid #dc3545;
+    }
+    
+    .chart-container {
+      position: relative;
+      margin: auto;
+      height: 300px;
+      margin-bottom: 30px;
+    }
+    
+    .student-list {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    .student-item {
+      border-left: 3px solid #dc3545;
+      padding: 10px 15px;
+      margin-bottom: 10px;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+    }
+    
+    .nav-tabs .nav-link.active {
+      font-weight: bold;
+      border-bottom: 3px solid #007bff;
+    }
+    
+    .table-hover tbody tr:hover {
+      background-color: rgba(0,123,255,0.075);
+    }
+    
+    .badge-paid {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    
+    .badge-pending {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+    
+    .badge-overdue {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2><i class="fas fa-chart-line"></i> <%= title %></h2>
+        <p class="text-muted">
+          <i class="fas fa-calendar-alt"></i> Thống kê 6 tháng gần nhất | 
+          <i class="fas fa-users"></i> <%= studentCount %> học sinh
+        </p>
+      </div>
+      <div>
+        <a href="/academic/tuition" class="btn btn-outline-secondary">
+          <i class="fas fa-arrow-left"></i> Quay Lại
+        </a>
+        <a href="/academic/tuition/class/<%= schedule._id %>" class="btn btn-primary">
+          <i class="fas fa-list"></i> Danh Sách Học Phí
+        </a>
+      </div>
+    </div>
+
+    <!-- Form lọc báo cáo -->
+    <div class="card mb-4">
+      <div class="card-header bg-white">
+        <h5><i class="fas fa-filter"></i> Bộ lọc báo cáo</h5>
+      </div>
+      <div class="card-body">
+        <form id="reportFilterForm" method="GET" action="/academic/tuition/report/class/<%= schedule._id %>">
+          <div class="row">
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="timeRange">Khoảng thời gian</label>
+                <select class="form-control" id="timeRange" name="timeRange">
+                  <option value="3" <%= timeRange == 3 ? 'selected' : '' %>>3 tháng gần nhất</option>
+                  <option value="6" <%= timeRange == 6 ? 'selected' : '' %>>6 tháng gần nhất</option>
+                  <option value="12" <%= timeRange == 12 ? 'selected' : '' %>>12 tháng gần nhất</option>
+                  <option value="custom" <%= timeRange == 'custom' ? 'selected' : '' %>>Tùy chỉnh</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="col-md-3 <%= timeRange != 'custom' ? 'd-none' : '' %>" id="startDateWrapper">
+              <div class="form-group">
+                <label for="startDate">Từ tháng</label>
+                <input type="month" class="form-control" id="startDate" name="startDate" value="<%= startDate || '' %>">
+              </div>
+            </div>
+            
+            <div class="col-md-3 <%= timeRange != 'custom' ? 'd-none' : '' %>" id="endDateWrapper">
+              <div class="form-group">
+                <label for="endDate">Đến tháng</label>
+                <input type="month" class="form-control" id="endDate" name="endDate" value="<%= endDate || '' %>">
+              </div>
+            </div>
+            
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="studentFilter">Học sinh</label>
+                <select class="form-control" id="studentFilter" name="studentId">
+                  <option value="">Tất cả học sinh</option>
+                  <% if (enrollments && enrollments.length > 0) { %>
+                    <% enrollments.forEach(enrollment => { %>
+                      <option value="<%= enrollment.student._id %>" <%= selectedStudentId && selectedStudentId.toString() === enrollment.student._id.toString() ? 'selected' : '' %>>
+                        <%= enrollment.student.name %>
+                      </option>
+                    <% }) %>
+                  <% } %>
+                </select>
+              </div>
+            </div>
+            
+            <div class="col-md-3 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search"></i> Lọc báo cáo
+              </button>
+              <a href="/academic/tuition/report/class/<%= schedule._id %>" class="btn btn-outline-secondary ms-2">
+                <i class="fas fa-redo"></i> Đặt lại
+              </a>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Thẻ thống kê tổng quan -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="card stats-card">
+          <div class="card-body">
+            <h5 class="card-title">Tổng Học Phí</h5>
+            <h3 class="text-primary"><%= totalStats.totalAmount.toLocaleString('vi-VN') %> ₫</h3>
+            <p class="text-muted mb-0"><%= totalStats.totalCount %> khoản học phí</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3">
+        <div class="card stats-card card-paid">
+          <div class="card-body">
+            <h5 class="card-title">Đã Thanh Toán</h5>
+            <h3 class="text-success"><%= totalStats.paidAmount.toLocaleString('vi-VN') %> ₫</h3>
+            <p class="text-muted mb-0"><%= totalStats.paidCount %> khoản (<%= Math.round((totalStats.paidCount / totalStats.totalCount || 0) * 100) %>%)</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3">
+        <div class="card stats-card card-pending">
+          <div class="card-body">
+            <h5 class="card-title">Chưa Thanh Toán</h5>
+            <h3 class="text-warning"><%= totalStats.pendingAmount.toLocaleString('vi-VN') %> ₫</h3>
+            <p class="text-muted mb-0"><%= totalStats.pendingCount %> khoản (<%= Math.round((totalStats.pendingCount / totalStats.totalCount || 0) * 100) %>%)</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3">
+        <div class="card stats-card card-overdue">
+          <div class="card-body">
+            <h5 class="card-title">Quá Hạn</h5>
+            <h3 class="text-danger"><%= totalStats.overdueAmount.toLocaleString('vi-VN') %> ₫</h3>
+            <p class="text-muted mb-0"><%= totalStats.overdueCount %> khoản (<%= Math.round((totalStats.overdueCount / totalStats.totalCount || 0) * 100) %>%)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-8">
+        <!-- Biểu đồ thống kê học phí theo tháng -->
+        <div class="card mb-4">
+          <div class="card-header bg-white">
+            <h5><i class="fas fa-chart-bar"></i> Thống Kê Học Phí Theo Tháng</h5>
+          </div>
+          <div class="card-body">
+            <div class="chart-container">
+              <canvas id="tuitionChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bảng thống kê chi tiết theo tháng -->
+        <div class="card">
+          <div class="card-header bg-white">
+            <h5><i class="fas fa-table"></i> Chi Tiết Thống Kê Theo Tháng</h5>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead class="thead-light">
+                  <tr>
+                    <th>Tháng</th>
+                    <th>Tổng Học Phí</th>
+                    <th>Đã Thanh Toán</th>
+                    <th>Chưa Thanh Toán</th>
+                    <th>Quá Hạn</th>
+                    <th>Tỷ Lệ Thu</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% months.forEach(month => { %>
+                    <tr>
+                      <td><strong><%= month %></strong></td>
+                      <td><%= monthlyStats[month].totalAmount.toLocaleString('vi-VN') %> ₫</td>
+                      <td class="text-success"><%= monthlyStats[month].paidAmount.toLocaleString('vi-VN') %> ₫</td>
+                      <td class="text-warning"><%= monthlyStats[month].pendingAmount.toLocaleString('vi-VN') %> ₫</td>
+                      <td class="text-danger"><%= monthlyStats[month].overdueAmount.toLocaleString('vi-VN') %> ₫</td>
+                      <td>
+                        <div class="progress" style="height: 10px;">
+                          <div class="progress-bar bg-success progress-width-value" role="progressbar" 
+                               data-percent="<%= Math.round((monthlyStats[month].paidAmount / monthlyStats[month].totalAmount || 0) * 100) %>" 
+                               aria-valuenow="<%= Math.round((monthlyStats[month].paidAmount / monthlyStats[month].totalAmount || 0) * 100) %>" 
+                               aria-valuemin="0" aria-valuemax="100">
+                          </div>
+                        </div>
+                        <small><%= Math.round((monthlyStats[month].paidAmount / monthlyStats[month].totalAmount || 0) * 100) %>%</small>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <!-- Học sinh nợ học phí -->
+        <div class="card mb-4">
+          <div class="card-header bg-white">
+            <h5><i class="fas fa-exclamation-triangle text-danger"></i> Học Sinh Nợ Học Phí</h5>
+          </div>
+          <div class="card-body p-0">
+            <div class="student-list p-3">
+              <% if (overdueStudents && overdueStudents.length > 0) { %>
+                <% overdueStudents.forEach(item => { %>
+                  <div class="student-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <h6 class="mb-1"><%= item.student.name %></h6>
+                        <small class="text-muted">Số khoản quá hạn: <%= item.overdueCount %></small>
+                      </div>
+                      <span class="text-danger font-weight-bold"><%= item.overdueAmount.toLocaleString('vi-VN') %> ₫</span>
+                    </div>
+                    <div class="mt-2">
+                      <a href="/academic/tuition/student/<%= item.student._id %>" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye"></i> Xem Chi Tiết
+                      </a>
+                    </div>
+                  </div>
+                <% }) %>
+              <% } else { %>
+                <div class="alert alert-success m-3">
+                  <i class="fas fa-check-circle"></i> Không có học sinh nào nợ học phí quá hạn.
+                </div>
+              <% } %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Thông tin lớp học -->
+        <div class="card">
+          <div class="card-header bg-white">
+            <h5><i class="fas fa-info-circle"></i> Thông Tin Lớp Học</h5>
+          </div>
+          <div class="card-body">
+            <p><strong>Tên lớp:</strong> <%= schedule.name %></p>
+            <p><strong>Giáo viên:</strong> <%= schedule.teacher ? schedule.teacher.name : 'Chưa phân công' %></p>
+            <p><strong>Số học sinh:</strong> <%= studentCount %></p>
+            <p><strong>Học phí cơ bản:</strong> <%= schedule.tuitionAmount ? schedule.tuitionAmount.toLocaleString('vi-VN') + ' ₫' : 'Chưa thiết lập' %></p>
+            <p><strong>Ngày đến hạn:</strong> Ngày <%= schedule.tuitionDueDay || 10 %> hàng tháng</p>
+            <% if (schedule.description) { %>
+              <p><strong>Mô tả:</strong> <%= schedule.description %></p>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%- include('../partials/footer') %>
+
+  <script>
+    $(document).ready(function() {
+      // Đặt width cho các thanh tiến trình
+      $('.progress-width-value').each(function() {
+        const percent = $(this).data('percent');
+        $(this).css('width', percent + '%');
+      });
+      
+      // Hiển thị/ẩn trường ngày tháng khi thay đổi loại khoảng thời gian
+      $('#timeRange').change(function() {
+        const value = $(this).val();
+        if (value === 'custom') {
+          $('#startDateWrapper, #endDateWrapper').removeClass('d-none');
+        } else {
+          $('#startDateWrapper, #endDateWrapper').addClass('d-none');
+        }
+      });
+      
+      // Dữ liệu cho biểu đồ
+      const months = <%- JSON.stringify(months) %>;
+      const monthlyStats = <%- JSON.stringify(monthlyStats) %>;
+      
+      // Tạo mảng dữ liệu cho biểu đồ
+      const chartData = {
+        labels: months,
+        datasets: [
+          {
+            label: 'Đã Thanh Toán',
+            backgroundColor: 'rgba(40, 167, 69, 0.7)',
+            data: months.map(month => monthlyStats[month].paidAmount)
+          },
+          {
+            label: 'Chưa Thanh Toán',
+            backgroundColor: 'rgba(255, 193, 7, 0.7)',
+            data: months.map(month => monthlyStats[month].pendingAmount)
+          },
+          {
+            label: 'Quá Hạn',
+            backgroundColor: 'rgba(220, 53, 69, 0.7)',
+            data: months.map(month => monthlyStats[month].overdueAmount)
+          }
+        ]
+      };
+      
+      // Tạo biểu đồ
+      const ctx = document.getElementById('tuitionChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: chartData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Thống kê học phí theo khoảng thời gian đã chọn'
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  let label = context.dataset.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  if (context.parsed.y !== null) {
+                    label += new Intl.NumberFormat('vi-VN').format(context.parsed.y) + ' ₫';
+                  }
+                  return label;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              stacked: true,
+            },
+            y: {
+              stacked: true,
+              ticks: {
+                callback: function(value) {
+                  return new Intl.NumberFormat('vi-VN', { 
+                    style: 'decimal',
+                    maximumFractionDigits: 0
+                  }).format(value) + ' ₫';
+                }
+              }
+            }
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html> 

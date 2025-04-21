@@ -3,6 +3,7 @@ const Parent = require('../models/Parent');
 const Teacher = require('../models/Teacher');
 const Schedule = require('../models/Schedule');
 const moment = require('moment');
+const Tuition = require('../models/Tuition');
 
 // Hiển thị trang chủ Dashboard
 exports.getDashboard = async (req, res) => {
@@ -11,6 +12,22 @@ exports.getDashboard = async (req, res) => {
     const studentCount = await Student.countDocuments();
     const parentCount = await Parent.countDocuments();
     const teacherCount = await Teacher.countDocuments();
+    
+    // Tính toán tổng học phí đã thanh toán trong tháng hiện tại
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+    const startOfMonth = new Date(currentYear, currentMonth - 1, 1);
+    const endOfMonth = new Date(currentYear, currentMonth, 0);
+    
+    // Lấy tất cả học phí đã thanh toán trong tháng hiện tại
+    const paidTuitions = await Tuition.find({
+      status: 'paid',
+      paymentDate: { $gte: startOfMonth, $lte: endOfMonth }
+    });
+    
+    // Tính tổng số tiền học phí đã thanh toán
+    const monthlyPayments = paidTuitions.reduce((total, tuition) => total + tuition.amount, 0);
     
     // Lấy danh sách lớp học từ model Schedule
     let courses = [];
@@ -148,7 +165,7 @@ exports.getDashboard = async (req, res) => {
         totalStudents: studentCount,
         activeClasses: courses.length,
         teachers: teacherCount,
-        monthlyPayments: 15000000 // Dữ liệu mẫu
+        monthlyPayments: monthlyPayments // Dữ liệu thực tế từ database
       },
       recentActivities,
       today,

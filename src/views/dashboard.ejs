@@ -93,7 +93,7 @@
                         </div>
                     </div>
                     <div class="mt-3">
-                        <a href="/billing" class="text-decoration-none">Chi tiết <i class="bi bi-arrow-right"></i></a>
+                        <a href="/academic/tuition" class="text-decoration-none">Chi tiết <i class="bi bi-arrow-right"></i></a>
                     </div>
                 </div>
             </div>
@@ -102,7 +102,7 @@
             
     <div class="row mb-4">
         <!-- Lịch học hôm nay -->
-        <div class="col-lg-8 mb-4">
+        <div class="col-lg-12">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center py-3">
                     <h5 class="mb-0">Lịch Học Hôm Nay</h5>
@@ -148,40 +148,6 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Thông báo mới nhất -->
-        <div class="col-lg-4 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-transparent border-0 py-3">
-                    <h5 class="mb-0">Thông Báo Mới Nhất</h5>
-                </div>
-                <div class="card-body pt-0">
-                    <% if (notifications && notifications.length > 0) { %>
-                        <ul class="list-group list-group-flush">
-                            <% notifications.forEach(function(notification) { %>
-                                <li class="list-group-item border-0 border-bottom py-3 px-0">
-                                    <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1 fw-medium"><%= notification.title %></h6>
-                                        <small class="text-muted"><%= new Date(notification.date).toLocaleDateString('vi-VN') %></small>
-                                    </div>
-                                    <p class="mb-1 text-muted small"><%= notification.message %></p>
-                                    <% if (notification.actionLink) { %>
-                                        <a href="<%= notification.actionLink %>" class="btn btn-sm btn-outline-primary mt-2 rounded-pill">
-                                            <%= notification.actionText || 'Chi tiết' %>
-                                        </a>
-                                    <% } %>
-                                </li>
-                            <% }); %>
-                        </ul>
-                    <% } else { %>
-                        <div class="text-center py-4">
-                            <i class="bi bi-bell-slash fs-1 text-muted"></i>
-                            <p class="mt-2">Không có thông báo mới</p>
-                        </div>
-                    <% } %>
-                </div>
-            </div>
-        </div>
     </div>
             
     <div class="row">
@@ -194,16 +160,6 @@
                 <div class="card-body pt-0">
                     <div class="row g-3">
                         <div class="col-md-3">
-                            <a href="/academic/students/new" class="card h-100 border-0 shadow-sm text-center py-4 text-decoration-none">
-                                <div class="card-body">
-                                    <div class="bg-light rounded-circle d-inline-flex p-3 mb-3 text-primary">
-                                        <i class="bi bi-person-plus fs-3"></i>
-                                    </div>
-                                    <h6 class="mb-0">Thêm Học Sinh</h6>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-md-3">
                             <a href="/academic/schedule/new" class="card h-100 border-0 shadow-sm text-center py-4 text-decoration-none">
                                 <div class="card-body">
                                     <div class="bg-light rounded-circle d-inline-flex p-3 mb-3 text-success">
@@ -213,35 +169,80 @@
                                 </div>
                             </a>
                         </div>
+                        
                         <div class="col-md-3">
-                            <a href="/academic/attendance" class="quick-link card">
-                                <div class="card-body d-flex align-items-center">
-                                    <div class="icon-wrapper bg-success">
-                                        <i class="bi bi-calendar-check text-white"></i>
+                            <a href="/academic/attendance" class="card h-100 border-0 shadow-sm text-center py-4 text-decoration-none">
+                                <div class="card-body">
+                                    <div class="bg-light rounded-circle d-inline-flex p-3 mb-3 text-info">
+                                        <i class="bi bi-calendar-check fs-3"></i>
                                     </div>
-                                    <div class="ms-3">
-                                        <h5 class="mb-0">Điểm Danh</h5>
-                                        <div class="dropdown mt-2">
-                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                Tùy chọn
-                                            </button>
-                                            <ul class="dropdown-menu">
-                                                <li><a class="dropdown-item" href="/academic/attendance"><i class="bi bi-calendar-date me-2"></i>Điểm danh hôm nay</a></li>
-                                                <li><a class="dropdown-item" href="/academic/attendance/class"><i class="bi bi-grid me-2"></i>Quản lý theo lớp</a></li>
-                                                <li><a class="dropdown-item" href="/academic/attendance/student"><i class="bi bi-person me-2"></i>Quản lý theo học sinh</a></li>
-                                            </ul>
-                                        </div>
-                                    </div>
+                                    <h6 class="mb-0">Điểm Danh</h6>
                                 </div>
                             </a>
                         </div>
+                        
                         <div class="col-md-3">
-                            <a href="/billing/new" class="card h-100 border-0 shadow-sm text-center py-4 text-decoration-none">
+                            <a href="/academic/tuition" class="card h-100 border-0 shadow-sm text-center py-4 text-decoration-none">
+                                <div class="card-body">
+                                    <div class="bg-light rounded-circle d-inline-flex p-3 mb-3 text-warning">
+                                        <i class="bi bi-cash fs-3"></i>
+                                    </div>
+                                    <h6 class="mb-0">Quản Lý Học Phí</h6>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <a href="/academic/students" class="card h-100 border-0 shadow-sm text-center py-4 text-decoration-none">
+                                <div class="card-body">
+                                    <div class="bg-light rounded-circle d-inline-flex p-3 mb-3 text-primary">
+                                        <i class="bi bi-people fs-3"></i>
+                                    </div>
+                                    <h6 class="mb-0">Danh Sách Học Sinh</h6>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <a href="/academic/parents" class="card h-100 border-0 shadow-sm text-center py-4 text-decoration-none">
+                                <div class="card-body">
+                                    <div class="bg-light rounded-circle d-inline-flex p-3 mb-3 text-success">
+                                        <i class="bi bi-person-lines-fill fs-3"></i>
+                                    </div>
+                                    <h6 class="mb-0">Quản Lý Phụ Huynh</h6>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <a href="/settings" class="card h-100 border-0 shadow-sm text-center py-4 text-decoration-none">
+                                <div class="card-body">
+                                    <div class="bg-light rounded-circle d-inline-flex p-3 mb-3 text-secondary">
+                                        <i class="bi bi-gear fs-3"></i>
+                                    </div>
+                                    <h6 class="mb-0">Cài Đặt Hệ Thống</h6>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <a href="/academic/tuition/report/class" class="card h-100 border-0 shadow-sm text-center py-4 text-decoration-none">
                                 <div class="card-body">
                                     <div class="bg-light rounded-circle d-inline-flex p-3 mb-3 text-danger">
-                                        <i class="bi bi-receipt fs-3"></i>
+                                        <i class="bi bi-graph-up fs-3"></i>
                                     </div>
-                                    <h6 class="mb-0">Tạo Hóa Đơn</h6>
+                                    <h6 class="mb-0">Báo Cáo Học Phí</h6>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <a href="/academic/schedule" class="card h-100 border-0 shadow-sm text-center py-4 text-decoration-none">
+                                <div class="card-body">
+                                    <div class="bg-light rounded-circle d-inline-flex p-3 mb-3 text-primary">
+                                        <i class="bi bi-calendar-week fs-3"></i>
+                                    </div>
+                                    <h6 class="mb-0">Lịch Học</h6>
                                 </div>
                             </a>
                         </div>

@@ -1,15 +1,35 @@
 const Teacher = require('../models/Teacher');
+const bcrypt = require('bcryptjs');
 
 // Controller lấy danh sách giáo viên
 exports.getTeachers = async (req, res) => {
   try {
-    const teachers = await Teacher.find().sort({ name: 1 });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    
+    const totalTeachers = await Teacher.countDocuments();
+    const totalPages = Math.ceil(totalTeachers / limit);
+    const teachers = await Teacher.find()
+                                .sort({ name: 1 })
+                                .skip(skip)
+                                .limit(limit);
     
     res.render('administrative/teachers', {
       title: 'Quản Lý Giáo Viên',
       username: req.session.user ? req.session.user.username : 'Người dùng',
       currentDate: new Date(),
-      teachers
+      teachers,
+      pagination: {
+        page,
+        limit,
+        totalTeachers,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+        nextPage: page + 1,
+        prevPage: page - 1
+      }
     });
   } catch (err) {
     console.error('Lỗi khi lấy danh sách giáo viên:', err);
@@ -20,12 +40,16 @@ exports.getTeachers = async (req, res) => {
 // Controller thêm giáo viên mới
 exports.createTeacher = async (req, res) => {
   try {
-    const { name, email, phone, subject } = req.body;
+    const { name, email, phone, password, subject } = req.body;
+    
+    // Băm mật khẩu
+    const hashedPassword = await bcrypt.hash(password, 10);
     
     const newTeacher = new Teacher({
       name,
       email,
       phone,
+      password: hashedPassword,
       subject
     });
     
@@ -60,14 +84,22 @@ exports.getTeacherDetail = async (req, res) => {
 // Cập nhật thông tin giáo viên
 exports.updateTeacher = async (req, res) => {
   try {
-    const { name, email, phone, subject } = req.body;
+    const { name, email, phone, password, subject } = req.body;
     
-    await Teacher.findByIdAndUpdate(req.params.id, {
+    // Chuẩn bị dữ liệu cập nhật
+    const updateData = {
       name,
       email,
       phone,
       subject
-    });
+    };
+    
+    // Chỉ cập nhật mật khẩu nếu nó được cung cấp
+    if (password && password.trim() !== '') {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+    
+    await Teacher.findByIdAndUpdate(req.params.id, updateData);
     
     res.redirect('/administrative/teachers');
   } catch (err) {

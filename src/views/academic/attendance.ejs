@@ -206,8 +206,13 @@
     }
     
     .attendance-card.absent {
-        border-left: 5px solid #e74c3c;
-        background-color: rgba(231, 76, 60, 0.05);
+        background-color: #ffebee;
+        border-left: 3px solid #f44336;
+    }
+    
+    .attendance-card.absent .status-badge {
+        background-color: #f44336;
+        color: white;
     }
     
     .attendance-card.late {
@@ -381,6 +386,48 @@
         border-left: 4px solid #e74c3c !important;
         box-shadow: inset 0 0 5px rgba(231, 76, 60, 0.1) !important;
     }
+    
+    .status-count {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 4px;
+        margin-right: 5px;
+        font-weight: 500;
+    }
+    
+    .absent-count {
+        background-color: #ffebee;
+        color: #f44336;
+        border: 1px solid #f44336;
+    }
+    
+    .present-count {
+        background-color: #e8f5e9;
+        color: #4caf50;
+        border: 1px solid #4caf50;
+    }
+    
+    .late-count {
+        background-color: #fff8e1;
+        color: #ff9800;
+        border: 1px solid #ff9800;
+    }
+    
+    #attendanceGrid .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    #attendanceGrid .card-header .attendance-stats {
+        display: flex;
+        gap: 5px;
+    }
+    
+    #attendanceGrid .attendance-time {
+        font-size: 0.85rem;
+        color: #757575;
+    }
 </style>
 
 <script>
@@ -476,7 +523,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (attendanceData.length > 0) {
             console.log('Gửi dữ liệu điểm danh cho ngày:', attendanceDate);
             
-            fetch('/academic/attendance/batch', {
+            fetch('/academic/attendance', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -527,7 +574,63 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('viewOptions').addEventListener('click', function(e) {
         console.log('Dropdown viewOptions được nhấp');
     });
+
+    // Đảm bảo cập nhật lại khi thay đổi trạng thái điểm danh
+    function toggleAttendanceStatus(studentId, button) {
+        // ... existing code ...
+        
+        // Cập nhật giao diện sau khi thay đổi trạng thái
+        setTimeout(() => {
+            renderAttendanceCards();
+        }, 100);
+    }
+
+    // Cập nhật giao diện ban đầu
+    setTimeout(() => {
+        renderAttendanceCards();
+    }, 300);
 });
+
+function renderAttendanceCards() {
+    // ... existing code ...
+    
+    // Thêm logic để đánh dấu học sinh vắng mặt
+    document.querySelectorAll('.attendance-card').forEach(card => {
+        const statusElement = card.querySelector('.status-badge');
+        if (statusElement && statusElement.textContent.trim() === 'Vắng mặt') {
+            card.classList.add('absent');
+        } else {
+            card.classList.remove('absent');
+        }
+    });
+    
+    // Cập nhật thống kê điểm danh
+    updateAttendanceStats();
+}
+
+function updateAttendanceStats() {
+    const presentCount = document.querySelectorAll('.attendance-card .status-badge:not(.absent-badge):not(.late-badge)').length;
+    const absentCount = document.querySelectorAll('.attendance-card .absent-badge').length;
+    const lateCount = document.querySelectorAll('.attendance-card .late-badge').length;
+    
+    const statsContainer = document.createElement('div');
+    statsContainer.className = 'attendance-stats';
+    
+    statsContainer.innerHTML = `
+        <span class="status-count present-count">Có mặt: ${presentCount}</span>
+        <span class="status-count absent-count">Vắng: ${absentCount}</span>
+        <span class="status-count late-count">Muộn: ${lateCount}</span>
+    `;
+    
+    const cardHeader = document.querySelector('#attendanceGrid .card-header');
+    const existingStats = cardHeader.querySelector('.attendance-stats');
+    
+    if (existingStats) {
+        cardHeader.replaceChild(statsContainer, existingStats);
+    } else {
+        cardHeader.appendChild(statsContainer);
+    }
+}
 </script>
 
 <%- include('../partials/footer') %>

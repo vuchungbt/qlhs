@@ -61,14 +61,22 @@ exports.createSchedule = async (req, res) => {
     // Chuyển đổi dayOfWeek từ chuỗi sang mảng nếu cần
     const days = Array.isArray(dayOfWeek) ? dayOfWeek : [dayOfWeek];
     
+    // Debug log để kiểm tra ngày được chọn
+    console.log('Ngày được chọn (gốc):', dayOfWeek);
+    console.log('Ngày được chọn (mảng):', days);
+    
+    // Tìm thông tin giáo viên để lấy môn học
+    const teacher = await Teacher.findById(teacherId);
+    if (!teacher) {
+      throw new Error('Không tìm thấy thông tin giáo viên');
+    }
+    
     // Tạo lịch học mới
     const newSchedule = new Schedule({
       name,
       teacher: teacherId,
       dayOfWeek: days,
-      days: days.map(day => 
-        typeof day === 'string' ? day.toLowerCase() : day
-      ),
+      days: days,
       startTime,
       endTime,
       time: {
@@ -198,8 +206,8 @@ exports.updateSchedule = async (req, res) => {
     // Chuyển đổi dayOfWeek từ chuỗi sang mảng nếu cần và lọc giá trị null/undefined
     const days = Array.isArray(daysInput) ? daysInput.filter(day => day) : [daysInput].filter(day => day);
     
-    console.log('Ngày trong tuần đã chọn:', days);
-    console.log('Địa điểm đã nhập:', location);
+    console.log('Ngày trong tuần đã chọn (raw):', dayOfWeek);
+    console.log('Ngày trong tuần đã xử lý:', days);
     
     // Đảm bảo tương thích với cả hai cấu trúc dữ liệu
     const updatedSchedule = {
@@ -208,9 +216,7 @@ exports.updateSchedule = async (req, res) => {
       // Lưu ở cả hai định dạng để đảm bảo tương thích
       dayOfWeek: days,
       // Chỉ chuyển đổi những giá trị không null/undefined
-      days: days.filter(day => day).map(day => 
-        typeof day === 'string' ? day.toLowerCase() : day
-      ),
+      days: days,
       // Lưu ở cả hai định dạng 
       startTime,
       endTime,
@@ -310,7 +316,7 @@ exports.getScheduleDetail = async (req, res) => {
     const { id } = req.params;
     
     const schedule = await Schedule.findById(id)
-      .populate('teacher', 'name email phone subject')
+      .populate('teacher', 'name email phone')
       .populate('students', 'name class dateOfBirth');
       
     if (!schedule) {

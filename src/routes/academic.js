@@ -25,6 +25,7 @@ router.get('/schedule/:id/students-data', ensureAuthenticated, scheduleControlle
 // Quản lý học sinh
 router.get('/students', ensureAuthenticated, academicController.getStudents);
 router.post('/students', ensureAuthenticated, academicController.createStudent);
+router.get('/students/new', ensureAuthenticated, academicController.getCreateStudentForm);
 router.get('/students/:id', ensureAuthenticated, academicController.getStudentDetail);
 router.get('/students/:id/data', ensureAuthenticated, academicController.getStudentData);
 router.post('/students/:id', ensureAuthenticated, academicController.updateStudent);
@@ -47,7 +48,9 @@ router.post('/tuition/generate', ensureAuthenticated, logRequestBody, academicCo
 router.post('/tuition/payment', ensureAuthenticated, academicController.recordTuitionPayment);
 router.post('/tuition/update', ensureAuthenticated, academicController.updateTuition);
 router.post('/tuition/delete', ensureAuthenticated, academicController.deleteTuition);
+router.post('/tuition/create-manual', ensureAuthenticated, academicController.createManualTuition);
 router.delete('/api/tuition/:id', ensureAuthenticated, academicController.deleteTuitionApi);
+router.get('/tuition/report/:id', ensureAuthenticated, academicController.getTuitionReport);
 
 // Quản lý điểm danh theo lớp học
 router.get('/attendance/class', ensureAuthenticated, academicController.getAttendanceByClass);
@@ -69,5 +72,18 @@ router.get('/tuition-student/:studentId', ensureAuthenticated, academicControlle
 
 // Thêm route mới cho đồng bộ hóa enrollment
 router.get('/sync-enrollments', ensureAuthenticated, academicController.syncEnrollments);
+
+// Tuition routes
+router.get('/tuition', ensureAuthenticated, academicController.getTuition);
+router.post('/tuition', ensureAuthenticated, academicController.addTuition);
+router.post('/tuition/update/:id', ensureAuthenticated, academicController.updateTuition);
+router.get('/tuition/delete/:id', ensureAuthenticated, academicController.deleteTuition);
+router.delete('/tuition/:id', ensureAuthenticated, academicController.deleteTuitionApi);
+router.get('/tuition/student/:id', ensureAuthenticated, academicController.getTuitionByStudent);
+router.get('/tuition/student/:id/detail', ensureAuthenticated, academicController.getTuitionByStudentDetail);
+router.post('/tuition/payment', ensureAuthenticated, academicController.recordTuitionPayment);
+router.get('/tuition/class/:id', ensureAuthenticated, academicController.getTuitionByClass);
+router.post('/tuition/generate', ensureAuthenticated, academicController.generateTuition);
+router.get('/tuition/report/class/:id', ensureAuthenticated, academicController.getTuitionReport);
 
 module.exports = router;

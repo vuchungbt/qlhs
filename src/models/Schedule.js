@@ -11,11 +11,6 @@ const ScheduleSchema = new Schema({
     ref: 'Teacher',
     required: true
   },
-  subject: {
-    type: Schema.Types.ObjectId,
-    ref: 'Subject',
-    required: true
-  },
   students: [{
     type: Schema.Types.ObjectId,
     ref: 'Student'
@@ -80,11 +75,32 @@ const ScheduleSchema = new Schema({
 
 // Hàm ảo để lấy thông tin lịch học hiển thị
 ScheduleSchema.virtual('scheduleDisplay').get(function() {
+  // Hàm chuyển đổi tên ngày từ tiếng Anh sang tiếng Việt
+  const convertDayToVietnamese = (day) => {
+    const dayMap = {
+      'monday': 'Thứ 2',
+      'tuesday': 'Thứ 3',
+      'wednesday': 'Thứ 4',
+      'thursday': 'Thứ 5',
+      'friday': 'Thứ 6',
+      'saturday': 'Thứ 7',
+      'sunday': 'Chủ nhật',
+      'Monday': 'Thứ 2',
+      'Tuesday': 'Thứ 3',
+      'Wednesday': 'Thứ 4',
+      'Thursday': 'Thứ 5',
+      'Friday': 'Thứ 6',
+      'Saturday': 'Thứ 7',
+      'Sunday': 'Chủ nhật'
+    };
+    return dayMap[day] || day;
+  };
+
   if (this.days && this.days.length > 0) {
-    return this.days.join(' & ');
+    return this.days.map(day => convertDayToVietnamese(day)).join(' & ');
   }
   if (this.dayOfWeek && this.dayOfWeek.length > 0) {
-    return this.dayOfWeek.join(' & ');
+    return this.dayOfWeek.map(day => convertDayToVietnamese(day)).join(' & ');
   }
   return 'Chưa có lịch';
 });

@@ -60,6 +60,28 @@ exports.getStudents = async (req, res) => {
   }
 };
 
+// Form tạo học sinh mới
+exports.getCreateStudentForm = async (req, res) => {
+  try {
+    const parents = await Parent.find().sort({ name: 1 });
+    const schedules = await Schedule.find().sort({ name: 1 }).populate('teacher');
+    
+    res.render('academic/student-form', {
+      title: 'Thêm Học Sinh Mới',
+      username: req.session.user ? req.session.user.username : 'Người dùng',
+      currentDate: new Date(),
+      student: {},
+      parents,
+      schedules,
+      isNew: true
+    });
+  } catch (err) {
+    console.error('Lỗi khi hiển thị form tạo học sinh:', err);
+    req.flash('error', 'Không thể hiển thị form tạo học sinh: ' + err.message);
+    res.redirect('/academic/students');
+  }
+};
+
 // Controller thêm học sinh mới
 exports.createStudent = async (req, res) => {
   try {
@@ -1176,9 +1198,9 @@ exports.getTuition = async (req, res) => {
     .populate('schedule')
     .sort({ dueDate: 1 });
     
-    // Lấy danh sách học sinh và lớp học
+    // Lấy danh sách học sinh và lớp học (populate teacher)
     const students = await Student.find({}).sort({ name: 1 });
-    const schedules = await Schedule.find({}).sort({ name: 1 });
+    const schedules = await Schedule.find({}).populate('teacher').sort({ name: 1 });
     
     // Tính số lượng học sinh thực tế cho mỗi lớp từ Enrollment
     for (let schedule of schedules) {
@@ -1252,38 +1274,113 @@ exports.addTuition = async (req, res) => {
 
 exports.updateTuition = async (req, res) => {
   try {
-    const { tuitionId, studentId, scheduleId, name, amount, dueDate, status, paymentDate, paymentMethod, note, academicYear } = req.body;
+    // Log để debug
+    console.log('updateTuition - Dữ liệu nhận được:', req.body);
     
+    const { tuitionId, amount, month, year, status, notes, paymentDate, paymentMethod } = req.body;
+
+    // Kiểm tra dữ liệu đầu vào
     if (!tuitionId) {
-      req.flash('error_msg', 'Không tìm thấy thông tin học phí');
-      return res.redirect('/academic/tuition');
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Thiếu ID học phí cần chỉnh sửa' 
+      });
     }
 
-    const updateData = {
-      student: studentId,
-      schedule: scheduleId,
-      name,
-      amount,
-      dueDate,
-      note,
-      academicYear
-    };
+    // Tìm bản ghi học phí
+    const tuition = await Tuition.findById(tuitionId);
+    if (!tuition) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy bản ghi học phí' });
+    }
 
-    if (status) updateData.status = status;
+    // Kiểm tra nếu chỉ cập nhật ghi chú (chỉ có tuitionId và notes trong request)
+    const isOnlyNotesUpdate = Object.keys(req.body).length === 2 && tuitionId && notes !== undefined;
     
-    // Nếu trạng thái là "paid" (đã thanh toán), cập nhật thông tin thanh toán
-    if (status === 'paid') {
-      updateData.paymentDate = paymentDate || new Date();
-      updateData.paymentMethod = paymentMethod;
+    // Kiểm tra nếu đang cập nhật trạng thái thanh toán
+    const isPaymentStatusUpdate = status === 'paid' && (req.body.status || paymentDate);
+    
+    if (isOnlyNotesUpdate) {
+      // Chỉ cập nhật ghi chú mà không thay đổi các trường khác
+      tuition.notes = notes;
+      console.log('Chỉ cập nhật ghi chú, giữ nguyên trạng thái:', tuition.status);
+    } else {
+      // Cập nhật thông tin học phí
+      if (amount && !isNaN(parseFloat(amount))) {
+        tuition.amount = parseFloat(amount);
+      }
+      
+      if (month && !isNaN(parseInt(month))) {
+        tuition.month = parseInt(month);
+      }
+      
+      if (year && !isNaN(parseInt(year))) {
+        tuition.year = parseInt(year);
+      }
+      
+      // Cập nhật ghi chú nếu có
+      if (notes !== undefined) {
+        tuition.notes = notes;
+      }
+      
+      // Cập nhật trạng thái nếu được cung cấp
+      if (status && ['pending', 'partial', 'paid', 'overdue'].includes(status)) {
+        tuition.status = status;
+        
+        // Nếu đánh dấu là paid và có paymentDate, cập nhật ngày thanh toán
+        if (status === 'paid' && paymentDate) {
+          tuition.paymentDate = new Date(paymentDate);
+        }
+        
+        // Nếu đánh dấu là paid và có paymentMethod, cập nhật phương thức thanh toán
+        if (status === 'paid' && paymentMethod) {
+          tuition.paymentMethod = paymentMethod;
+        }
+        
+        console.log('Đã cập nhật trạng thái thành:', status);
+      } else if (!isPaymentStatusUpdate) {
+        // Nếu không phải là cập nhật trạng thái thanh toán, mới thực hiện logic tự động cập nhật trạng thái
+        if (tuition.amountPaid >= tuition.amount) {
+          tuition.status = 'paid';
+        } else if (tuition.amountPaid > 0) {
+          tuition.status = 'partial';
+        } else if (new Date() > new Date(tuition.dueDate)) {
+          tuition.status = 'overdue';
+        } else {
+          tuition.status = 'pending';
+        }
+      }
     }
 
-    await Tuition.findByIdAndUpdate(tuitionId, updateData);
-    req.flash('success_msg', 'Đã cập nhật thông tin học phí thành công');
-    res.redirect('/academic/tuition');
+    // Lưu bản ghi học phí
+    await tuition.save();
+    
+    // Log thông tin sau khi lưu để debug
+    console.log('Đã cập nhật học phí:', {
+      id: tuition._id,
+      status: tuition.status,
+      notes: tuition.notes,
+      isOnlyNotesUpdate,
+      paymentDate: tuition.paymentDate
+    });
+
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Đã cập nhật thông tin học phí thành công',
+      tuition: {
+        _id: tuition._id,
+        amount: tuition.amount,
+        status: tuition.status,
+        notes: tuition.notes,
+        paymentDate: tuition.paymentDate,
+        paymentMethod: tuition.paymentMethod
+      }
+    });
   } catch (error) {
-    console.error('Lỗi khi cập nhật học phí:', error);
-    req.flash('error_msg', 'Có lỗi khi cập nhật thông tin học phí');
-    res.redirect('/academic/tuition');
+    console.error('Lỗi khi chỉnh sửa học phí:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Đã xảy ra lỗi: ' + (error.message || 'Lỗi không xác định')
+    });
   }
 };
 
@@ -1292,15 +1389,50 @@ exports.deleteTuition = async (req, res) => {
     const { tuitionId } = req.body;
     
     if (!tuitionId) {
+      // Kiểm tra nếu là yêu cầu AJAX
+      if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+        return res.status(400).json({ success: false, message: 'Không tìm thấy thông tin học phí' });
+      }
+      
       req.flash('error_msg', 'Không tìm thấy thông tin học phí');
       return res.redirect('/academic/tuition');
     }
 
-    await Tuition.findByIdAndDelete(tuitionId);
+    const tuition = await Tuition.findByIdAndDelete(tuitionId);
+    
+    if (!tuition) {
+      // Kiểm tra nếu là yêu cầu AJAX
+      if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+        return res.status(404).json({ success: false, message: 'Không tìm thấy học phí với ID đã cung cấp' });
+      }
+      
+      req.flash('error_msg', 'Không tìm thấy thông tin học phí');
+      return res.redirect('/academic/tuition');
+    }
+    
+    // Kiểm tra nếu là yêu cầu AJAX
+    if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+      return res.json({
+        success: true,
+        message: 'Đã xóa thông tin học phí thành công',
+        deletedTuition: tuition
+      });
+    }
+    
+    // Nếu không phải AJAX request, redirect như thông thường
     req.flash('success_msg', 'Đã xóa thông tin học phí thành công');
     res.redirect('/academic/tuition');
   } catch (error) {
     console.error('Lỗi khi xóa học phí:', error);
+    
+    // Kiểm tra nếu là yêu cầu AJAX
+    if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Đã xảy ra lỗi khi xóa thông tin học phí' 
+      });
+    }
+    
     req.flash('error_msg', 'Có lỗi khi cập nhật thông tin học phí');
     res.redirect('/academic/tuition');
   }
@@ -1342,12 +1474,53 @@ exports.deleteTuitionApi = async (req, res) => {
 
 exports.getTuitionByStudent = async (req, res) => {
   try {
+    const studentId = req.params.id;
     const students = await Student.find({}).sort({ name: 1 });
     
-    res.render('academic/tuition-by-student', {
-      students,
-      user: req.user
-    });
+    // Nếu có studentId, lấy thông tin chi tiết của học sinh đó
+    if (studentId) {
+      const student = await Student.findById(studentId);
+      if (!student) {
+        req.flash('error_msg', 'Không tìm thấy thông tin học sinh');
+        return res.redirect('/academic/tuition');
+      }
+      
+      const classes = await Schedule.find({}).sort({ name: 1 });
+      
+      // Lấy thông tin học phí của học sinh
+      const tuitionHistory = await Tuition.find({ student: studentId })
+        .populate('class')
+        .sort({ dueDate: -1 });
+      
+      // Tính toán thống kê học phí
+      const tuitionStats = {
+        total: tuitionHistory.reduce((sum, t) => sum + t.amount, 0),
+        paid: tuitionHistory.filter(t => t.status === 'paid').reduce((sum, t) => sum + t.amount, 0),
+        pending: tuitionHistory.filter(t => t.status === 'pending' && new Date(t.dueDate) >= new Date()).reduce((sum, t) => sum + t.amount, 0),
+        overdue: tuitionHistory.filter(t => t.status === 'pending' && new Date(t.dueDate) < new Date()).reduce((sum, t) => sum + t.amount, 0)
+      };
+      
+      return res.render('academic/tuition-by-student', {
+        title: `Học phí của ${student.name}`,
+        student,
+        students,
+        classes,
+        tuitionHistory,
+        tuitionStats,
+        user: req.user
+      });
+    } else {
+      // Nếu không có studentId, hiển thị trang danh sách học sinh
+      res.render('academic/tuition-by-student', {
+        title: 'Quản lý học phí theo học sinh',
+        students,
+        user: req.user,
+        student: null,
+        tuitionHistory: [],
+        tuitionStats: { total: 0, paid: 0, pending: 0, overdue: 0 },
+        classes: []
+      });
+    }
   } catch (error) {
     console.error('Lỗi khi tải trang quản lý học phí theo học sinh:', error);
     req.flash('error_msg', 'Có lỗi khi tải trang quản lý học phí');
@@ -1387,6 +1560,7 @@ exports.getTuitionByStudentDetail = async (req, res) => {
     };
 
     res.render('academic/tuition-student-detail', {
+      title: `Học phí của ${student.name}`,
       student,
       tuitions,
       tuitionStats,
@@ -1473,8 +1647,8 @@ exports.getTuitionByClass = async (req, res) => {
     const year = req.query.year || new Date().getFullYear();
     const status = req.query.status || 'all';
     
-    // Tìm thông tin lịch học
-    const scheduleInfo = await Schedule.findById(scheduleId);
+    // Tìm thông tin lịch học và populate thông tin giáo viên
+    const scheduleInfo = await Schedule.findById(scheduleId).populate('teacher');
     
     if (!scheduleInfo) {
       req.flash('error', 'Không tìm thấy thông tin lịch học.');
@@ -1543,7 +1717,7 @@ exports.getTuitionByClass = async (req, res) => {
     });
     
     // Danh sách tất cả các lịch học/lớp học
-    const schedules = await Schedule.find({}).sort({ name: 1 });
+    const schedules = await Schedule.find({}).populate('teacher').sort({ name: 1 });
     
     res.render('academic/tuition-by-class', {
       title: 'Quản lý học phí theo lớp',
@@ -1671,7 +1845,7 @@ exports.generateTuition = async (req, res) => {
       contentType: req.headers['content-type']
     });
     
-    const { scheduleId, month, year, dueDay, amount, name } = req.body;
+    const { scheduleId, month, year, dueDay, amount, name, status } = req.body;
     
     // Log từng trường dữ liệu sau khi parse
     console.log('generateTuition - Dữ liệu sau khi parse:', {
@@ -1680,7 +1854,8 @@ exports.generateTuition = async (req, res) => {
       year: year,
       dueDay: dueDay,
       amount: amount,
-      name: name
+      name: name,
+      status: status
     });
     
     if (!scheduleId) {
@@ -1783,7 +1958,12 @@ exports.generateTuition = async (req, res) => {
     const tuitionName = name || `Học phí tháng ${monthInt}/${yearInt} - ${scheduleInfo.name}`;
     const tuitionPromises = [];
     let successCount = 0;
+    const createdTuitions = [];
     
+    // Xác định trạng thái học phí (mặc định là 'pending' nếu không được cung cấp hoặc không hợp lệ)
+    const tuitionStatus = status && ['pending', 'paid'].includes(status) ? status : 'pending';
+    
+    // Tạo học phí cho từng học sinh trong lớp với trạng thái được chọn
     for (const enrollment of enrollments) {
       try {
         if (!enrollment.student || !enrollment.student._id) {
@@ -1791,6 +1971,7 @@ exports.generateTuition = async (req, res) => {
           continue;
         }
         
+        // Tạo đối tượng học phí mới với trạng thái từ form
         const tuition = new Tuition({
           student: enrollment.student._id,
           schedule: scheduleId,
@@ -1799,22 +1980,43 @@ exports.generateTuition = async (req, res) => {
           month: monthInt,
           year: yearInt,
           dueDate: dueDateObj,
-          status: 'pending',
+          status: tuitionStatus,  // Sử dụng trạng thái từ form
           academicYear: `${yearInt}-${yearInt + 1}`
         });
         
-        tuitionPromises.push(tuition.save());
+        // Lưu vào mảng để kiểm tra sau khi lưu
+        createdTuitions.push(tuition);
+        
+        // Lưu học phí vào database
+        const savedPromise = tuition.save();
+        tuitionPromises.push(savedPromise);
         successCount++;
       } catch (enrollmentError) {
         console.error('Lỗi khi tạo học phí cho học sinh:', enrollment.student?.name || 'Không xác định', enrollmentError);
       }
     }
     
-    await Promise.all(tuitionPromises);
+    // Chờ tất cả các promise hoàn thành
+    const savedResults = await Promise.all(tuitionPromises);
     
+    // Kiểm tra xem tất cả các bản ghi đã được lưu với trạng thái đúng chưa
+    let statusCountMap = {
+      pending: 0,
+      paid: 0
+    };
+    
+    for (const tuition of savedResults) {
+      statusCountMap[tuition.status] = (statusCountMap[tuition.status] || 0) + 1;
+    }
+    
+    console.log(`Đã tạo ${successCount} học phí, trong đó: 
+      - ${statusCountMap.pending || 0} có trạng thái 'pending'
+      - ${statusCountMap.paid || 0} có trạng thái 'paid'`);
+    
+    // Trả về kết quả thành công
     return res.status(200).json({ 
       success: true, 
-      message: `Đã tạo học phí cho ${successCount} học sinh trong lớp ${scheduleInfo.name}` 
+      message: `Đã tạo học phí cho ${successCount} học sinh trong lớp ${scheduleInfo.name} với trạng thái '${tuitionStatus === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}'.` 
     });
   } catch (err) {
     console.error('Lỗi khi tạo học phí hàng loạt:', err);
@@ -1890,6 +2092,439 @@ exports.editTuition = async (req, res) => {
 };
 
 // Đồng bộ hóa dữ liệu Enrollment với students trong Schedule
+exports.syncEnrollments = async (req, res) => {
+  try {
+    console.log('Bắt đầu đồng bộ hóa dữ liệu Enrollment...');
+    
+    // Lấy tất cả lớp học
+    const schedules = await Schedule.find().select('_id name students');
+    console.log(`Tìm thấy ${schedules.length} lớp học`);
+    
+    let totalSynced = 0;
+    let totalCreated = 0;
+    
+    // Duyệt qua từng lớp
+    for (const schedule of schedules) {
+      console.log(`\nĐang đồng bộ cho lớp ${schedule.name} (${schedule._id})`);
+      console.log(`Số học sinh trong mảng students: ${schedule.students ? schedule.students.length : 0}`);
+      
+      if (!schedule.students || schedule.students.length === 0) {
+        console.log('Lớp này không có học sinh, bỏ qua.');
+        continue;
+      }
+      
+      // Lấy danh sách enrollment hiện tại
+      const existingEnrollments = await Enrollment.find({
+        class: schedule._id
+      });
+      
+      console.log(`Số enrollment hiện tại: ${existingEnrollments.length}`);
+      
+      // Lấy danh sách student IDs từ các enrollment hiện tại
+      const existingStudentIds = existingEnrollments.map(e => e.student.toString());
+      
+      // Duyệt qua từng học sinh trong mảng students
+      const newEnrollmentPromises = [];
+      
+      for (const studentId of schedule.students) {
+        // Bỏ qua nếu đã có enrollment
+        if (existingStudentIds.includes(studentId.toString())) {
+          console.log(`- Học sinh ${studentId} đã có enrollment, kiểm tra trạng thái`);
+          
+          // Kiểm tra trạng thái enrollment
+          const enrollment = existingEnrollments.find(e => 
+            e.student.toString() === studentId.toString()
+          );
+          
+          // Nếu enrollment không active, cập nhật thành active
+          if (enrollment && enrollment.status !== 'active') {
+            console.log(`  Cập nhật trạng thái enrollment từ ${enrollment.status} thành active`);
+            enrollment.status = 'active';
+            await enrollment.save();
+            totalSynced++;
+          }
+          
+          continue;
+        }
+        
+        // Tạo enrollment mới cho học sinh
+        console.log(`- Tạo enrollment mới cho học sinh ${studentId}`);
+        const newEnrollment = new Enrollment({
+          student: studentId,
+          class: schedule._id,
+          status: 'active',
+          academicYear: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1),
+          enrollmentDate: new Date()
+        });
+        
+        newEnrollmentPromises.push(newEnrollment.save());
+        totalCreated++;
+      }
+      
+      // Lưu tất cả enrollment mới
+      if (newEnrollmentPromises.length > 0) {
+        await Promise.all(newEnrollmentPromises);
+        console.log(`Đã tạo ${newEnrollmentPromises.length} enrollment mới cho lớp ${schedule.name}`);
+      }
+    }
+    
+    const message = `Đồng bộ hóa hoàn tất. Đã tạo ${totalCreated} enrollment mới và cập nhật ${totalSynced} enrollment.`;
+    console.log(message);
+    
+    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+      return res.json({
+        success: true,
+        message,
+        totalCreated,
+        totalSynced
+      });
+    }
+    
+    req.flash('success', message);
+    res.redirect('/academic/schedule');
+  } catch (error) {
+    console.error('Lỗi khi đồng bộ hóa enrollment:', error);
+    
+    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+      return res.status(500).json({
+        success: false,
+        message: 'Lỗi khi đồng bộ hóa: ' + error.message
+      });
+    }
+    
+    req.flash('error', 'Lỗi khi đồng bộ hóa: ' + error.message);
+    res.redirect('/academic/schedule');
+  }
+};
+
+// Báo cáo học phí theo lớp
+exports.getTuitionReport = async (req, res) => {
+  try {
+    const scheduleId = req.params.id;
+    
+    if (!scheduleId) {
+      req.flash('error_msg', 'Không tìm thấy thông tin lớp học');
+      return res.redirect('/academic/tuition');
+    }
+    
+    // Lấy thông tin lớp học
+    const scheduleInfo = await Schedule.findById(scheduleId).populate('teacher');
+    
+    if (!scheduleInfo) {
+      req.flash('error_msg', 'Không tìm thấy thông tin lớp học');
+      return res.redirect('/academic/tuition');
+    }
+    
+    // Lấy danh sách học sinh trong lớp này
+    const enrollments = await Enrollment.find({
+      class: scheduleId,
+      status: 'active'
+    }).populate('student');
+    
+    // Danh sách học sinh đã ghi danh
+    const studentIds = enrollments.map(e => e.student._id);
+    const studentCount = studentIds.length;
+    
+    // Xử lý tham số từ query
+    const selectedStudentId = req.query.studentId || null;
+    const timeRange = req.query.timeRange || '6'; // Mặc định là 6 tháng
+    let startDate, endDate;
+    
+    // Xác định khoảng thời gian dựa vào tham số
+    if (timeRange === 'custom' && req.query.startDate && req.query.endDate) {
+      // Nếu là tùy chỉnh và có ngày bắt đầu, kết thúc
+      startDate = new Date(req.query.startDate);
+      endDate = new Date(req.query.endDate);
+      // Đảm bảo endDate là cuối tháng
+      endDate.setMonth(endDate.getMonth() + 1);
+      endDate.setDate(0);
+    } else {
+      // Nếu không phải tùy chỉnh, lấy theo số tháng gần nhất
+      const months = parseInt(timeRange) || 6;
+      endDate = new Date();
+      startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - (months - 1));
+      startDate.setDate(1); // Ngày đầu tiên của tháng
+    }
+    
+    // Định dạng startDate và endDate để hiển thị trong form
+    const formattedStartDate = startDate ? `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}` : '';
+    const formattedEndDate = endDate ? `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}` : '';
+    
+    // Xây dựng query để lấy học phí
+    let tuitionQuery = {
+      schedule: scheduleId,
+      dueDate: { $gte: startDate, $lte: endDate }
+    };
+    
+    // Nếu có chọn học sinh cụ thể
+    if (selectedStudentId) {
+      tuitionQuery.student = selectedStudentId;
+    }
+    
+    // Lấy tất cả học phí theo điều kiện đã lọc
+    const tuitions = await Tuition.find(tuitionQuery)
+      .populate('student')
+      .sort({ dueDate: -1 });
+    
+    // Tính toán thống kê học phí theo tháng
+    const monthlyStats = {};
+    const months = [];
+    
+    // Tạo danh sách các tháng trong khoảng thời gian
+    let currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      const monthKey = `${currentDate.getMonth() + 1}/${currentDate.getFullYear()}`;
+      months.push(monthKey);
+      
+      const monthTuitions = tuitions.filter(t => {
+        const tuitionDate = new Date(t.dueDate);
+        return tuitionDate.getMonth() === currentDate.getMonth() && 
+               tuitionDate.getFullYear() === currentDate.getFullYear();
+      });
+      
+      monthlyStats[monthKey] = {
+        totalAmount: monthTuitions.reduce((sum, t) => sum + (t.amount || 0), 0),
+        paidAmount: monthTuitions.filter(t => t.status === 'paid').reduce((sum, t) => sum + (t.amount || 0), 0),
+        pendingAmount: monthTuitions.filter(t => t.status === 'pending').reduce((sum, t) => sum + (t.amount || 0), 0),
+        overdueAmount: monthTuitions.filter(t => {
+          return t.status === 'pending' && new Date(t.dueDate) < new Date();
+        }).reduce((sum, t) => sum + (t.amount || 0), 0),
+        paidCount: monthTuitions.filter(t => t.status === 'paid').length,
+        pendingCount: monthTuitions.filter(t => t.status === 'pending').length,
+        overdueCount: monthTuitions.filter(t => {
+          return t.status === 'pending' && new Date(t.dueDate) < new Date();
+        }).length,
+        totalCount: monthTuitions.length
+      };
+      
+      // Chuyển sang tháng tiếp theo
+      currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+    
+    // Tính tổng thống kê cho toàn bộ khoảng thời gian
+    const totalStats = {
+      totalAmount: tuitions.reduce((sum, t) => sum + (t.amount || 0), 0),
+      paidAmount: tuitions.filter(t => t.status === 'paid').reduce((sum, t) => sum + (t.amount || 0), 0),
+      pendingAmount: tuitions.filter(t => t.status === 'pending').reduce((sum, t) => sum + (t.amount || 0), 0),
+      overdueAmount: tuitions.filter(t => {
+        return t.status === 'pending' && new Date(t.dueDate) < new Date();
+      }).reduce((sum, t) => sum + (t.amount || 0), 0),
+      paidCount: tuitions.filter(t => t.status === 'paid').length,
+      pendingCount: tuitions.filter(t => t.status === 'pending').length,
+      overdueCount: tuitions.filter(t => {
+        return t.status === 'pending' && new Date(t.dueDate) < new Date();
+      }).length,
+      totalCount: tuitions.length
+    };
+    
+    // Lấy 10 học sinh có học phí quá hạn nhiều nhất
+    let overdueStudents = [];
+    
+    if (selectedStudentId) {
+      // Nếu đã chọn học sinh cụ thể, chỉ tính toán cho học sinh đó
+      const studentTuitions = tuitions.filter(t => 
+        t.student && t.student._id.toString() === selectedStudentId &&
+        t.status === 'pending' && new Date(t.dueDate) < new Date()
+      );
+      
+      if (studentTuitions.length > 0) {
+        const student = enrollments.find(e => e.student._id.toString() === selectedStudentId)?.student;
+        if (student) {
+          overdueStudents = [{
+            student: student,
+            overdueAmount: studentTuitions.reduce((sum, t) => sum + (t.amount || 0), 0),
+            overdueCount: studentTuitions.length
+          }];
+        }
+      }
+    } else {
+      // Nếu không chọn học sinh cụ thể, tính toán cho tất cả học sinh
+      overdueStudents = studentIds.map(studentId => {
+        const studentTuitions = tuitions.filter(t => 
+          t.student && t.student._id.toString() === studentId.toString() && 
+          t.status === 'pending' && new Date(t.dueDate) < new Date()
+        );
+        
+        return {
+          student: enrollments.find(e => e.student._id.toString() === studentId.toString())?.student,
+          overdueAmount: studentTuitions.reduce((sum, t) => sum + (t.amount || 0), 0),
+          overdueCount: studentTuitions.length
+        };
+      })
+      .filter(s => s.overdueAmount > 0 && s.student)
+      .sort((a, b) => b.overdueAmount - a.overdueAmount)
+      .slice(0, 10);
+    }
+    
+    // Render trang báo cáo với các thông tin đã lọc
+    res.render('academic/tuition-report', {
+      title: selectedStudentId ? 
+        `Báo cáo học phí của ${enrollments.find(e => e.student._id.toString() === selectedStudentId)?.student?.name || 'Học sinh'} - Lớp ${scheduleInfo.name}` : 
+        `Báo cáo học phí lớp ${scheduleInfo.name}`,
+      schedule: scheduleInfo,
+      months: months,
+      monthlyStats,
+      totalStats,
+      overdueStudents,
+      studentCount,
+      tuitions,
+      enrollments,
+      selectedStudentId,
+      timeRange,
+      startDate: formattedStartDate,
+      endDate: formattedEndDate,
+      user: req.user,
+      moment: require('moment')
+    });
+  } catch (error) {
+    console.error('Lỗi khi tạo báo cáo học phí:', error);
+    req.flash('error_msg', 'Có lỗi khi tạo báo cáo học phí: ' + error.message);
+    res.redirect('/academic/tuition');
+  }
+};
+
+// Tạo học phí thủ công
+exports.createManualTuition = async (req, res) => {
+  try {
+    console.log('createManualTuition - Dữ liệu nhận được:', req.body);
+    
+    const { 
+      scheduleId, 
+      studentId, 
+      amount, 
+      month, 
+      year, 
+      dueDay, 
+      name, 
+      status, 
+      notes 
+    } = req.body;
+    
+    // Kiểm tra dữ liệu đầu vào
+    if (!scheduleId || !studentId || !amount || !month || !year || !dueDay) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Vui lòng điền đầy đủ thông tin bắt buộc' 
+      });
+    }
+    
+    // Chuyển đổi dữ liệu sang số
+    const monthInt = parseInt(month);
+    const yearInt = parseInt(year);
+    const dueDayInt = parseInt(dueDay);
+    const amountFloat = parseFloat(amount);
+    
+    // Kiểm tra tính hợp lệ của dữ liệu
+    if (isNaN(monthInt) || monthInt < 1 || monthInt > 12) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Tháng không hợp lệ. Vui lòng nhập số từ 1 đến 12' 
+      });
+    }
+    
+    if (isNaN(yearInt) || yearInt < 2000 || yearInt > 2100) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Năm không hợp lệ. Vui lòng nhập số từ 2000 đến 2100' 
+      });
+    }
+    
+    if (isNaN(dueDayInt) || dueDayInt < 1 || dueDayInt > 31) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Ngày đến hạn không hợp lệ. Vui lòng nhập số từ 1 đến 31' 
+      });
+    }
+    
+    if (isNaN(amountFloat) || amountFloat <= 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Số tiền không hợp lệ. Vui lòng nhập số dương' 
+      });
+    }
+    
+    // Kiểm tra student và schedule có tồn tại không
+    const student = await Student.findById(studentId);
+    if (!student) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Không tìm thấy học sinh' 
+      });
+    }
+    
+    const schedule = await Schedule.findById(scheduleId);
+    if (!schedule) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Không tìm thấy lớp học' 
+      });
+    }
+    
+    // Kiểm tra xem học sinh có đang học trong lớp không
+    const enrollment = await Enrollment.findOne({
+      student: studentId,
+      class: scheduleId,
+      status: 'active'
+    });
+    
+    if (!enrollment) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Học sinh không thuộc lớp học này hoặc không còn hoạt động' 
+      });
+    }
+    
+    // Tạo ngày đến hạn
+    const dueDate = new Date(yearInt, monthInt - 1, dueDayInt);
+    
+    // Tạo bản ghi học phí mới
+    const tuition = new Tuition({
+      student: studentId,
+      schedule: scheduleId,
+      name: name || `Học phí tháng ${monthInt}/${yearInt} - ${schedule.name}`,
+      amount: amountFloat,
+      month: monthInt,
+      year: yearInt,
+      dueDate: dueDate,
+      status: status || 'pending',
+      notes: notes || '',
+      academicYear: `${yearInt}-${yearInt + 1}`
+    });
+    
+    // Nếu trạng thái là đã thanh toán, cập nhật thông tin thanh toán
+    if (status === 'paid') {
+      tuition.paymentDate = new Date();
+      tuition.paymentMethod = 'cash'; // Mặc định là tiền mặt
+    }
+    
+    // Lưu bản ghi học phí
+    await tuition.save();
+    
+    console.log('Đã tạo học phí thủ công:', {
+      id: tuition._id,
+      student: student.name,
+      amount: amountFloat,
+      dueDate: dueDate,
+      status: status
+    });
+    
+    // Phản hồi thành công
+    return res.status(200).json({ 
+      success: true, 
+      message: `Đã tạo học phí thủ công cho học sinh ${student.name}`,
+      tuition: tuition
+    });
+  } catch (error) {
+    console.error('Lỗi khi tạo học phí thủ công:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Đã xảy ra lỗi: ' + (error.message || 'Lỗi không xác định')
+    });
+  }
+};
+
+// Đồng bộ hóa enrollment
 exports.syncEnrollments = async (req, res) => {
   try {
     console.log('Bắt đầu đồng bộ hóa dữ liệu Enrollment...');

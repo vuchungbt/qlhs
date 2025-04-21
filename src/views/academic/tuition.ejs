@@ -71,9 +71,6 @@
       <a href="/academic/sync-enrollments" class="btn btn-warning me-2">
         <i class="fas fa-sync"></i> Đồng Bộ Enrollment
       </a>
-      <button class="btn btn-primary" data-toggle="modal" data-target="#generateTuitionModal">
-        <i class="fas fa-plus"></i> Tạo Học Phí Tháng
-      </button>
     </div>
   </div>
   
@@ -191,8 +188,6 @@
               <tr>
                 <th>Lớp</th>
                 <th>Giáo Viên</th>
-                <th>Học Phí Cơ Bản</th>
-                <th>Ngày Thanh Toán</th>
                 <th>Tổng Học Sinh</th>
                 <th>Thao Tác</th>
               </tr>
@@ -202,8 +197,6 @@
                 <tr>
                   <td><%= schedule.name %></td>
                   <td><%= schedule.teacher ? schedule.teacher.name : 'Chưa phân công' %></td>
-                  <td><%= schedule.tuitionFee ? schedule.tuitionFee.toLocaleString('vi-VN') + ' ₫' : '0 ₫' %></td>
-                  <td>Ngày <%= schedule.paymentDay || 15 %> hàng tháng</td>
                   <td>
                     <% if (typeof schedule.studentCount !== 'undefined') { %>
                       <%= schedule.studentCount %>
@@ -224,6 +217,10 @@
                             data-year="<%= selectedYear %>">
                       <i class="fas fa-sync-alt"></i> Tạo Học Phí
                     </button>
+                    <a href="/academic/tuition/report/<%= schedule._id %>" 
+                       class="btn btn-sm btn-primary">
+                      <i class="fas fa-chart-line"></i> Báo Cáo
+                    </a>
                   </td>
                 </tr>
               <% }) %>
@@ -235,61 +232,6 @@
           <i class="fas fa-info-circle mr-2"></i> Chưa có lớp học nào được tạo.
         </div>
       <% } %>
-    </div>
-  </div>
-  
-  <!-- Modal Tạo Học Phí -->
-  <div class="modal fade" id="generateTuitionModal" tabindex="-1" role="dialog" aria-labelledby="generateTuitionModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
-        <div class="modal-header bg-primary text-white">
-          <h5 class="modal-title" id="generateTuitionModalLabel">Tạo Học Phí Hàng Loạt</h5>
-          <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          <form id="generateTuitionForm">
-            <div class="form-group">
-              <label for="modalMonth">Tháng</label>
-              <select class="form-control" id="modalMonth" name="month">
-                <% for(let i = 1; i <= 12; i++) { %>
-                  <option value="<%= i %>" <%= selectedMonth == i ? 'selected' : '' %>>
-                    Tháng <%= i %>
-                  </option>
-                <% } %>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label for="modalYear">Năm</label>
-              <select class="form-control" id="modalYear" name="year">
-                <% 
-                for(let i = currentYear - 2; i <= currentYear + 1; i++) { 
-                %>
-                  <option value="<%= i %>" <%= selectedYear == i ? 'selected' : '' %>>
-                    <%= i %>
-                  </option>
-                <% } %>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label for="modalClass">Lớp Học</label>
-              <select class="form-control" id="modalClass" name="scheduleId">
-                <option value="">-- Chọn Lớp Học --</option>
-                <% schedules.forEach(schedule => { %>
-                  <option value="<%= schedule._id %>"><%= schedule.name %></option>
-                <% }) %>
-              </select>
-            </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
-          <button type="button" class="btn btn-primary" id="confirmGenerateTuition">Tạo Học Phí</button>
-        </div>
-      </div>
     </div>
   </div>
   
@@ -307,21 +249,6 @@
         if (confirm(`Bạn có chắc muốn tạo học phí cho lớp "${className}" tháng ${month}/${year}?`)) {
           generateTuition(scheduleId, month, year);
         }
-      });
-      
-      // Xử lý tạo học phí từ modal
-      $('#confirmGenerateTuition').click(function() {
-        const scheduleId = $('#modalClass').val();
-        const month = $('#modalMonth').val();
-        const year = $('#modalYear').val();
-        
-        if (!scheduleId) {
-          alert('Vui lòng chọn lớp học');
-          return;
-        }
-        
-        generateTuition(scheduleId, month, year);
-        $('#generateTuitionModal').modal('hide');
       });
       
       // Hàm tạo học phí

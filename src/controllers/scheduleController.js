@@ -56,14 +56,23 @@ exports.getSchedules = async (req, res) => {
 // Tạo lịch học mới
 exports.createSchedule = async (req, res) => {
   try {
-    const { name, teacherId, dayOfWeek, startTime, endTime, location, studentIds } = req.body;
+    const { name, teacherId, dayOfWeek, startTime, endTime, location } = req.body;
+    let { studentIds } = req.body;
     
     // Chuyển đổi dayOfWeek từ chuỗi sang mảng nếu cần
     const days = Array.isArray(dayOfWeek) ? dayOfWeek : [dayOfWeek];
     
+    // Đảm bảo studentIds luôn là mảng
+    if (studentIds) {
+      studentIds = Array.isArray(studentIds) ? studentIds : [studentIds];
+    } else {
+      studentIds = [];
+    }
+    
     // Debug log để kiểm tra ngày được chọn
     console.log('Ngày được chọn (gốc):', dayOfWeek);
     console.log('Ngày được chọn (mảng):', days);
+    console.log('Học sinh được chọn:', studentIds);
     
     // Tìm thông tin giáo viên để lấy môn học
     const teacher = await Teacher.findById(teacherId);
@@ -85,13 +94,13 @@ exports.createSchedule = async (req, res) => {
       },
       location: location || '',
       room: location || '',
-      students: studentIds || []
+      students: studentIds
     });
 
     await newSchedule.save();
     
     // Tạo enrollment cho mỗi học sinh được chọn
-    if (studentIds && studentIds.length > 0) {
+    if (studentIds.length > 0) {
       const enrollmentPromises = [];
       
       studentIds.forEach(studentId => {
@@ -198,7 +207,8 @@ exports.getEditSchedule = async (req, res) => {
 exports.updateSchedule = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, teacherId, dayOfWeek, startTime, endTime, location, studentIds, status } = req.body;
+    const { name, teacherId, dayOfWeek, startTime, endTime, location, status } = req.body;
+    let { studentIds } = req.body;
     
     // Kiểm tra và đảm bảo dayOfWeek không null/undefined
     const daysInput = dayOfWeek || [];
@@ -206,8 +216,16 @@ exports.updateSchedule = async (req, res) => {
     // Chuyển đổi dayOfWeek từ chuỗi sang mảng nếu cần và lọc giá trị null/undefined
     const days = Array.isArray(daysInput) ? daysInput.filter(day => day) : [daysInput].filter(day => day);
     
+    // Đảm bảo studentIds luôn là mảng
+    if (studentIds) {
+      studentIds = Array.isArray(studentIds) ? studentIds : [studentIds];
+    } else {
+      studentIds = [];
+    }
+    
     console.log('Ngày trong tuần đã chọn (raw):', dayOfWeek);
     console.log('Ngày trong tuần đã xử lý:', days);
+    console.log('Học sinh được chọn:', studentIds);
     
     // Đảm bảo tương thích với cả hai cấu trúc dữ liệu
     const updatedSchedule = {
@@ -227,7 +245,7 @@ exports.updateSchedule = async (req, res) => {
       // Cập nhật cả hai trường location và room với cùng giá trị
       location: location || '',
       room: location || '',
-      students: studentIds || [],
+      students: studentIds,
       status
     };
     

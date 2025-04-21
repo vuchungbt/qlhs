@@ -162,7 +162,7 @@
 
                     <div class="col-md-6">
                         <label for="studentIds" class="form-label">Học sinh</label>
-                        <select class="form-select" id="studentIds" name="studentIds" multiple>
+                        <select class="form-select" id="studentIds" name="studentIds[]" multiple>
                             <% if (typeof students !== 'undefined' && students && students.length > 0) { %>
                                 <% students.forEach(function(student) { %>
                                     <option value="<%= student._id %>"><%= student.name %></option>
@@ -200,22 +200,7 @@
                 <div id="studentListError" class="alert alert-danger" style="display: none;"></div>
                 <div id="studentListContent">
                      <p id="noStudentMessage" class="text-center text-muted" style="display: none;">Lớp này chưa có học sinh nào.</p>
-                     <div class="table-responsive" style="display: none;"> 
-                        <table id="studentListTable" class="table table-striped table-bordered table-hover" style="width:100%">
-                            <thead>
-                                <tr>
-                                    <th>STT</th>
-                                    <th>Họ Tên</th>
-                                    <th>Ngày Sinh</th>
-                                    <th>Trạng Thái</th>
-                                    <th>Ghi Chú</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Student data will be loaded here by JavaScript -->
-                            </tbody>
-                        </table>
-                    </div>
+                     <div id="tableContainer"></div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -343,94 +328,42 @@
         const studentListModalElement = document.getElementById('studentListModal');
         const studentListModal = new bootstrap.Modal(studentListModalElement);
         const modalTitleElement = document.getElementById('studentListModalLabel');
-        const studentTableBody = document.querySelector('#studentListTable tbody');
-        const studentTableElement = document.getElementById('studentListTable');
-        const studentTableResponsiveDiv = studentTableElement.closest('.table-responsive');
+        const tableContainer = document.getElementById('tableContainer');
         const loadingIndicator = document.getElementById('studentListLoading');
         const errorDiv = document.getElementById('studentListError');
         const noStudentMsg = document.getElementById('noStudentMessage');
-        let dataTable = null;
-
-        // Kiểm tra và hủy DataTable nếu tồn tại
-        function destroyExistingDataTable() {
-            // Kiểm tra nếu DataTable đã được khởi tạo
-            if ($.fn.DataTable.isDataTable(studentTableElement)) {
-                $(studentTableElement).DataTable().destroy();
-            }
-            // Xóa nội dung trong tbody
-            studentTableBody.innerHTML = '';
-        }
-
+        
         studentListModalElement.addEventListener('show.bs.modal', async function (event) {
             const button = event.relatedTarget; // Button that triggered the modal
             const scheduleId = button.dataset.scheduleId;
             const scheduleName = button.dataset.scheduleName;
 
-            // Update modal title
+            // Cập nhật tiêu đề modal
             modalTitleElement.textContent = `Danh sách học sinh - ${scheduleName}`;
 
-            // Hủy DataTable cũ nếu có
-            destroyExistingDataTable();
-
             // Reset trạng thái giao diện
-            studentTableResponsiveDiv.style.display = 'none';
+            tableContainer.innerHTML = ''; // Xóa bảng cũ nếu có
             errorDiv.style.display = 'none';
             noStudentMsg.style.display = 'none';
             loadingIndicator.style.display = 'block';
 
             try {
-                // Fetch student data
+                // Fetch dữ liệu học sinh
                 const response = await fetch(`/academic/schedule/${scheduleId}/students-data`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
 
-                loadingIndicator.style.display = 'none'; // Hide loading
+                // Ẩn loading
+                loadingIndicator.style.display = 'none';
 
                 if (data.success && data.students) {
                     if (data.students.length > 0) {
-                        studentTableResponsiveDiv.style.display = 'block'; // Show table container
-                        let rowNum = 1;
-                        data.students.forEach(student => {
-                            const row = studentTableBody.insertRow();
-                            const statusBadge = student.status === 'active' 
-                                ? '<span class="badge bg-success rounded-pill">Đang học</span>' 
-                                : '<span class="badge bg-danger rounded-pill">Đã nghỉ học</span>';
-                                
-                            row.insertCell(0).textContent = rowNum++;
-                            row.insertCell(1).textContent = student.name || '-';
-                            row.insertCell(2).textContent = student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString('vi-VN') : '-';
-                            row.insertCell(3).innerHTML = statusBadge;
-                            row.insertCell(4).textContent = student.note || '-'; 
-                        });
-
-                        // Khởi tạo DataTable
-                        if (typeof $ !== 'undefined' && $.fn.DataTable) {
-                            dataTable = $(studentTableElement).DataTable({
-                                responsive: true,
-                                dom: 'Bfrtip',
-                                buttons: [
-                                    {
-                                        extend: 'excelHtml5',
-                                        text: '<i class="bi bi-file-earmark-excel"></i> Xuất Excel',
-                                        titleAttr: 'Xuất ra file Excel',
-                                        className: 'btn btn-success btn-sm',
-                                        title: `Danh sách học sinh - ${scheduleName}`
-                                    }
-                                ],
-                                language: {
-                                    url: '//cdn.datatables.net/plug-ins/1.10.25/i18n/Vietnamese.json'
-                                },
-                                order: [[1, 'asc']]
-                            });
-                        } else {
-                            console.error("jQuery or DataTables is not loaded. Cannot initialize.");
-                            errorDiv.textContent = 'Lỗi: Không thể khởi tạo bảng dữ liệu (jQuery/DataTables chưa sẵn sàng).';
-                            errorDiv.style.display = 'block';
-                        }
+                        // Tạo bảng mới và khởi tạo
+                        createNewTable(tableContainer, data.students, scheduleName);
                     } else {
-                        noStudentMsg.style.display = 'block'; // Show no student message
+                        noStudentMsg.style.display = 'block';
                     }
                 } else {
                     throw new Error(data.message || 'Không thể lấy dữ liệu học sinh.');
@@ -443,16 +376,79 @@
             }
         });
 
-        studentListModalElement.addEventListener('hidden.bs.modal', function () {
-            // Hủy DataTable khi đóng modal
-            destroyExistingDataTable();
+        // Hàm tạo bảng mới với ID duy nhất
+        function createNewTable(container, students, scheduleName) {
+            // Tạo một ID duy nhất cho bảng
+            const tableId = 'studentTable_' + Date.now();
             
-            // Reset giao diện
-            modalTitleElement.textContent = 'Danh sách học sinh - '; 
+            // Tạo cấu trúc HTML cho bảng
+            const tableHTML = `
+                <div class="table-responsive">
+                    <table id="${tableId}" class="table table-striped table-bordered table-hover" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Họ Tên</th>
+                                <th>Ngày Sinh</th>
+                                <th>Trạng Thái</th>
+                                <th>Ghi Chú</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${students.map((student, index) => {
+                                const statusBadge = student.status === 'active' 
+                                    ? '<span class="badge bg-success rounded-pill">Đang học</span>' 
+                                    : '<span class="badge bg-danger rounded-pill">Đã nghỉ học</span>';
+                                    
+                                return `<tr>
+                                    <td>${index + 1}</td>
+                                    <td>${student.name || '-'}</td>
+                                    <td>${student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString('vi-VN') : '-'}</td>
+                                    <td>${statusBadge}</td>
+                                    <td>${student.note || '-'}</td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            // Thêm bảng vào container
+            container.innerHTML = tableHTML;
+            
+            // Khởi tạo DataTable với bảng mới
+            if (typeof $ !== 'undefined' && $.fn.DataTable) {
+                $(`#${tableId}`).DataTable({
+                    responsive: true,
+                    dom: 'Bfrtip',
+                    buttons: [
+                        {
+                            extend: 'excelHtml5',
+                            text: '<i class="bi bi-file-earmark-excel"></i> Xuất Excel',
+                            titleAttr: 'Xuất ra file Excel',
+                            className: 'btn btn-success btn-sm',
+                            title: `Danh sách học sinh - ${scheduleName}`
+                        }
+                    ],
+                    language: {
+                        url: '//cdn.datatables.net/plug-ins/1.10.25/i18n/Vietnamese.json'
+                    },
+                    order: [[1, 'asc']]
+                });
+            } else {
+                console.error("jQuery or DataTables is not loaded. Cannot initialize.");
+                errorDiv.textContent = 'Lỗi: Không thể khởi tạo bảng dữ liệu (jQuery/DataTables chưa sẵn sàng).';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        studentListModalElement.addEventListener('hidden.bs.modal', function () {
+            // Reset giao diện khi đóng modal
+            modalTitleElement.textContent = 'Danh sách học sinh - ';
+            tableContainer.innerHTML = ''; // Xóa bảng
             errorDiv.style.display = 'none';
             loadingIndicator.style.display = 'none';
             noStudentMsg.style.display = 'none';
-            studentTableResponsiveDiv.style.display = 'none';
         });
     });
 </script>

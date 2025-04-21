@@ -349,7 +349,17 @@
         const loadingIndicator = document.getElementById('studentListLoading');
         const errorDiv = document.getElementById('studentListError');
         const noStudentMsg = document.getElementById('noStudentMessage');
-        let dataTable = null; // Variable to hold DataTable instance
+        let dataTable = null;
+
+        // Kiểm tra và hủy DataTable nếu tồn tại
+        function destroyExistingDataTable() {
+            // Kiểm tra nếu DataTable đã được khởi tạo
+            if ($.fn.DataTable.isDataTable(studentTableElement)) {
+                $(studentTableElement).DataTable().destroy();
+            }
+            // Xóa nội dung trong tbody
+            studentTableBody.innerHTML = '';
+        }
 
         studentListModalElement.addEventListener('show.bs.modal', async function (event) {
             const button = event.relatedTarget; // Button that triggered the modal
@@ -359,12 +369,10 @@
             // Update modal title
             modalTitleElement.textContent = `Danh sách học sinh - ${scheduleName}`;
 
-            // Clear previous state and show loading
-            if (dataTable) {
-                dataTable.destroy();
-                dataTable = null;
-                studentTableBody.innerHTML = ''; // Clear table body
-            }
+            // Hủy DataTable cũ nếu có
+            destroyExistingDataTable();
+
+            // Reset trạng thái giao diện
             studentTableResponsiveDiv.style.display = 'none';
             errorDiv.style.display = 'none';
             noStudentMsg.style.display = 'none';
@@ -397,32 +405,32 @@
                             row.insertCell(4).textContent = student.note || '-'; 
                         });
 
-                        // Initialize DataTables only if jQuery is available (double check)
-                        if (typeof $ !== 'undefined' && $.fn.DataTable) { 
+                        // Khởi tạo DataTable
+                        if (typeof $ !== 'undefined' && $.fn.DataTable) {
                             dataTable = $(studentTableElement).DataTable({
                                 responsive: true,
-                                dom: 'Bfrtip', // Add B for Buttons
+                                dom: 'Bfrtip',
                                 buttons: [
                                     {
                                         extend: 'excelHtml5',
                                         text: '<i class="bi bi-file-earmark-excel"></i> Xuất Excel',
                                         titleAttr: 'Xuất ra file Excel',
                                         className: 'btn btn-success btn-sm',
-                                        title: `Danh sách học sinh - ${scheduleName}` // Set file name
+                                        title: `Danh sách học sinh - ${scheduleName}`
                                     }
                                 ],
-                                language: { // Optional: Vietnamese language pack
+                                language: {
                                     url: '//cdn.datatables.net/plug-ins/1.10.25/i18n/Vietnamese.json'
                                 },
-                                order: [[1, 'asc']] // Default sort by name
+                                order: [[1, 'asc']]
                             });
                         } else {
                             console.error("jQuery or DataTables is not loaded. Cannot initialize.");
-                             errorDiv.textContent = 'Lỗi: Không thể khởi tạo bảng dữ liệu (jQuery/DataTables chưa sẵn sàng).';
-                             errorDiv.style.display = 'block';
+                            errorDiv.textContent = 'Lỗi: Không thể khởi tạo bảng dữ liệu (jQuery/DataTables chưa sẵn sàng).';
+                            errorDiv.style.display = 'block';
                         }
                     } else {
-                         noStudentMsg.style.display = 'block'; // Show no student message
+                        noStudentMsg.style.display = 'block'; // Show no student message
                     }
                 } else {
                     throw new Error(data.message || 'Không thể lấy dữ liệu học sinh.');
@@ -436,18 +444,15 @@
         });
 
         studentListModalElement.addEventListener('hidden.bs.modal', function () {
-            if (dataTable) {
-                if ($.fn.DataTable.isDataTable(studentTableElement)) {
-                    dataTable.destroy();
-                }
-                dataTable = null;
-            }
-            studentTableBody.innerHTML = ''; 
-            modalTitleElement.textContent = 'Danh sách học sinh - '; // Reset title
+            // Hủy DataTable khi đóng modal
+            destroyExistingDataTable();
+            
+            // Reset giao diện
+            modalTitleElement.textContent = 'Danh sách học sinh - '; 
             errorDiv.style.display = 'none';
             loadingIndicator.style.display = 'none';
-             noStudentMsg.style.display = 'none';
-             studentTableResponsiveDiv.style.display = 'none';
+            noStudentMsg.style.display = 'none';
+            studentTableResponsiveDiv.style.display = 'none';
         });
     });
 </script>

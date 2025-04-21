@@ -67,8 +67,7 @@
                                 <table class="table table-striped">
                                     <thead>
                                         <tr>
-                                            <th>Tên học sinh</th>
-                                            <th>Lớp</th>
+                                            <th>Tên học sinh</th> 
                                             <th>Ngày sinh</th>
                                             <th>Thao tác</th>
                                         </tr>
@@ -76,8 +75,7 @@
                                     <tbody>
                                         <% schedule.students.forEach(function(student) { %>
                                             <tr>
-                                                <td><%= student.name %></td>
-                                                <td><%= student.class %></td>
+                                                <td><%= student.name %></td> 
                                                 <td><%= student.dateOfBirth ? moment(student.dateOfBirth).format('DD/MM/YYYY') : 'Chưa cập nhật' %></td>
                                                 <td>
                                                     <a href="/academic/students/<%= student._id %>" class="btn btn-sm btn-outline-primary">

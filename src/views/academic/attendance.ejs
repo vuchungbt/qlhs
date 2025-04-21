@@ -442,17 +442,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentDate = document.getElementById('attendanceDate').value;
     const selectedClassId = document.getElementById('classFilter').value; // Lấy giá trị lớp đang chọn
     
-    // *** NEW LOGIC START: Set default status if a class is selected ***
-    if (selectedClassId) { // Chỉ thực hiện khi có lớp được chọn
-        console.log('Setting default attendance status to present for class:', selectedClassId);
-        document.querySelectorAll('.attendance-card').forEach(card => {
-            // Chỉ đặt trạng thái nếu card chưa có trạng thái nào
-            if (!card.classList.contains('present') && !card.classList.contains('absent') && !card.classList.contains('late')) {
-                card.classList.add('present');
+    // Đánh dấu các nút trạng thái là active dựa theo trạng thái hiện tại của học sinh
+    document.querySelectorAll('.attendance-card').forEach(card => {
+        // Nếu card đã có trạng thái (từ cơ sở dữ liệu)
+        if (card.classList.contains('present') || card.classList.contains('absent') || card.classList.contains('late')) {
+            let status = '';
+            if (card.classList.contains('present')) status = 'present';
+            else if (card.classList.contains('absent')) status = 'absent';
+            else if (card.classList.contains('late')) status = 'late';
+            
+            // Đánh dấu nút tương ứng là active
+            const button = card.querySelector(`.${status}-btn`);
+            if (button) {
+                button.classList.add('active');
             }
-        });
-    }
-    // *** NEW LOGIC END ***
+        }
+        // Nếu lớp được chọn và card chưa có trạng thái, thiết lập mặc định là "có mặt"
+        else if (selectedClassId) {
+            card.classList.add('present');
+            const presentBtn = card.querySelector('.present-btn');
+            if (presentBtn) {
+                presentBtn.classList.add('active');
+            }
+        }
+    });
     
     // Bấm vào nút trạng thái (Có mặt, Vắng mặt, Đi muộn) cho từng học sinh
     document.querySelectorAll('.attendance-btn').forEach(button => {
@@ -592,15 +605,23 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function renderAttendanceCards() {
-    // ... existing code ...
-    
-    // Thêm logic để đánh dấu học sinh vắng mặt
+    // Cập nhật trạng thái đánh dấu cho các card
     document.querySelectorAll('.attendance-card').forEach(card => {
-        const statusElement = card.querySelector('.status-badge');
-        if (statusElement && statusElement.textContent.trim() === 'Vắng mặt') {
-            card.classList.add('absent');
-        } else {
-            card.classList.remove('absent');
+        // Thêm active class cho nút tương ứng với trạng thái
+        if (card.classList.contains('present')) {
+            card.querySelector('.present-btn')?.classList.add('active');
+            card.querySelector('.absent-btn')?.classList.remove('active');
+            card.querySelector('.late-btn')?.classList.remove('active');
+        } 
+        else if (card.classList.contains('absent')) {
+            card.querySelector('.present-btn')?.classList.remove('active');
+            card.querySelector('.absent-btn')?.classList.add('active');
+            card.querySelector('.late-btn')?.classList.remove('active');
+        }
+        else if (card.classList.contains('late')) {
+            card.querySelector('.present-btn')?.classList.remove('active');
+            card.querySelector('.absent-btn')?.classList.remove('active');
+            card.querySelector('.late-btn')?.classList.add('active');
         }
     });
     
@@ -609,26 +630,32 @@ function renderAttendanceCards() {
 }
 
 function updateAttendanceStats() {
-    const presentCount = document.querySelectorAll('.attendance-card .status-badge:not(.absent-badge):not(.late-badge)').length;
-    const absentCount = document.querySelectorAll('.attendance-card .absent-badge').length;
-    const lateCount = document.querySelectorAll('.attendance-card .late-badge').length;
+    const presentCount = document.querySelectorAll('.attendance-card.present').length;
+    const absentCount = document.querySelectorAll('.attendance-card.absent').length;
+    const lateCount = document.querySelectorAll('.attendance-card.late').length;
     
-    const statsContainer = document.createElement('div');
-    statsContainer.className = 'attendance-stats';
+    console.log('Thống kê điểm danh:', {
+        present: presentCount,
+        absent: absentCount,
+        late: lateCount
+    });
     
-    statsContainer.innerHTML = `
-        <span class="status-count present-count">Có mặt: ${presentCount}</span>
-        <span class="status-count absent-count">Vắng: ${absentCount}</span>
-        <span class="status-count late-count">Muộn: ${lateCount}</span>
-    `;
-    
-    const cardHeader = document.querySelector('#attendanceGrid .card-header');
-    const existingStats = cardHeader.querySelector('.attendance-stats');
-    
-    if (existingStats) {
-        cardHeader.replaceChild(statsContainer, existingStats);
-    } else {
-        cardHeader.appendChild(statsContainer);
+    // Hiển thị thống kê nếu có element chứa
+    const cardHeader = document.querySelector('.card-header');
+    if (cardHeader) {
+        // Kiểm tra xem đã có thống kê chưa
+        let statsContainer = cardHeader.querySelector('.attendance-stats');
+        if (!statsContainer) {
+            statsContainer = document.createElement('div');
+            statsContainer.className = 'attendance-stats d-flex';
+            cardHeader.appendChild(statsContainer);
+        }
+        
+        statsContainer.innerHTML = `
+            <span class="status-count present-count ms-2">Có mặt: ${presentCount}</span>
+            <span class="status-count absent-count ms-2">Vắng: ${absentCount}</span>
+            <span class="status-count late-count ms-2">Muộn: ${lateCount}</span>
+        `;
     }
 }
 </script>

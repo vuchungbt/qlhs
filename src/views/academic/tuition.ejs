@@ -210,13 +210,6 @@
                        class="btn btn-sm btn-info">
                       <i class="fas fa-eye"></i> Xem Chi Tiết
                     </a>
-                    <button class="btn btn-sm btn-success generate-tuition-btn" 
-                            data-id="<%= schedule._id %>"
-                            data-name="<%= schedule.name %>"
-                            data-month="<%= selectedMonth %>"
-                            data-year="<%= selectedYear %>">
-                      <i class="fas fa-sync-alt"></i> Tạo Học Phí
-                    </button>
                     <a href="/academic/tuition/report/<%= schedule._id %>" 
                        class="btn btn-sm btn-primary">
                       <i class="fas fa-chart-line"></i> Báo Cáo
@@ -239,43 +232,6 @@
   
   <script>
     $(document).ready(function() {
-      // Xử lý tạo học phí cho một lớp
-      $('.generate-tuition-btn').click(function() {
-        const scheduleId = $(this).data('id');
-        const className = $(this).data('name');
-        const month = $(this).data('month');
-        const year = $(this).data('year');
-        
-        if (confirm(`Bạn có chắc muốn tạo học phí cho lớp "${className}" tháng ${month}/${year}?`)) {
-          generateTuition(scheduleId, month, year);
-        }
-      });
-      
-      // Hàm tạo học phí
-      function generateTuition(scheduleId, month, year) {
-        $.ajax({
-          url: '/academic/tuition/generate',
-          type: 'POST',
-          data: {
-            scheduleId: scheduleId,
-            month: month,
-            year: year
-          },
-          success: function(response) {
-            if (response.success) {
-              alert(response.message);
-              // Tải lại trang sau khi tạo thành công
-              location.reload();
-            } else {
-              alert('Lỗi: ' + response.message);
-            }
-          },
-          error: function(err) {
-            console.error('Lỗi khi tạo học phí:', err);
-            alert('Đã xảy ra lỗi khi tạo học phí');
-          }
-        });
-      }
       
       // Chọn tháng, năm tự động submit form
       $('#month, #year').change(function() {

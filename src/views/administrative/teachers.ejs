@@ -51,14 +51,25 @@
                             <td><%= teacher.email %></td>
                             <td><%= teacher.phone %></td>
                             <td><span class="badge bg-light text-dark"><%= teacher.subject %></span></td>
-                            <td><span class="badge bg-success">Đang dạy</span></td>
+                            <td>
+                                <% if (teacher.status === 'active') { %>
+                                    <span class="badge bg-success">Đang dạy</span>
+                                <% } else if (teacher.status === 'inactive') { %>
+                                    <span class="badge bg-danger">Nghỉ dạy</span>
+                                <% } else if (teacher.status === 'on_leave') { %>
+                                    <span class="badge bg-warning text-dark">Tạm nghỉ</span>
+                                <% } else { %>
+                                    <span class="badge bg-secondary">Không xác định</span>
+                                <% } %>
+                            </td>
                             <td>
                                 <button class="btn btn-sm btn-outline-primary edit-teacher-btn" 
                                         data-id="<%= teacher._id %>"
                                         data-name="<%= teacher.name %>"
                                         data-email="<%= teacher.email %>"
                                         data-phone="<%= teacher.phone %>"
-                                        data-subject="<%= teacher.subject %>">
+                                        data-subject="<%= teacher.subject %>"
+                                        data-status="<%= teacher.status %>">
                                     <i class="bi bi-pencil"></i>
                                 </button>
                                 <button class="btn btn-sm btn-outline-danger delete-teacher-btn" 
@@ -209,6 +220,14 @@
                             <small class="text-muted mt-1 d-block">Có thể nhập nhiều môn cách nhau bằng dấu phẩy</small>
                         </div>
                     </div>
+                    <div class="col-md-6">
+                        <label for="status" class="form-label">Trạng thái</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="active">Đang dạy</option>
+                            <option value="inactive">Nghỉ dạy</option>
+                            <option value="on_leave">Tạm nghỉ</option>
+                        </select>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -278,6 +297,14 @@
                             </div>
                             <small class="text-muted mt-1 d-block">Có thể nhập nhiều môn cách nhau bằng dấu phẩy</small>
                         </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="editStatus" class="form-label">Trạng thái</label>
+                        <select class="form-select" id="editStatus" name="status">
+                            <option value="active">Đang dạy</option>
+                            <option value="inactive">Nghỉ dạy</option>
+                            <option value="on_leave">Tạm nghỉ</option>
+                        </select>
                     </div>
                 </form>
             </div>
@@ -389,12 +416,14 @@
                     const email = this.getAttribute('data-email');
                     const phone = this.getAttribute('data-phone');
                     const subject = this.getAttribute('data-subject');
+                    const status = this.getAttribute('data-status');
                     
                     document.getElementById('editTeacherId').value = id;
                     document.getElementById('editName').value = name;
                     document.getElementById('editEmail').value = email;
                     document.getElementById('editPhone').value = phone;
                     document.getElementById('editSubject').value = subject;
+                    document.getElementById('editStatus').value = status || 'active';
                     
                     // Cập nhật action form
                     document.getElementById('editTeacherForm').action = `/administrative/teachers/${id}`;

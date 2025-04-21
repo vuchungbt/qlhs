@@ -40,7 +40,7 @@ exports.getTeachers = async (req, res) => {
 // Controller thêm giáo viên mới
 exports.createTeacher = async (req, res) => {
   try {
-    const { name, email, phone, password, subject } = req.body;
+    const { name, email, phone, password, subject, status } = req.body;
     
     // Băm mật khẩu
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -50,7 +50,8 @@ exports.createTeacher = async (req, res) => {
       email,
       phone,
       password: hashedPassword,
-      subject
+      subject,
+      status: status || 'active'
     });
     
     await newTeacher.save();
@@ -84,14 +85,15 @@ exports.getTeacherDetail = async (req, res) => {
 // Cập nhật thông tin giáo viên
 exports.updateTeacher = async (req, res) => {
   try {
-    const { name, email, phone, password, subject } = req.body;
+    const { name, email, phone, password, subject, status } = req.body;
     
     // Chuẩn bị dữ liệu cập nhật
     const updateData = {
       name,
       email,
       phone,
-      subject
+      subject,
+      status
     };
     
     // Chỉ cập nhật mật khẩu nếu nó được cung cấp

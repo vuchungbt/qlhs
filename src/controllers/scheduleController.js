@@ -328,41 +328,19 @@ exports.updateSchedule = async (req, res) => {
   }
 };
 
-// Xem chi tiết lịch học
+// Lấy thông tin chi tiết một lịch học
 exports.getScheduleDetail = async (req, res) => {
   try {
     const { id } = req.params;
     
     const schedule = await Schedule.findById(id)
-      .populate('teacher')
-      .populate({
-        path: 'students',
-        select: 'name dateOfBirth status'
-      });
+      .populate('teacher', 'name email phone')
+      .populate('students', 'name class dateOfBirth');
       
     if (!schedule) {
       req.flash('error', 'Không tìm thấy lịch học');
       return res.redirect('/academic/schedule');
     }
-    
-    // Định dạng ngày học
-    schedule.scheduleDisplay = formatScheduleDays(schedule.dayOfWeek || schedule.days || []);
-    
-    // Định dạng thời gian
-    const startTime = schedule.time?.start || schedule.startTime;
-    const endTime = schedule.time?.end || schedule.endTime;
-    if (startTime && endTime) {
-      schedule.timeDisplay = `${startTime} - ${endTime}`;
-    }
-    
-    // Đếm số lượng enrollment có trạng thái active
-    const enrollments = await Enrollment.find({
-      class: id,
-      status: 'active'
-    });
-    
-    // Ghi đè số lượng học sinh từ Enrollment
-    schedule.studentCount = enrollments.length;
     
     res.render('academic/schedule-detail', {
       title: 'Chi Tiết Lịch Học',
@@ -372,30 +350,11 @@ exports.getScheduleDetail = async (req, res) => {
       moment
     });
   } catch (error) {
-    console.error('Lỗi khi xem chi tiết lịch học:', error);
-    req.flash('error', 'Không thể tải thông tin lịch học: ' + error.message);
+    console.error('Lỗi khi lấy chi tiết lịch học:', error);
+    req.flash('error', 'Không thể tải thông tin lịch học');
     res.redirect('/academic/schedule');
   }
 };
-
-// Hàm định dạng hiển thị các ngày trong tuần
-function formatScheduleDays(days) {
-  if (!days || !Array.isArray(days) || days.length === 0) {
-    return 'Chưa thiết lập';
-  }
-  
-  const dayMap = {
-    'monday': 'Thứ 2',
-    'tuesday': 'Thứ 3',
-    'wednesday': 'Thứ 4',
-    'thursday': 'Thứ 5',
-    'friday': 'Thứ 6',
-    'saturday': 'Thứ 7',
-    'sunday': 'Chủ nhật'
-  };
-  
-  return days.map(day => dayMap[day.toLowerCase()] || day).join(', ');
-}
 
 // API endpoint để lấy danh sách học sinh của một lịch học
 exports.getScheduleStudentsData = async (req, res) => {

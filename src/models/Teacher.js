@@ -19,7 +19,14 @@ const teacherSchema = new mongoose.Schema({
     required: true
   },
   subject: {
-    type: String
+    type: String,
+    required: false,
+    trim: true
+  },
+  status: {
+    type: String,
+    enum: ['active', 'inactive', 'on_leave'],
+    default: 'active'
   },
   createdAt: {
     type: Date,

@@ -566,7 +566,7 @@
                     <div class="mb-3">
                         <label for="tuitionAmount" class="form-label">Số tiền</label>
                         <div class="input-group">
-                            <input type="number" class="form-control" id="tuitionAmount" name="amount" required min="0">
+                            <input type="text" class="form-control money-input" id="tuitionAmount" name="amount" required min="0">
                             <span class="input-group-text">VNĐ</span>
                         </div>
                     </div>
@@ -648,7 +648,7 @@
                     <div class="mb-3">
                         <label for="editTuitionAmount" class="form-label">Số tiền</label>
                         <div class="input-group">
-                            <input type="number" class="form-control" id="editTuitionAmount" name="amount" required min="0">
+                            <input type="text" class="form-control money-input" id="editTuitionAmount" name="amount" required min="0">
                             <span class="input-group-text">VNĐ</span>
                         </div>
                     </div>
@@ -713,6 +713,44 @@
                     item.classList.add('overdue');
                 }
             }
+        });
+        
+        // Xử lý định dạng tiền tệ cho các input số tiền
+        function formatMoney(input) {
+            // Xóa tất cả ký tự không phải số
+            let value = input.value.replace(/\D/g, '');
+            
+            // Định dạng số với dấu phân cách hàng nghìn theo chuẩn tiền Việt Nam
+            if (value !== '') {
+                value = new Intl.NumberFormat('vi-VN').format(parseInt(value));
+            }
+            
+            // Gán lại giá trị đã định dạng
+            input.value = value;
+        }
+        
+        // Xử lý khi gửi form để chuyển về dạng số
+        function prepareMoneyInput(inputId) {
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.value = input.value.replace(/\D/g, '');
+            }
+        }
+        
+        // Áp dụng định dạng tiền tệ cho tất cả input có class money-input
+        document.querySelectorAll('.money-input').forEach(input => {
+            input.addEventListener('input', function() {
+                formatMoney(this);
+            });
+        });
+        
+        // Xử lý khi submit form để đảm bảo giá trị tiền tệ được gửi ở dạng số
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function() {
+                this.querySelectorAll('.money-input').forEach(input => {
+                    input.value = input.value.replace(/\D/g, '');
+                });
+            });
         });
         
         // Xử lý khi nhấn nút thanh toán

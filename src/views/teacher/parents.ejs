@@ -1,0 +1,140 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Danh sách phụ huynh</h1>
+        <div>
+            <a href="/teacher/dashboard" class="btn btn-outline-primary">
+                <i class="fas fa-tachometer-alt me-1"></i> Quay lại bảng điều khiển
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <div class="row align-items-center">
+                <div class="col-md-4 mb-2 mb-md-0">
+                    <h5 class="mb-0 text-primary">Phụ huynh của học sinh</h5>
+                </div>
+                <div class="col-md-4 mb-2 mb-md-0">
+                    <select id="classFilter" class="form-select">
+                        <option value="">Tất cả lớp học</option>
+                        <% if (classOptions && classOptions.length > 0) { %>
+                            <% classOptions.forEach(cls => { %>
+                                <option value="<%= cls.id %>"><%= cls.name %></option>
+                            <% }) %>
+                        <% } %>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm phụ huynh...">
+                        <button class="btn btn-outline-secondary" type="button" id="searchButton">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <% if (parents && parents.length > 0) { %>
+                <div class="table-responsive">
+                    <table class="table table-hover" id="parentsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Họ tên</th>
+                                <th>Mối quan hệ</th>
+                                <th>Điện thoại</th>
+                                <th>Email</th>
+                                <th>Học sinh</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% parents.forEach(parent => { %>
+                                <tr data-classes="<%= parent.children && parent.children.map(c => c.class).filter(Boolean).join(',') %>">
+                                    <td><%= parent.name %></td>
+                                    <td><%= parent.relationship || 'Chưa cập nhật' %></td>
+                                    <td>
+                                        <% if (parent.phone) { %>
+                                            <a href="tel:<%= parent.phone %>"><i class="fas fa-phone-alt me-1"></i> <%= parent.phone %></a>
+                                        <% } else { %>
+                                            <span class="text-muted">Chưa cập nhật</span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <% if (parent.email) { %>
+                                            <a href="mailto:<%= parent.email %>"><i class="fas fa-envelope me-1"></i> <%= parent.email %></a>
+                                        <% } else { %>
+                                            <span class="text-muted">Chưa cập nhật</span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <% if (parent.children && parent.children.length > 0) { %>
+                                            <% parent.children.forEach((child, idx) => { %>
+                                                <a href="/teacher/students/<%= child._id %>" class="badge bg-info text-white text-decoration-none">
+                                                    <%= child.name %>
+                                                </a>
+                                                <%= idx < parent.children.length - 1 ? ' ' : '' %>
+                                            <% }); %>
+                                        <% } else { %>
+                                            <span class="text-muted">Không có thông tin</span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <a href="/teacher/parents/<%= parent._id %>" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye"></i> Chi tiết
+                                        </a>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } else { %>
+                <div class="text-center py-5">
+                    <i class="fas fa-users-slash fa-4x text-muted mb-3"></i>
+                    <h5>Không có dữ liệu phụ huynh</h5>
+                    <p class="text-muted">Không tìm thấy thông tin phụ huynh nào trong hệ thống.</p>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const classFilter = document.getElementById('classFilter');
+    const parentsTable = document.getElementById('parentsTable');
+    const tableRows = parentsTable ? parentsTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr') : [];
+    
+    function filterTable() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const selectedClass = classFilter.value;
+        
+        for (let i = 0; i < tableRows.length; i++) {
+            const row = tableRows[i];
+            const text = row.textContent.toLowerCase();
+            const classIds = row.dataset.classes ? row.dataset.classes.split(',') : [];
+            
+            // Ẩn hiện dựa trên tìm kiếm và lớp
+            const matchesSearch = text.indexOf(searchTerm) > -1;
+            const matchesClass = !selectedClass || classIds.includes(selectedClass);
+            
+            if (matchesSearch && matchesClass) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    }
+    
+    // Event listeners
+    searchInput.addEventListener('keyup', filterTable);
+    document.getElementById('searchButton').addEventListener('click', filterTable);
+    classFilter.addEventListener('change', filterTable);
+});
+</script>
+
+<%- include('../partials/footer') %> 

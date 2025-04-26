@@ -9,14 +9,14 @@
         </div>
     </div>
 
-    <% if (success) { %>
+    <% if (success && success.length > 0) { %>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
         <%= success %>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
     <% } %>
 
-    <% if (error) { %>
+    <% if (error && error.length > 0) { %>
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
         <%= error %>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -34,9 +34,11 @@
                         <a href="/settings/account" class="list-group-item list-group-item-action active">
                             <i class="bi bi-person-fill me-2"></i> Thông tin tài khoản
                         </a>
+                        <% if (userType !== 'teacher') { %>
                         <a href="/settings/notifications" class="list-group-item list-group-item-action">
                             <i class="bi bi-bell-fill me-2"></i> Cài đặt thông báo
                         </a>
+                        <% } %>
                     </div>
                 </div>
             </div>
@@ -63,6 +65,36 @@
                             </div>
                             
                             <div class="col-md-8">
+                                <% if (userType === 'teacher') { %>
+                                <!-- Form thông tin giáo viên -->
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Họ và tên</label>
+                                    <input type="text" class="form-control" id="name" name="name" value="<%= user.name %>" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email" name="email" value="<%= user.email %>" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="phone" class="form-label">Số điện thoại</label>
+                                    <input type="text" class="form-control" id="phone" name="phone" value="<%= user.phone %>" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="subject" class="form-label">Môn giảng dạy</label>
+                                    <input type="text" class="form-control" id="subject" value="<%= user.subject %>" readonly disabled>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="status" class="form-label">Trạng thái</label>
+                                    <input type="text" class="form-control" id="status" 
+                                      value="<%= user.status === 'active' ? 'Đang hoạt động' : user.status === 'inactive' ? 'Nghỉ dạy' : 'Tạm nghỉ' %>" 
+                                      readonly disabled>
+                                </div>
+                                <% } else { %>
+                                <!-- Form thông tin admin -->
                                 <div class="mb-3">
                                     <label for="username" class="form-label">Tên người dùng</label>
                                     <input type="text" class="form-control" id="username" name="username" value="<%= user.username %>" required>
@@ -77,6 +109,7 @@
                                     <label for="role" class="form-label">Vai trò</label>
                                     <input type="text" class="form-control" id="role" value="<%= user.role %>" readonly disabled>
                                 </div>
+                                <% } %>
                             </div>
                         </div>
                         

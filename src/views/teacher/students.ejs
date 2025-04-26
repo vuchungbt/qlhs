@@ -1,0 +1,484 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mb-0">Học Sinh Của Tôi</h1>
+                <div>
+                    <a href="/teacher/dashboard" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-left me-1"></i> Quay Lại Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-transparent py-3 border-bottom-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Danh Sách Học Sinh</h5>
+                    <div class="d-flex">
+                        <div class="me-2">
+                            <select id="classFilter" class="form-select form-select-sm">
+                                <option value="">Tất cả lớp</option>
+                                <% classes.forEach(function(cls) { %>
+                                    <option value="<%= cls.name %>"><%= cls.name %></option>
+                                <% }); %>
+                            </select>
+                        </div>
+                        <div>
+                            <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Tìm kiếm học sinh...">
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="studentsTable">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th style="font-weight: 500">Họ tên</th>
+                                    <th style="font-weight: 500">Lớp học</th>
+                                    <th style="font-weight: 500">Phụ huynh</th>
+                                    <th style="font-weight: 500">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if (students && students.length > 0) { %>
+                                    <% students.forEach(function(student) { %>
+                                        <tr data-class="<% if (student.classes) { %><%= student.classes.map(c => c.name).join(',') %><% } %>">
+                                            <td class="fw-medium"><%= student.name %></td>
+                                            <td>
+                                                <% if (student.classes && student.classes.length > 0) { %>
+                                                    <% student.classes.forEach(function(cls, index) { %>
+                                                        <span class="badge bg-info mb-1"><%= cls.name %></span>
+                                                        <%= index < student.classes.length - 1 ? '<br>' : '' %>
+                                                    <% }); %>
+                                                <% } else { %>
+                                                    <span class="text-muted">Chưa có lớp</span>
+                                                <% } %>
+                                            </td>
+                                            <td>
+                                                <% if (student.parent) { %>
+                                                    <a href="#" class="view-parent text-decoration-none" data-id="<%= student.parent._id %>"><%= student.parent.name %></a><br>
+                                                    <% if (student.parent.phone) { %>
+                                                        <small><i class="bi bi-telephone me-1"></i> <%= student.parent.phone %></small>
+                                                    <% } %>
+                                                <% } else if (student.parentName) { %>
+                                                    <%= student.parentName %><br>
+                                                    <% if (student.parentPhone) { %>
+                                                        <small><i class="bi bi-telephone me-1"></i> <%= student.parentPhone %></small>
+                                                    <% } %>
+                                                <% } else { %>
+                                                    <span class="text-muted">Chưa có thông tin</span>
+                                                <% } %>
+                                            </td>
+                                            <td>
+                                                <a href="#" class="btn btn-sm btn-outline-primary view-student" data-id="<%= student._id %>">
+                                                    <i class="bi bi-eye me-1"></i> Chi tiết
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    <% }); %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4">Không có học sinh nào thuộc lớp dạy của bạn.</td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>
+
+<!-- Modal Học Sinh -->
+<div class="modal fade" id="studentModal" tabindex="-1" aria-labelledby="studentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="studentModalLabel">Thông tin học sinh</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="student-loading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Đang tải...</span>
+          </div>
+          <p class="mt-2">Đang tải thông tin học sinh...</p>
+        </div>
+        <div id="student-data" style="display: none;">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-4">
+                <h6 class="fw-bold border-bottom pb-2">Thông tin cá nhân</h6>
+                <table class="table table-sm">
+                  <tr>
+                    <td width="40%" class="fw-medium">Họ tên:</td>
+                    <td id="student-name"></td>
+                  </tr>
+                  <tr>
+                    <td class="fw-medium">Ngày sinh:</td>
+                    <td id="student-dob"></td>
+                  </tr>
+                  <tr>
+                    <td class="fw-medium">Số điện thoại:</td>
+                    <td id="student-phone"></td>
+                  </tr>
+                  <tr>
+                    <td class="fw-medium">Địa chỉ:</td>
+                    <td id="student-address"></td>
+                  </tr>
+                  <tr>
+                    <td class="fw-medium">Ghi chú:</td>
+                    <td id="student-notes"></td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-4">
+                <h6 class="fw-bold border-bottom pb-2">Thông tin phụ huynh</h6>
+                <div id="student-parent-info">
+                  <!-- Sẽ được điền bởi JavaScript -->
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-3">
+            <h6 class="fw-bold border-bottom pb-2">Lịch sử điểm danh gần đây</h6>
+            <div id="student-attendance">
+              <!-- Sẽ được điền bởi JavaScript -->
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+        <a href="#" id="student-detail-link" class="btn btn-primary" style="display:none;">Xem chi tiết</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Phụ Huynh -->
+<div class="modal fade" id="parentModal" tabindex="-1" aria-labelledby="parentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title" id="parentModalLabel">Thông tin phụ huynh</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="parent-loading" class="text-center py-5">
+          <div class="spinner-border text-info" role="status">
+            <span class="visually-hidden">Đang tải...</span>
+          </div>
+          <p class="mt-2">Đang tải thông tin phụ huynh...</p>
+        </div>
+        <div id="parent-data" style="display: none;">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-4">
+                <h6 class="fw-bold border-bottom pb-2">Thông tin cá nhân</h6>
+                <table class="table table-sm">
+                  <tr>
+                    <td width="40%" class="fw-medium">Họ tên:</td>
+                    <td id="parent-name"></td>
+                  </tr>
+                  <tr>
+                    <td class="fw-medium">Số điện thoại:</td>
+                    <td id="parent-phone"></td>
+                  </tr>
+                  <tr>
+                    <td class="fw-medium">Email:</td>
+                    <td id="parent-email"></td>
+                  </tr>
+                  <tr>
+                    <td class="fw-medium">Địa chỉ:</td>
+                    <td id="parent-address"></td>
+                  </tr>
+                  <tr>
+                    <td class="fw-medium">Nghề nghiệp:</td>
+                    <td id="parent-occupation"></td>
+                  </tr>
+                  <tr>
+                    <td class="fw-medium">Ghi chú:</td>
+                    <td id="parent-notes"></td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-4">
+                <h6 class="fw-bold border-bottom pb-2">Danh sách học sinh</h6>
+                <div id="parent-children">
+                  <!-- Sẽ được điền bởi JavaScript -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+        <a href="#" id="parent-detail-link" class="btn btn-primary" style="display:none;">Xem chi tiết</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const classFilter = document.getElementById('classFilter');
+    const table = document.getElementById('studentsTable');
+    const rows = table.querySelectorAll('tbody tr');
+    
+    // Hàm lọc danh sách học sinh
+    function filterStudents() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const selectedClass = classFilter.value;
+        
+        rows.forEach(row => {
+            const name = row.cells[0].textContent.toLowerCase();
+            const classData = row.getAttribute('data-class') || '';
+            const classes = classData.split(',');
+            
+            const nameMatch = name.includes(searchTerm);
+            const classMatch = selectedClass === '' || classes.includes(selectedClass);
+            
+            if (nameMatch && classMatch) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    
+    // Sự kiện tìm kiếm
+    searchInput.addEventListener('input', filterStudents);
+    classFilter.addEventListener('change', filterStudents);
+    
+    // Xử lý sự kiện click xem thông tin học sinh
+    document.querySelectorAll('.view-student').forEach(function(element) {
+      element.addEventListener('click', function(e) {
+        e.preventDefault();
+        const studentId = this.getAttribute('data-id');
+        
+        // Reset và hiển thị modal
+        document.getElementById('student-loading').style.display = 'block';
+        document.getElementById('student-data').style.display = 'none';
+        document.getElementById('student-detail-link').href = `/teacher/students/${studentId}`;
+        
+        // Hiển thị modal
+        var studentModal = new bootstrap.Modal(document.getElementById('studentModal'));
+        studentModal.show();
+        
+        // Gọi API lấy thông tin học sinh
+        fetch(`/teacher/api/students/${studentId}`)
+          .then(response => response.json())
+          .then(data => {
+            // Điền thông tin cơ bản
+            document.getElementById('student-name').textContent = data.name || 'Chưa cập nhật';
+            document.getElementById('student-dob').textContent = data.dateOfBirth ? new Date(data.dateOfBirth).toLocaleDateString('vi-VN') : 'Chưa cập nhật';
+            document.getElementById('student-phone').textContent = data.contactNumber || 'Chưa cập nhật';
+            document.getElementById('student-address').textContent = data.address || 'Chưa cập nhật';
+            document.getElementById('student-notes').textContent = data.notes || 'Không có ghi chú';
+            
+            // Cập nhật tiêu đề modal
+            document.getElementById('studentModalLabel').textContent = `Thông tin học sinh: ${data.name}`;
+            
+            // Điền thông tin phụ huynh
+            const parentInfoContainer = document.getElementById('student-parent-info');
+            if (data.parent) {
+              parentInfoContainer.innerHTML = `
+                <table class="table table-sm">
+                  <tr>
+                    <td width="40%" class="fw-medium">Họ tên:</td>
+                    <td>${data.parent.name || 'Chưa cập nhật'}</td>
+                  </tr>
+                  <tr>
+                    <td class="fw-medium">Số điện thoại:</td>
+                    <td>${data.parent.phone ? `<a href="tel:${data.parent.phone}">${data.parent.phone}</a>` : 'Chưa cập nhật'}</td>
+                  </tr>
+                  <tr>
+                    <td class="fw-medium">Email:</td>
+                    <td>${data.parent.email ? `<a href="mailto:${data.parent.email}">${data.parent.email}</a>` : 'Chưa cập nhật'}</td>
+                  </tr>
+                </table>
+              `;
+            } else if (data.parentName) {
+              parentInfoContainer.innerHTML = `
+                <table class="table table-sm">
+                  <tr>
+                    <td width="40%" class="fw-medium">Họ tên:</td>
+                    <td>${data.parentName || 'Chưa cập nhật'}</td>
+                  </tr>
+                  <tr>
+                    <td class="fw-medium">Số điện thoại:</td>
+                    <td>${data.parentPhone ? `<a href="tel:${data.parentPhone}">${data.parentPhone}</a>` : 'Chưa cập nhật'}</td>
+                  </tr>
+                </table>
+              `;
+            } else {
+              parentInfoContainer.innerHTML = '<p class="text-muted">Chưa có thông tin phụ huynh</p>';
+            }
+            
+            // Điền lịch sử điểm danh
+            const attendanceContainer = document.getElementById('student-attendance');
+            if (data.attendanceHistory && data.attendanceHistory.length > 0) {
+              let tableHtml = `
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover">
+                    <thead>
+                      <tr>
+                        <th>Ngày</th>
+                        <th>Lớp</th>
+                        <th>Trạng thái</th>
+                        <th>Ghi chú</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+              `;
+              
+              data.attendanceHistory.forEach(record => {
+                const statusBadge = getStatusBadge(record.status);
+                tableHtml += `
+                  <tr>
+                    <td>${new Date(record.date).toLocaleDateString('vi-VN')}</td>
+                    <td>${record.className}</td>
+                    <td>${statusBadge}</td>
+                    <td>${record.note || ''}</td>
+                  </tr>
+                `;
+              });
+              
+              tableHtml += `
+                    </tbody>
+                  </table>
+                </div>
+              `;
+              attendanceContainer.innerHTML = tableHtml;
+            } else {
+              attendanceContainer.innerHTML = '<p class="text-muted">Chưa có lịch sử điểm danh</p>';
+            }
+            
+            // Hiển thị dữ liệu và ẩn loading
+            document.getElementById('student-loading').style.display = 'none';
+            document.getElementById('student-data').style.display = 'block';
+          })
+          .catch(error => {
+            console.error('Lỗi khi lấy thông tin học sinh:', error);
+            document.getElementById('student-loading').style.display = 'none';
+            document.getElementById('student-data').innerHTML = `
+              <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                Đã xảy ra lỗi khi tải thông tin học sinh. Vui lòng thử lại sau.
+              </div>
+            `;
+            document.getElementById('student-data').style.display = 'block';
+          });
+      });
+    });
+    
+    // Xử lý sự kiện click xem thông tin phụ huynh
+    document.querySelectorAll('.view-parent').forEach(function(element) {
+      element.addEventListener('click', function(e) {
+        e.preventDefault();
+        const parentId = this.getAttribute('data-id');
+        
+        // Reset và hiển thị modal
+        document.getElementById('parent-loading').style.display = 'block';
+        document.getElementById('parent-data').style.display = 'none';
+        document.getElementById('parent-detail-link').href = `/teacher/parents/${parentId}`;
+        
+        // Hiển thị modal
+        var parentModal = new bootstrap.Modal(document.getElementById('parentModal'));
+        parentModal.show();
+        
+        // Gọi API lấy thông tin phụ huynh
+        fetch(`/teacher/api/parents/${parentId}`)
+          .then(response => response.json())
+          .then(data => {
+            // Điền thông tin cơ bản
+            document.getElementById('parent-name').textContent = data.name || 'Chưa cập nhật';
+            document.getElementById('parent-phone').innerHTML = data.phone ? 
+              `<a href="tel:${data.phone}">${data.phone}</a>` : 'Chưa cập nhật';
+            document.getElementById('parent-email').innerHTML = data.email ? 
+              `<a href="mailto:${data.email}">${data.email}</a>` : 'Chưa cập nhật';
+            document.getElementById('parent-address').textContent = data.address || 'Chưa cập nhật';
+            document.getElementById('parent-occupation').textContent = data.occupation || 'Chưa cập nhật';
+            document.getElementById('parent-notes').textContent = data.notes || 'Không có ghi chú';
+            
+            // Cập nhật tiêu đề modal
+            document.getElementById('parentModalLabel').textContent = `Thông tin phụ huynh: ${data.name}`;
+            
+            // Điền danh sách học sinh
+            const childrenContainer = document.getElementById('parent-children');
+            if (data.children && data.children.length > 0) {
+              let childrenHtml = '<div class="list-group">';
+              
+              data.children.forEach(child => {
+                const statusBadge = child.status === 'active' ? 
+                  '<span class="badge bg-success">Đang học</span>' : 
+                  '<span class="badge bg-secondary">Không hoạt động</span>';
+                  
+                childrenHtml += `
+                  <a href="/teacher/students/${child.id}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                      <h6 class="mb-1">${child.name}</h6>
+                      ${statusBadge}
+                    </div>
+                    <small class="text-muted">
+                      Ngày sinh: ${child.dateOfBirth ? new Date(child.dateOfBirth).toLocaleDateString('vi-VN') : 'Chưa cập nhật'}
+                    </small>
+                  </a>
+                `;
+              });
+              
+              childrenHtml += '</div>';
+              childrenContainer.innerHTML = childrenHtml;
+            } else {
+              childrenContainer.innerHTML = '<p class="text-muted">Chưa có thông tin học sinh</p>';
+            }
+            
+            // Hiển thị dữ liệu và ẩn loading
+            document.getElementById('parent-loading').style.display = 'none';
+            document.getElementById('parent-data').style.display = 'block';
+          })
+          .catch(error => {
+            console.error('Lỗi khi lấy thông tin phụ huynh:', error);
+            document.getElementById('parent-loading').style.display = 'none';
+            document.getElementById('parent-data').innerHTML = `
+              <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                Đã xảy ra lỗi khi tải thông tin phụ huynh. Vui lòng thử lại sau.
+              </div>
+            `;
+            document.getElementById('parent-data').style.display = 'block';
+          });
+      });
+    });
+    
+    // Hàm hỗ trợ hiển thị trạng thái điểm danh
+    function getStatusBadge(status) {
+      switch (status) {
+        case 'present':
+          return '<span class="badge bg-success">Có mặt</span>';
+        case 'absent':
+          return '<span class="badge bg-danger">Vắng mặt</span>';
+        case 'late':
+          return '<span class="badge bg-warning text-dark">Đi muộn</span>';
+        default:
+          return '<span class="badge bg-secondary">Không xác định</span>';
+      }
+    }
+  });
+</script> 

@@ -133,7 +133,7 @@
                 <tbody>
                     <% if (attendance && attendance.length > 0) { %>
                         <% attendance.forEach(function(record) { %>
-                            <tr class="<%= record.status === 'absent' ? 'absent-highlight' : '' %>">
+                            <tr class="<%= record.status === 'absent' ? 'absent-highlight' : (record.status === 'late' ? 'late-highlight' : '') %>">
                                 <td><%= moment(record.date).format('DD/MM/YYYY') %></td>
                                 <td class="fw-medium"><%= record.student ? record.student.name : 'Không xác định' %></td>
                                 <td>
@@ -206,8 +206,8 @@
     }
     
     .attendance-card.absent {
-        background-color: #ffebee;
-        border-left: 3px solid #f44336;
+        background-color: rgba(231, 76, 60, 0.15);
+        border-left: 5px solid #e74c3c;
     }
     
     .attendance-card.absent .status-badge {
@@ -216,8 +216,8 @@
     }
     
     .attendance-card.late {
+        background-color: rgba(243, 156, 18, 0.15);
         border-left: 5px solid #f39c12;
-        background-color: rgba(243, 156, 18, 0.05);
     }
     
     .student-info {
@@ -380,11 +380,17 @@
         background-color: rgba(67, 97, 238, 0.03);
     }
     
-    /* Highlight học sinh vắng mặt */
+    /* Highlight học sinh vắng mặt và đi muộn */
     tr.absent-highlight {
         background-color: rgba(231, 76, 60, 0.15) !important;
         border-left: 4px solid #e74c3c !important;
         box-shadow: inset 0 0 5px rgba(231, 76, 60, 0.1) !important;
+    }
+    
+    tr.late-highlight {
+        background-color: rgba(243, 156, 18, 0.15) !important;
+        border-left: 4px solid #f39c12 !important;
+        box-shadow: inset 0 0 5px rgba(243, 156, 18, 0.1) !important;
     }
     
     .status-count {
@@ -497,6 +503,9 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
                 card.style.transform = 'scale(1)';
             }, 300);
+            
+            // Cập nhật thống kê
+            updateAttendanceStats();
         });
     });
     
@@ -581,22 +590,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Chuyển đến trang với lớp được chọn và ngày hiện tại
         window.location.href = '/academic/attendance?date=' + currentDate + (selectedClass ? '&classId=' + selectedClass : '');
     });
-
-    // Debug - kiểm tra dropdown có hoạt động không
-    console.log('Đã khởi tạo dropdown cho viewOptions');
-    document.getElementById('viewOptions').addEventListener('click', function(e) {
-        console.log('Dropdown viewOptions được nhấp');
-    });
-
-    // Đảm bảo cập nhật lại khi thay đổi trạng thái điểm danh
-    function toggleAttendanceStatus(studentId, button) {
-        // ... existing code ...
-        
-        // Cập nhật giao diện sau khi thay đổi trạng thái
-        setTimeout(() => {
-            renderAttendanceCards();
-        }, 100);
-    }
 
     // Cập nhật giao diện ban đầu
     setTimeout(() => {

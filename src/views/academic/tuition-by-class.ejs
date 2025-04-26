@@ -280,8 +280,12 @@
                       statusClass = 'status-paid';
                       statusText = 'Đã TT';
                       badgeClass = 'badge-paid';
+                    } else if (tuition.status === 'overdue' || tuition._displayStatus === 'overdue') {
+                      statusClass = 'status-overdue';
+                      statusText = 'Quá hạn';
+                      badgeClass = 'badge-overdue';
                     } else if (tuition.status === 'pending') {
-                      const dueDate = new Date(tuition.year, tuition.month - 1, schedule.paymentDay || 15);
+                      const dueDate = new Date(tuition.dueDate);
                       const today = new Date();
                       
                       if (today > dueDate) {
@@ -454,7 +458,7 @@
             
             <div class="form-group">
               <label for="editAmount">Số Tiền</label>
-              <input type="number" class="form-control" id="editAmount" name="amount" required>
+              <input type="text" class="form-control money-input" id="editAmount" name="amount" required>
             </div>
             
             <div class="form-group">
@@ -535,8 +539,8 @@
             
             <div class="form-group">
               <label for="modalAmount">Số tiền học phí</label>
-              <input type="number" class="form-control" id="modalAmount" 
-                    value="<%= schedule.tuitionAmount || 0 %>" min="0" step="10000">
+              <input type="text" class="form-control money-input" id="modalAmount" 
+                    value="<%= (schedule.tuitionAmount || 0).toLocaleString('vi-VN') %>" min="0" step="10000">
               <small class="form-text text-muted">Nhập số tiền học phí cho mỗi học sinh</small>
             </div>
             
@@ -627,7 +631,7 @@
             
             <div class="form-group mb-3">
               <label for="amount">Số Tiền</label>
-              <input type="number" class="form-control" id="amount" name="amount" value="<%= schedule.tuitionAmount || 0 %>" min="0" step="10000" required>
+              <input type="text" class="form-control money-input" id="amount" name="amount" value="<%= (schedule.tuitionAmount || 0).toLocaleString('vi-VN') %>" min="0" step="10000" required>
             </div>
             
             <div class="row">
@@ -800,7 +804,7 @@
         
         $('#editTuitionId').val(tuitionId);
         $('#editStudentId').val(studentId);
-        $('#editAmount').val(amount);
+        $('#editAmount').val(parseInt(amount).toLocaleString('vi-VN'));
         $('#editMonth').val(month);
         $('#editYear').val(year);
         $('#editStatus').val(status);
@@ -1178,6 +1182,49 @@
         // Đóng modal
         const manualTuitionModal = bootstrap.Modal.getInstance(document.getElementById('manualTuitionModal'));
         manualTuitionModal.hide();
+      });
+      
+      // Hàm định dạng tiền tệ cho các input số tiền
+      function formatMoney(input) {
+        // Xóa tất cả ký tự không phải số
+        let value = input.value.replace(/\D/g, '');
+        
+        // Định dạng số với dấu phân cách hàng nghìn theo chuẩn tiền Việt Nam
+        if (value !== '') {
+          value = new Intl.NumberFormat('vi-VN').format(parseInt(value));
+        }
+        
+        // Gán lại giá trị đã định dạng
+        input.value = value;
+      }
+      
+      // Áp dụng định dạng tiền tệ cho tất cả input có class money-input
+      document.querySelectorAll('.money-input').forEach(input => {
+        input.addEventListener('input', function() {
+          formatMoney(this);
+        });
+      });
+      
+      // Hàm xử lý giá trị tiền tệ trước khi submit form
+      function prepareMoneyInput(inputId) {
+        const input = document.getElementById(inputId);
+        if (input) {
+          // Chuyển đổi giá trị đã định dạng thành số nguyên
+          input.value = input.value.replace(/\D/g, '');
+        }
+      }
+      
+      // Xử lý khi submit form
+      $('#confirmGenerateTuition').click(function() {
+        prepareMoneyInput('modalAmount');
+      });
+      
+      $('#confirmAddTuition').click(function() {
+        prepareMoneyInput('amount');
+      });
+      
+      $('#updateTuition').click(function() {
+        prepareMoneyInput('editAmount');
       });
     });
   </script>

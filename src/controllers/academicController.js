@@ -525,15 +525,34 @@ exports.getAttendance = async (req, res) => {
     }
     
     // Lấy danh sách điểm danh cho ngày được chọn
-    const attendance = await Attendance.find({
+    const attendanceRecords = await Attendance.find({
       date: {
         $gte: targetDate.toDate(),
         $lt: moment(targetDate).endOf('day').toDate()
       }
     })
-    .populate('student', 'name')
+    .populate({
+      path: 'students.student',
+      model: 'Student',
+      select: 'name'
+    })
     .populate('schedule', 'name');
 
+    // Chuyển đổi dữ liệu điểm danh để phù hợp với view
+    const attendance = [];
+    attendanceRecords.forEach(record => {
+      record.students.forEach(studentAttendance => {
+        attendance.push({
+          _id: record._id,
+          date: record.date,
+          schedule: record.schedule,
+          student: studentAttendance.student,
+          status: studentAttendance.status,
+          note: studentAttendance.note || ''
+        });
+      });
+    });
+    
     res.render('academic/attendance', {
       title: 'Điểm Danh',
       username: req.session.user ? req.session.user.username : 'Người dùng',
@@ -555,12 +574,12 @@ exports.getAttendance = async (req, res) => {
 // Controller thêm điểm danh
 exports.createAttendance = async (req, res) => {
   try {
-    const { studentId, status, note } = req.body;
+    const { studentId, scheduleId, status, note } = req.body;
     
     // Kiểm tra xem học sinh đã được điểm danh hôm nay chưa
     const today = moment().startOf('day');
     const existingAttendance = await Attendance.findOne({
-      student: studentId,
+      schedule: scheduleId,
       date: {
         $gte: today.toDate(),
         $lt: moment(today).endOf('day').toDate()
@@ -568,17 +587,38 @@ exports.createAttendance = async (req, res) => {
     });
     
     if (existingAttendance) {
-      // Cập nhật điểm danh nếu đã tồn tại
-      existingAttendance.status = status;
-      existingAttendance.note = note;
+      // Kiểm tra xem học sinh đã có trong danh sách điểm danh chưa
+      const studentIndex = existingAttendance.students.findIndex(
+        s => s.student._id && s.student._id.toString() === studentId || s.student.toString() === studentId
+      );
+
+      if (studentIndex >= 0) {
+        // Cập nhật thông tin điểm danh của học sinh
+        existingAttendance.students[studentIndex].status = status;
+        existingAttendance.students[studentIndex].note = note || '';
+      } else {
+        // Thêm học sinh vào danh sách điểm danh
+        existingAttendance.students.push({
+          student: studentId,
+          status: status,
+          note: note || ''
+        });
+      }
+
+      existingAttendance.updatedAt = new Date();
       await existingAttendance.save();
     } else {
-      // Tạo mới nếu chưa tồn tại
+      // Tạo bản ghi điểm danh mới
       const newAttendance = new Attendance({
-        student: studentId,
+        schedule: scheduleId,
         date: new Date(),
-        status,
-        note
+        students: [{
+          student: studentId,
+          status: status,
+          note: note || ''
+        }],
+        createdAt: new Date(),
+        updatedAt: new Date()
       });
       await newAttendance.save();
     }
@@ -596,11 +636,11 @@ exports.batchAttendance = async (req, res) => {
     const { date, classId, attendances } = req.body;
 
     // Kiểm tra dữ liệu đầu vào
-    if (!date || !attendances || !Array.isArray(attendances)) {
+    if (!date || !attendances || !Array.isArray(attendances) || !classId) {
       return res.status(400).json({ success: false, message: 'Dữ liệu không hợp lệ' });
     }
 
-    // Chuyển đổi ngày sang đối tượng Date, đảm bảo sử dụng múi giờ local
+    // Chuyển đổi ngày sang đối tượng Date
     const attendanceDate = moment(date, 'YYYY-MM-DD').startOf('day').toDate();
 
     // Kiểm tra nếu ngày không hợp lệ
@@ -610,44 +650,52 @@ exports.batchAttendance = async (req, res) => {
 
     console.log('Đang lưu điểm danh cho ngày:', moment(attendanceDate).format('YYYY-MM-DD'));
 
-    // Xây dựng danh sách các thao tác bulk write
-    const bulkOps = attendances.map(item => {
-      // Chuẩn bị dữ liệu cập nhật
-      const updateData = {
-        student: item.studentId,
-        date: attendanceDate,
-        status: item.status,
-        note: item.note || '',
-      };
-
-      // Thêm scheduleId nếu có classId được gửi lên
-      if (classId) {
-        updateData.schedule = classId;
+    // Tìm bản ghi điểm danh hiện có cho lớp và ngày
+    let attendanceRecord = await Attendance.findOne({
+      schedule: classId,
+      date: {
+        $gte: moment(attendanceDate).startOf('day').toDate(),
+        $lte: moment(attendanceDate).endOf('day').toDate()
       }
-
-      // Tạo thao tác upsert
-      return {
-        updateOne: {
-          filter: { student: item.studentId, date: {
-            $gte: moment(attendanceDate).startOf('day').toDate(),
-            $lt: moment(attendanceDate).endOf('day').toDate()
-          }},
-          update: { $set: updateData },
-          upsert: true
-        }
-      };
     });
 
-    // Thực hiện bulk write
-    if (bulkOps.length > 0) {
-      const result = await Attendance.bulkWrite(bulkOps);
-      console.log('Kết quả bulkWrite điểm danh:', result);
-      res.json({ success: true, message: 'Đã lưu điểm danh thành công' });
-    } else {
-      res.json({ success: true, message: 'Không có dữ liệu điểm danh để lưu' });
+    if (!attendanceRecord) {
+      // Tạo bản ghi điểm danh mới nếu chưa tồn tại
+      attendanceRecord = new Attendance({
+        schedule: classId,
+        date: attendanceDate,
+        students: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
     }
+
+    // Cập nhật hoặc thêm mới thông tin điểm danh cho từng học sinh
+    attendances.forEach(item => {
+      const studentIndex = attendanceRecord.students.findIndex(
+        s => s.student.toString() === item.studentId
+      );
+
+      if (studentIndex >= 0) {
+        // Cập nhật thông tin điểm danh của học sinh
+        attendanceRecord.students[studentIndex].status = item.status;
+        attendanceRecord.students[studentIndex].note = item.note || '';
+      } else {
+        // Thêm học sinh vào danh sách điểm danh
+        attendanceRecord.students.push({
+          student: item.studentId,
+          status: item.status,
+          note: item.note || ''
+        });
+      }
+    });
+
+    attendanceRecord.updatedAt = new Date();
+    await attendanceRecord.save();
+
+    res.json({ success: true, message: 'Đã lưu điểm danh thành công' });
   } catch (err) {
-    console.error('Lỗi khi lưu điểm danh hàng loạt:', err);
+    console.error('Lỗi khi lưu điểm danh:', err);
     res.status(500).json({ success: false, message: 'Lỗi server: ' + err.message });
   }
 };
@@ -718,16 +766,35 @@ exports.getAttendanceByClass = async (req, res) => {
       selectedClass = await Schedule.findById(selectedClassId);
       
       // Lấy lịch sử điểm danh
-      attendanceRecords = await Attendance.find({
+      const attendanceDocs = await Attendance.find({
         schedule: selectedClassId,
         date: {
           $gte: startDate.toDate(),
           $lte: endDate.toDate()
         }
       })
-      .populate('student', 'name')
+      .populate({
+        path: 'students.student',
+        model: 'Student',
+        select: 'name'
+      })
       .populate('schedule', 'name')
       .sort({ date: -1 });
+
+      // Chuyển đổi dữ liệu điểm danh để phù hợp với view
+      attendanceRecords = [];
+      attendanceDocs.forEach(record => {
+        record.students.forEach(studentAttendance => {
+          attendanceRecords.push({
+            _id: record._id,
+            date: record.date,
+            schedule: record.schedule,
+            student: studentAttendance.student,
+            status: studentAttendance.status,
+            note: studentAttendance.note || ''
+          });
+        });
+      });
     }
     
     res.render('academic/attendance-by-class', {
@@ -766,27 +833,33 @@ exports.getAttendanceByClassDetail = async (req, res) => {
       return res.redirect('/academic/attendance/class');
     }
     
-    // Lấy các bản ghi điểm danh của lớp vào ngày đã chọn
-    const attendanceRecords = await Attendance.find({
+    // Lấy bản ghi điểm danh của lớp vào ngày đã chọn
+    const attendanceRecord = await Attendance.findOne({
       schedule: classId,
       date: {
         $gte: targetDate.toDate(),
         $lt: moment(targetDate).endOf('day').toDate()
       }
-    }).populate('student', 'name');
+    }).populate({
+      path: 'students.student',
+      model: 'Student',
+      select: 'name'
+    });
     
     // Tạo map để tra cứu nhanh điểm danh của học sinh
     const attendanceMap = {};
-    attendanceRecords.forEach(record => {
-      attendanceMap[record.student._id.toString()] = record;
-    });
+    if (attendanceRecord && attendanceRecord.students) {
+      attendanceRecord.students.forEach(studentAttendance => {
+        attendanceMap[studentAttendance.student._id.toString()] = studentAttendance;
+      });
+    }
     
     res.render('academic/attendance-class-detail', {
       title: 'Chi Tiết Điểm Danh Lớp',
       username: req.session.user ? req.session.user.username : 'Người dùng',
       schedule,
       selectedDate: targetDate.toDate(),
-      attendanceRecords,
+      attendanceRecord,
       attendanceMap,
       moment
     });
@@ -801,88 +874,75 @@ exports.getAttendanceByClassDetail = async (req, res) => {
 exports.updateAttendance = async (req, res) => {
   try {
     const { studentId, date, status, note, scheduleId } = req.body;
-    const attendanceId = req.params.id;
     
     // Kiểm tra dữ liệu đầu vào
-    if (!status) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Dữ liệu không hợp lệ. Vui lòng cung cấp trạng thái điểm danh.' 
+    if (!studentId || !scheduleId || !status || !date) {
+      return res.status(400).json({
+        success: false,
+        message: 'Dữ liệu không hợp lệ. Vui lòng cung cấp đủ thông tin.'
       });
     }
     
-    // Tìm bản ghi điểm danh
-    let attendance;
-    if (attendanceId !== 'new') {
-      // Cập nhật bản ghi hiện có
-      attendance = await Attendance.findById(attendanceId);
-      if (!attendance) {
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Không tìm thấy bản ghi điểm danh' 
-        });
-      }
-      
-      attendance.status = status;
-      attendance.note = note || '';
-      if (scheduleId) {
-        attendance.schedule = scheduleId;
-      }
-    } else {
-      // Kiểm tra điều kiện cần thiết cho bản ghi mới
-      if (!studentId || !date) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Dữ liệu không hợp lệ. Vui lòng cung cấp đủ thông tin học sinh và ngày.' 
-        });
-      }
-      
-      // Tạo bản ghi mới
-      const attendanceDate = moment(date).startOf('day').toDate();
-      console.log('Đang lưu điểm danh cho ngày:', moment(attendanceDate).format('YYYY-MM-DD'));
-      
-      // Kiểm tra xem đã có bản ghi cho học sinh và ngày này chưa
-      const existingAttendance = await Attendance.findOne({
-        student: studentId,
-        date: {
-          $gte: moment(attendanceDate).startOf('day').toDate(),
-          $lt: moment(attendanceDate).endOf('day').toDate()
-        }
-      });
-      
-      if (existingAttendance) {
-        // Cập nhật bản ghi đã tồn tại
-        existingAttendance.status = status;
-        existingAttendance.note = note || '';
-        if (scheduleId) {
-          existingAttendance.schedule = scheduleId;
-        }
-        attendance = existingAttendance;
-      } else {
-        // Tạo bản ghi mới
-        attendance = new Attendance({
-          student: studentId,
-          date: attendanceDate,
-          status,
-          note: note || '',
-          schedule: scheduleId || null
-        });
-      }
-    }
+    // Chuyển đổi ngày thành đầu ngày để tránh vấn đề múi giờ
+    const attendanceDate = moment(date).startOf('day').toDate();
     
-    await attendance.save();
-    
-    res.json({
-      success: true,
-      message: 'Cập nhật điểm danh thành công',
-      attendance
+    // Tìm bản ghi điểm danh cho lớp và ngày đã chọn
+    let attendanceRecord = await Attendance.findOne({
+      schedule: scheduleId,
+      date: {
+        $gte: moment(attendanceDate).startOf('day').toDate(),
+        $lte: moment(attendanceDate).endOf('day').toDate()
+      }
     });
     
+    if (attendanceRecord) {
+      // Kiểm tra xem học sinh đã có trong danh sách điểm danh chưa
+      const studentIndex = attendanceRecord.students.findIndex(
+        s => s.student._id && s.student._id.toString() === studentId || s.student.toString() === studentId
+      );
+      
+      if (studentIndex >= 0) {
+        // Cập nhật thông tin điểm danh của học sinh
+        attendanceRecord.students[studentIndex].status = status;
+        attendanceRecord.students[studentIndex].note = note || '';
+      } else {
+        // Thêm học sinh vào danh sách điểm danh
+        attendanceRecord.students.push({
+          student: studentId,
+          status: status,
+          note: note || ''
+        });
+      }
+      
+      attendanceRecord.updatedAt = new Date();
+      await attendanceRecord.save();
+    } else {
+      // Tạo bản ghi điểm danh mới
+      attendanceRecord = new Attendance({
+        schedule: scheduleId,
+        date: attendanceDate,
+        students: [{
+          student: studentId,
+          status: status,
+          note: note || ''
+        }],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      
+      await attendanceRecord.save();
+    }
+    
+    res.status(200).json({
+      success: true,
+      message: 'Cập nhật điểm danh thành công',
+      data: attendanceRecord
+    });
   } catch (err) {
     console.error('Lỗi khi cập nhật điểm danh:', err);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Lỗi server: ' + err.message 
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server: ' + err.message
     });
   }
 };
@@ -1224,6 +1284,16 @@ exports.getTuition = async (req, res) => {
       overdueCount: tuitions.filter(t => t.status === 'overdue').length
     };
     
+    // Truyền thông tin người dùng vào template
+    const userInfo = {
+      user: req.session.user,
+      username: req.session.user ? req.session.user.username : 'Người dùng',
+      isAuthenticated: req.session.isLoggedIn || false,
+      userType: req.session.userType || ''
+    };
+    
+    console.log('Thông tin người dùng truyền vào template:', userInfo);
+    
     res.render('academic/tuition', {
       tuitions,
       students,
@@ -1231,13 +1301,20 @@ exports.getTuition = async (req, res) => {
       stats,
       selectedMonth,
       selectedYear,
-      user: req.user,
       title: 'Quản lý học phí',
-      currentYear: new Date().getFullYear()
+      currentYear: new Date().getFullYear(),
+      error: req.flash('error'),
+      success: req.flash('success'),
+      currentDate: new Date(),
+      // Thông tin người dùng
+      user: req.session.user,
+      username: req.session.user ? req.session.user.username : 'Người dùng',
+      isAuthenticated: req.session.isLoggedIn || false,
+      userType: req.session.userType || ''
     });
   } catch (error) {
     console.error('Lỗi khi tải trang học phí:', error);
-    req.flash('error_msg', 'Có lỗi khi tải trang học phí');
+    req.flash('error', 'Có lỗi khi tải trang học phí');
     res.redirect('/dashboard');
   }
 };
@@ -1705,10 +1782,18 @@ exports.getTuitionByClass = async (req, res) => {
       if (tuition.status === 'paid') {
         tuitionStats.paid += tuition.amount;
         tuitionStats.paidCount++;
+      } else if (tuition.status === 'overdue') {
+        // Đã được đánh dấu là quá hạn trong database
+        tuitionStats.overdue += tuition.amount;
+        tuitionStats.overdueCount++;
       } else if (tuition.status === 'pending') {
-        if (new Date(tuition.dueDate) < new Date()) {
+        // Kiểm tra ngày hiện tại với ngày đến hạn
+        if (new Date() > new Date(tuition.dueDate)) {
           tuitionStats.overdue += tuition.amount;
           tuitionStats.overdueCount++;
+          
+          // Đánh dấu để hiển thị đúng trên giao diện
+          tuition._displayStatus = 'overdue';
         } else {
           tuitionStats.pending += tuition.amount;
           tuitionStats.pendingCount++;
@@ -2627,5 +2712,68 @@ exports.syncEnrollments = async (req, res) => {
     
     req.flash('error', 'Lỗi khi đồng bộ hóa: ' + error.message);
     res.redirect('/academic/schedule');
+  }
+}; 
+
+// Lưu điểm danh
+exports.saveAttendance = async (req, res) => {
+  try {
+    const { classId, date, attendances } = req.body;
+    
+    console.log('Dữ liệu điểm danh nhận được:', JSON.stringify(req.body, null, 2));
+    
+    // Kiểm tra dữ liệu đầu vào
+    if (!date || !attendances || !Array.isArray(attendances) || attendances.length === 0) {
+      return res.status(400).json({ success: false, message: 'Dữ liệu không hợp lệ' });
+    }
+
+    // Chuyển đổi ngày sang đối tượng Date, đảm bảo sử dụng múi giờ local
+    const attendanceDate = moment(date, 'YYYY-MM-DD').startOf('day').toDate();
+
+    // Kiểm tra nếu ngày không hợp lệ
+    if (!moment(attendanceDate).isValid()) {
+      return res.status(400).json({ success: false, message: 'Ngày không hợp lệ' });
+    }
+
+    console.log('Đang lưu điểm danh cho ngày:', moment(attendanceDate).format('YYYY-MM-DD'));
+
+    if (!classId) {
+      return res.status(400).json({ success: false, message: 'Vui lòng chọn lớp học' });
+    }
+
+    // Tìm bản ghi điểm danh hiện có hoặc tạo mới
+    let attendanceRecord = await Attendance.findOne({
+      schedule: classId,
+      date: {
+        $gte: moment(attendanceDate).startOf('day').toDate(),
+        $lt: moment(attendanceDate).endOf('day').toDate()
+      }
+    });
+
+    if (!attendanceRecord) {
+      // Tạo bản ghi mới nếu chưa tồn tại
+      attendanceRecord = new Attendance({
+        schedule: classId,
+        date: attendanceDate,
+        students: []
+      });
+    }
+
+    // Cập nhật danh sách học sinh
+    attendanceRecord.students = attendances.map(item => ({
+      student: item.studentId,
+      status: item.status,
+      note: item.note || ''
+    }));
+
+    // Lưu bản ghi điểm danh
+    await attendanceRecord.save();
+    console.log('Đã lưu điểm danh thành công cho lớp:', classId);
+    
+    res.json({ success: true, message: 'Đã lưu điểm danh thành công' });
+    
+  } catch (err) {
+    console.error('Lỗi khi lưu điểm danh:', err);
+    res.status(500).json({ success: false, message: 'Lỗi server: ' + err.message });
   }
 }; 

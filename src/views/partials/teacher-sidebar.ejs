@@ -1,0 +1,437 @@
+<!-- Sidebar -->
+<div class="col-auto min-vh-100 bg-dark text-white sidebar" style="padding: 0;">
+    <div class="p-3">
+        <div class="d-flex align-items-center mb-4">
+            <i class="bi bi-grid-1x2-fill me-2 sidebar-icon"></i>
+            <span class="fs-4 fw-bold sidebar-text">Teacher Dashboard</span>
+            <button id="toggleSidebar" class="btn btn-sm text-white ms-auto">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
+
+        <!-- Search Form -->
+        <div class="mb-4 sidebar-search">
+            <div class="search-input-wrapper">
+                <i class="bi bi-search"></i>
+                <input type="text" name="q" class="search-input" placeholder="Search" aria-label="Search">
+            </div>
+        </div>
+
+        <div class="mb-2">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a href="/teacher/dashboard" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Tổng quan">
+                        <i class="bi bi-house-door sidebar-icon"></i>
+                        <span class="sidebar-text">Dashboard</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="mb-4">
+            <div class="sidebar-heading sidebar-text">QUẢN LÝ LỚP HỌC</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a href="/teacher/classes" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Danh sách lớp của tôi">
+                        <i class="bi bi-book sidebar-icon"></i>
+                        <span class="sidebar-text">Lớp Học Của Tôi</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/teacher/students" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Danh sách học sinh của tôi">
+                        <i class="bi bi-people sidebar-icon"></i>
+                        <span class="sidebar-text">Học Sinh Của Tôi</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/teacher/parents" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Danh sách phụ huynh của học sinh">
+                        <i class="bi bi-person-lines-fill sidebar-icon"></i>
+                        <span class="sidebar-text">Phụ Huynh</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="mb-4">
+            <div class="sidebar-heading sidebar-text">ĐIỂM DANH</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a href="/teacher/attendance/class" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Điểm danh theo lớp">
+                        <i class="bi bi-check2-square sidebar-icon"></i>
+                        <span class="sidebar-text">Điểm Danh Theo Lớp</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/teacher/attendance/student" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Điểm danh theo học sinh">
+                        <i class="bi bi-person-check sidebar-icon"></i>
+                        <span class="sidebar-text">Điểm Danh Theo Học Sinh</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/teacher/attendance/groups" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Quản lý nhóm điểm danh">
+                        <i class="bi bi-collection sidebar-icon"></i>
+                        <span class="sidebar-text">Nhóm Điểm Danh</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/teacher/attendance/create-group" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Tạo nhóm điểm danh mới">
+                        <i class="bi bi-plus-circle sidebar-icon"></i>
+                        <span class="sidebar-text">Tạo Nhóm Điểm Danh</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="mb-4">
+            <div class="sidebar-heading sidebar-text">HỌC PHÍ</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a href="/teacher/tuition" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Quản lý học phí">
+                        <i class="bi bi-cash-coin sidebar-icon"></i>
+                        <span class="sidebar-text">Quản Lý Học Phí</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="mb-4">
+            <div class="sidebar-heading sidebar-text">CÀI ĐẶT</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a href="/settings/account" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Thay đổi cài đặt tài khoản">
+                        <i class="bi bi-gear sidebar-icon"></i>
+                        <span class="sidebar-text">Cài Đặt Tài Khoản</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="mt-5">
+            <a href="/auth/logout" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Đăng xuất khỏi hệ thống">
+                <i class="bi bi-box-arrow-right sidebar-icon"></i>
+                <span class="sidebar-text">Đăng xuất</span>
+            </a>
+        </div>
+
+        <!-- User Profile Info -->
+        <% if (typeof teacher !== 'undefined' && teacher) { %>
+        <div class="user-profile mt-4 d-flex align-items-center">
+            <img src="<%= teacher.profileImage || '/images/default-avatar.png' %>" alt="<%= teacher.name || teacher.username %>" class="rounded-circle me-2" width="32" height="32">
+            <div class="sidebar-text">
+                <div class="fw-bold"><%= teacher.name || teacher.username %></div>
+                <small class="text-muted">Giáo viên</small>
+            </div>
+        </div>
+        <% } %>
+    </div>
+</div>
+
+<!-- Nút để mở rộng sidebar khi đã thu nhỏ -->
+<div id="expandSidebar" class="expand-sidebar-button d-none">
+    <i class="bi bi-chevron-right"></i>
+</div>
+
+<!-- Overlay cho sidebar trên mobile -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<style>
+    /* CSS cho sidebar */
+    .sidebar {
+        width: 250px;
+        transition: all 0.3s ease;
+        z-index: 1000;
+        overflow-y: auto;
+        overflow-x: hidden;
+        height: 100vh;
+        position: fixed;
+        left: 0;
+        top: 0;
+    }
+    
+    .sidebar.collapsed {
+        width: 70px;
+        min-width: 70px;
+    }
+    
+    .sidebar.collapsed .sidebar-text {
+        display: none;
+    }
+    
+    .sidebar.collapsed .sidebar-search {
+        display: none;
+    }
+    
+    .sidebar.collapsed .user-profile img {
+        margin-right: 0;
+    }
+    
+    .sidebar-icon {
+        font-size: 1.2rem;
+        display: inline-block;
+        margin-right: 10px;
+        width: 20px;
+        text-align: center;
+    }
+    
+    .sidebar.collapsed .sidebar-icon {
+        margin-right: 0;
+        margin-left: 8px;
+    }
+    
+    .nav-link {
+        border-radius: 5px;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        white-space: nowrap;
+    }
+    
+    .nav-link:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .nav-link.active {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .sidebar-heading {
+        font-size: 0.8rem;
+        font-weight: bold;
+        color: #adb5bd;
+        margin-bottom: 10px;
+        margin-top: 20px;
+        white-space: nowrap;
+    }
+    
+    /* Style cho nút mở rộng sidebar */
+    .expand-sidebar-button {
+        position: fixed;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 30px;
+        height: 30px;
+        background-color: #343a40;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+        z-index: 1001;
+        transition: all 0.3s ease;
+    }
+    
+    .expand-sidebar-button:hover {
+        background-color: #495057;
+    }
+    
+    /* Responsive cho màn hình nhỏ */
+    @media (max-width: 991px) {
+        .sidebar {
+            width: 70px;
+            min-width: 70px;
+            position: fixed;
+        }
+        
+        .sidebar .sidebar-text {
+            display: none;
+        }
+        
+        .sidebar .sidebar-search {
+            display: none;
+        }
+        
+        .sidebar.expanded {
+            width: 250px;
+            position: fixed;
+            height: 100vh;
+            top: 0;
+            left: 0;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .sidebar.expanded .sidebar-text {
+            display: inline-block;
+        }
+        
+        .sidebar.expanded .sidebar-search {
+            display: block;
+        }
+        
+        .sidebar.expanded .sidebar-icon {
+            margin-right: 10px;
+            margin-left: 0;
+        }
+        
+        /* Overlay khi sidebar mở rộng trên mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        
+        .sidebar-overlay.active {
+            display: block;
+        }
+    }
+    
+    /* Điều chỉnh layout chính */
+    .main-content {
+        transition: padding-left 0.3s ease;
+        padding-left: 80px !important;
+        width: 100%;
+    }
+    
+    @media (min-width: 992px) {
+        .main-content {
+            padding-left: 270px !important;
+            width: 100%;
+        }
+        
+        .main-content.sidebar-collapsed {
+            padding-left: 70px !important;
+        }
+    }
+    
+    /* Fix for Bootstrap row and container */
+    .container-fluid {
+        padding-left: 0;
+        padding-right: 15px;
+    }
+    
+    .row {
+        margin-left: 0;
+        margin-right: 0;
+    }
+</style>
+
+<script>
+    // Toggle sidebar collapse
+    document.getElementById('toggleSidebar').addEventListener('click', function() {
+        const sidebar = document.querySelector('.sidebar');
+        const expandButton = document.getElementById('expandSidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const mainContent = document.querySelector('.main-content');
+        
+        // Xử lý khác nhau cho desktop và mobile
+        if (window.innerWidth <= 991) {
+            // Mobile: toggle expanded class
+            sidebar.classList.toggle('expanded');
+            
+            // Hiển thị/ẩn overlay
+            if (sidebar.classList.contains('expanded')) {
+                sidebarOverlay.classList.add('active');
+            } else {
+                sidebarOverlay.classList.remove('active');
+            }
+        } else {
+            // Desktop: toggle collapsed class
+            sidebar.classList.toggle('collapsed');
+            
+            // Thay đổi padding cho main content
+            if (mainContent) {
+                mainContent.classList.toggle('sidebar-collapsed');
+            }
+            
+            // Hiển thị nút mở rộng khi thu nhỏ sidebar
+            if (sidebar.classList.contains('collapsed')) {
+                localStorage.setItem('sidebarCollapsed', 'true');
+                expandButton.classList.remove('d-none');
+            } else {
+                localStorage.setItem('sidebarCollapsed', 'false');
+                expandButton.classList.add('d-none');
+            }
+        }
+    });
+    
+    // Xử lý nút mở rộng sidebar
+    document.getElementById('expandSidebar').addEventListener('click', function() {
+        const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.querySelector('.main-content');
+        
+        sidebar.classList.remove('collapsed');
+        if (mainContent) {
+            mainContent.classList.remove('sidebar-collapsed');
+        }
+        
+        localStorage.setItem('sidebarCollapsed', 'false');
+        this.classList.add('d-none');
+    });
+    
+    // Xử lý overlay
+    document.getElementById('sidebarOverlay').addEventListener('click', function() {
+        const sidebar = document.querySelector('.sidebar');
+        sidebar.classList.remove('expanded');
+        this.classList.remove('active');
+    });
+    
+    // Khôi phục trạng thái sidebar từ localStorage và xử lý responsive
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.querySelector('.sidebar');
+        const expandButton = document.getElementById('expandSidebar');
+        const sidebarCollapsed = localStorage.getItem('sidebarCollapsed');
+        const mainContent = document.querySelector('.main-content');
+        
+        function handleResize() {
+            if (window.innerWidth <= 991) { // Tablet và Mobile
+                // Mobile: luôn thu nhỏ, có thể mở rộng
+                sidebar.classList.remove('collapsed');
+                if (mainContent) {
+                    mainContent.classList.remove('sidebar-collapsed');
+                }
+                expandButton.classList.add('d-none');
+                
+                // Nếu đang mở rộng, ẩn overlay khi resize
+                if (sidebar.classList.contains('expanded')) {
+                    sidebar.classList.remove('expanded');
+                    document.getElementById('sidebarOverlay').classList.remove('active');
+                }
+            } else { // Desktop
+                // Desktop: khôi phục trạng thái từ local storage
+                sidebar.classList.remove('expanded');
+                document.getElementById('sidebarOverlay').classList.remove('active');
+                
+                if (sidebarCollapsed === 'true') {
+                    sidebar.classList.add('collapsed');
+                    if (mainContent) {
+                        mainContent.classList.add('sidebar-collapsed');
+                    }
+                    expandButton.classList.remove('d-none');
+                } else {
+                    sidebar.classList.remove('collapsed');
+                    if (mainContent) {
+                        mainContent.classList.remove('sidebar-collapsed');
+                    }
+                    expandButton.classList.add('d-none');
+                }
+            }
+        }
+        
+        // Xử lý khi trang vừa load
+        handleResize();
+        
+        // Xử lý khi thay đổi kích thước cửa sổ
+        window.addEventListener('resize', handleResize);
+        
+        // Đánh dấu menu active dựa trên URL hiện tại
+        const currentPath = window.location.pathname;
+        const menuLinks = document.querySelectorAll('.sidebar .nav-link');
+        
+        menuLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            if (!href || href === "#") return;
+            
+            if (href === currentPath || (currentPath.includes(href) && href !== '/')) {
+                link.classList.add('active');
+            }
+        });
+    });
+</script> 

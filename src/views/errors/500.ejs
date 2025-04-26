@@ -1,0 +1,32 @@
+<%
+// Đặt các biến mặc định
+if (typeof title === 'undefined') title = 'Lỗi máy chủ';
+if (typeof isAuthenticated === 'undefined') isAuthenticated = false;
+if (typeof userType === 'undefined') userType = null;
+%>
+<%- include('../partials/header') %>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <div class="mb-4">
+                <i class="bi bi-x-octagon-fill text-danger" style="font-size: 5rem;"></i>
+            </div>
+            <h1 class="display-4 fw-bold text-danger mb-4">500</h1>
+            <h2 class="mb-3">Lỗi máy chủ</h2>
+            <p class="lead mb-4 text-muted">
+                <%= typeof message !== 'undefined' ? message : 'Đã xảy ra lỗi trên máy chủ. Vui lòng thử lại sau.' %>
+            </p>
+            <div class="d-grid gap-2 d-md-block">
+                <a href="javascript:history.back()" class="btn btn-outline-secondary me-2">
+                    <i class="bi bi-arrow-left me-1"></i> Quay lại
+                </a>
+                <a href="/" class="btn btn-primary">
+                    <i class="bi bi-house me-1"></i> Trang chủ
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %> 

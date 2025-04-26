@@ -129,13 +129,27 @@
                                 %><%= locationValue %>" placeholder="Phòng học">
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Trạng thái</label>
-                            <select class="form-select" name="status">
-                                <option value="active" <%= schedule.status === 'active' ? 'selected' : '' %>>Đang hoạt động</option>
-                                <option value="inactive" <%= schedule.status === 'inactive' ? 'selected' : '' %>>Tạm dừng</option>
-                                <option value="completed" <%= schedule.status === 'completed' ? 'selected' : '' %>>Đã kết thúc</option>
-                            </select>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Trạng thái</label>
+                                <select class="form-select" name="status">
+                                    <option value="active" <%= schedule.status === 'active' ? 'selected' : '' %>>Đang hoạt động</option>
+                                    <option value="inactive" <%= schedule.status === 'inactive' ? 'selected' : '' %>>Tạm dừng</option>
+                                    <option value="completed" <%= schedule.status === 'completed' ? 'selected' : '' %>>Đã kết thúc</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="assistantTeacherIds" class="form-label">Trợ giảng</label>
+                                <select class="form-select" id="assistantTeacherIds" name="assistantTeacherIds[]" multiple>
+                                    <% if (typeof teachers !== 'undefined' && teachers && teachers.length > 0) { %>
+                                        <% teachers.forEach(function(teacher) { %>
+                                            <option value="<%= teacher._id %>" <%= schedule.assistantTeachers && schedule.assistantTeachers.some(t => t._id.toString() === teacher._id.toString()) ? 'selected' : '' %>><%= teacher.name %></option>
+                                        <% }); %>
+                                    <% } %>
+                                </select>
+                                <small class="form-text text-muted">Giữ Ctrl để chọn nhiều trợ giảng</small>
+                            </div>
+
                         </div>
 
                         <!-- Phần quản lý danh sách học sinh -->
@@ -223,6 +237,22 @@
                                 </div>
                             </div>
                         </div>
+<!-- 
+                        <div class="col-md-6">
+                            <label for="studentIds" class="form-label">Học sinh</label>
+                            <select class="form-select" id="studentIds" name="studentIds[]" multiple>
+                                <% if (typeof students !== 'undefined' && students && students.length > 0) { %>
+                                    <% students.forEach(function(student) { %>
+                                        <option value="<%= student._id %>" <%= schedule.students.some(s => s._id.toString() === student._id.toString()) ? 'selected' : '' %>><%= student.name %></option>
+                                    <% }); %>
+                                <% } %>
+                            </select>
+                            <small class="form-text text-muted">Giữ Ctrl để chọn nhiều học sinh</small>
+                        </div>
+                         -->
+                        
+                        
+                        <div class="col-12 mt-4">
 
                         <div class="d-flex justify-content-between">
                             <a href="/academic/schedule" class="btn btn-secondary">

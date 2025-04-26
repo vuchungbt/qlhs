@@ -11,6 +11,10 @@ const ScheduleSchema = new Schema({
     ref: 'Teacher',
     required: true
   },
+  assistantTeachers: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Teacher'
+  }],
   students: [{
     type: Schema.Types.ObjectId,
     ref: 'Student'

@@ -1,0 +1,491 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mb-0">Chi Tiết Nhóm: <%= group.name %></h1>
+                <div>
+                    <a href="/teacher/attendance/groups" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-arrow-left me-1"></i> Quay Lại
+                    </a>
+                    <a href="/teacher/attendance/groups/<%= group._id %>/take" class="btn btn-primary">
+                        <i class="bi bi-check2-square me-1"></i> Điểm Danh
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-transparent py-3 border-bottom-0">
+                    <h5 class="mb-0">Thông Tin Nhóm</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Tên nhóm:</label>
+                        <div><%= group.name %></div>
+                    </div>
+                    
+                    <% if (group.description) { %>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Mô tả:</label>
+                        <div><%= group.description %></div>
+                    </div>
+                    <% } %>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Ngày tạo:</label>
+                        <div><%= moment(group.createdAt).format('DD/MM/YYYY HH:mm') %></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Trạng thái:</label>
+                        <div>
+                            <% if (group.active) { %>
+                                <span class="badge bg-success">Đang sử dụng</span>
+                            <% } else { %>
+                                <span class="badge bg-secondary">Không sử dụng</span>
+                            <% } %>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Các lớp:</label>
+                        <div>
+                            <% if (group.schedules && group.schedules.length > 0) { %>
+                                <ul class="list-group list-group-flush">
+                                    <% group.schedules.forEach(schedule => { %>
+                                        <li class="list-group-item px-0"><%= schedule.name %></li>
+                                    <% }); %>
+                                </ul>
+                            <% } else { %>
+                                <span class="text-muted">Không có lớp nào</span>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-transparent py-3 border-bottom-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Danh Sách Học Sinh (<%= group.students ? group.students.length : 0 %>)</h5>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="printStudentList">
+                            <i class="bi bi-printer me-1"></i> In danh sách
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <% if (group.students && group.students.length > 0) { %>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">STT</th>
+                                        <th scope="col">Họ Tên</th>
+                                        <th scope="col">Mã Học Sinh</th>
+                                        <th scope="col">Giới Tính</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% group.students.forEach((student, index) => { %>
+                                        <tr>
+                                            <td><%= index + 1 %></td>
+                                            <td><%= student.name %></td>
+                                            <td><%= student.studentId || 'N/A' %></td>
+                                            <td><%= student.gender === 'male' ? 'Nam' : student.gender === 'female' ? 'Nữ' : 'Khác' %></td>
+                                        </tr>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } else { %>
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i> Không có học sinh nào trong nhóm này.
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-transparent py-3 border-bottom-0">
+                    <h5 class="mb-0">Lịch Sử Điểm Danh Gần Đây</h5>
+                </div>
+                <div class="card-body">
+                    <% if (recentAttendances && recentAttendances.length > 0) { %>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Ngày</th>
+                                        <th scope="col">Số Học Sinh</th>
+                                        <th scope="col">Có Mặt</th>
+                                        <th scope="col">Vắng Mặt</th>
+                                        <th scope="col">Đi Muộn</th>
+                                        <th scope="col">Tỷ Lệ</th>
+                                        <th scope="col" width="100">Thao Tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% recentAttendances.forEach(attendance => { 
+                                        // Tính toán số lượng mỗi trạng thái
+                                        let presentCount = 0;
+                                        let absentCount = 0;
+                                        let lateCount = 0;
+                                        
+                                        attendance.students.forEach(student => {
+                                            if (student.status === 'present') presentCount++;
+                                            else if (student.status === 'absent') absentCount++;
+                                            else if (student.status === 'late') lateCount++;
+                                        });
+                                        
+                                        const totalStudents = attendance.students.length;
+                                        const attendRate = totalStudents > 0 ? Math.round((presentCount + lateCount) / totalStudents * 100) : 0;
+                                    %>
+                                        <tr>
+                                            <td><%= moment(attendance.date).format('DD/MM/YYYY') %></td>
+                                            <td><%= totalStudents %></td>
+                                            <td><span class="text-success"><%= presentCount %></span></td>
+                                            <td><span class="text-danger"><%= absentCount %></span></td>
+                                            <td><span class="text-warning"><%= lateCount %></span></td>
+                                            <td>
+                                                <div class="progress" style="height: 15px; width: 100px">
+                                                    <div class="progress-bar bg-success" role="progressbar" style="width: <%= attendRate %>%" 
+                                                         aria-valuenow="<%= attendRate %>" aria-valuemin="0" aria-valuemax="100">
+                                                        <%= attendRate %>%
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary view-attendance" 
+                                                        data-attendance-id="<%= attendance._id %>" 
+                                                        data-date="<%= moment(attendance.date).format('DD/MM/YYYY') %>">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } else { %>
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i> Chưa có lịch sử điểm danh nào cho nhóm này.
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Chi tiết điểm danh -->
+<div class="modal fade" id="attendanceDetailModal" tabindex="-1" aria-labelledby="attendanceDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="attendanceDetailModalLabel">Chi Tiết Điểm Danh</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="attendanceDetailContent">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Đang tải dữ liệu...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Kích hoạt DataTables cho bảng học sinh
+        if (document.querySelector('.table')) {
+            $('.table').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/vi.json'
+                },
+                pageLength: 10
+            });
+        }
+        
+        // Xử lý sự kiện xem chi tiết điểm danh
+        document.querySelectorAll('.view-attendance').forEach(button => {
+            button.addEventListener('click', function() {
+                const attendanceId = this.getAttribute('data-attendance-id');
+                const date = this.getAttribute('data-date');
+                
+                // Cập nhật tiêu đề modal
+                document.getElementById('attendanceDetailModalLabel').textContent = `Chi Tiết Điểm Danh - ${date}`;
+                
+                // Hiển thị modal
+                const modal = new bootstrap.Modal(document.getElementById('attendanceDetailModal'));
+                modal.show();
+                
+                // Tải dữ liệu chi tiết điểm danh
+                loadAttendanceDetail(attendanceId);
+            });
+        });
+        
+        // Xử lý nút in danh sách học sinh
+        document.getElementById('printStudentList').addEventListener('click', function() {
+            const printWindow = window.open('', '_blank');
+            
+            const groupName = '<%= group.name %>';
+            const teacherName = '<%= teacher.name || teacher.username %>';
+            const studentCount = '<%= group.students ? group.students.length : 0 %>';
+            
+            let studentsHtml = '';
+            <% if (group.students && group.students.length > 0) { %>
+                <% group.students.forEach((student, index) => { %>
+                    studentsHtml += `
+                        <tr>
+                            <td>${<%= index + 1 %>}</td>
+                            <td>${'<%= student.name %>'}</td>
+                            <td>${'<%= student.studentId || "N/A" %>'}</td>
+                            <td>${'<%= student.gender === "male" ? "Nam" : student.gender === "female" ? "Nữ" : "Khác" %>'}</td>
+                        </tr>
+                    `;
+                <% }); %>
+            <% } %>
+            
+            const html = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Danh sách học sinh - ${groupName}</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            margin: 0;
+                            padding: 20px;
+                        }
+                        .header {
+                            text-align: center;
+                            margin-bottom: 20px;
+                        }
+                        .info {
+                            margin-bottom: 20px;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                        }
+                        th, td {
+                            border: 1px solid #ddd;
+                            padding: 8px;
+                            text-align: left;
+                        }
+                        th {
+                            background-color: #f2f2f2;
+                        }
+                        .footer {
+                            margin-top: 30px;
+                            text-align: right;
+                            font-style: italic;
+                        }
+                        @media print {
+                            .no-print {
+                                display: none;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h2>DANH SÁCH HỌC SINH</h2>
+                        <h3>${groupName}</h3>
+                    </div>
+                    
+                    <div class="info">
+                        <p><strong>Giáo viên:</strong> ${teacherName}</p>
+                        <p><strong>Tổng số học sinh:</strong> ${studentCount}</p>
+                        <p><strong>Ngày in:</strong> ${moment().format('DD/MM/YYYY HH:mm')}</p>
+                    </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Họ Tên</th>
+                                <th>Mã Học Sinh</th>
+                                <th>Giới Tính</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${studentsHtml}
+                        </tbody>
+                    </table>
+                    
+                    <div class="footer">
+                        <p>In ngày ${moment().format('DD/MM/YYYY')}</p>
+                    </div>
+                    
+                    <div class="no-print" style="text-align: center; margin-top: 20px;">
+                        <button onclick="window.print()">In danh sách</button>
+                        <button onclick="window.close()">Đóng</button>
+                    </div>
+                    
+                    <script>
+                        // Tự động mở hộp thoại in sau khi trang được tải
+                        window.onload = function() {
+                            setTimeout(function() {
+                                window.print();
+                            }, 500);
+                        };
+                    </script>
+                </body>
+                </html>
+            `;
+            
+            printWindow.document.write(html);
+            printWindow.document.close();
+        });
+        
+        // Hàm tải chi tiết điểm danh
+        async function loadAttendanceDetail(attendanceId) {
+            const contentElement = document.getElementById('attendanceDetailContent');
+            
+            try {
+                const response = await fetch(`/teacher/api/attendance/${attendanceId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const attendance = result.data;
+                    
+                    // Tính toán số lượng mỗi trạng thái
+                    let presentCount = 0;
+                    let absentCount = 0;
+                    let lateCount = 0;
+                    
+                    attendance.students.forEach(student => {
+                        if (student.status === 'present') presentCount++;
+                        else if (student.status === 'absent') absentCount++;
+                        else if (student.status === 'late') lateCount++;
+                    });
+                    
+                    const totalStudents = attendance.students.length;
+                    
+                    let studentsHtml = '';
+                    attendance.students.forEach((student, index) => {
+                        studentsHtml += `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${student.student.name}</td>
+                                <td>
+                                    ${student.status === 'present' ? 
+                                        '<span class="badge bg-success">Có mặt</span>' : 
+                                      student.status === 'absent' ? 
+                                        '<span class="badge bg-danger">Vắng mặt</span>' : 
+                                        '<span class="badge bg-warning">Đi muộn</span>'
+                                    }
+                                </td>
+                                <td>${student.note || '-'}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    contentElement.innerHTML = `
+                        <div class="mb-3">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-2">
+                                        <strong>Ngày:</strong> ${moment(attendance.date).format('DD/MM/YYYY')}
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>Tổng số học sinh:</strong> ${totalStudents}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="attendance-stats d-flex gap-2 mb-2">
+                                        <span class="status-count present-count">Có mặt: ${presentCount}</span>
+                                        <span class="status-count absent-count">Vắng: ${absentCount}</span>
+                                        <span class="status-count late-count">Muộn: ${lateCount}</span>
+                                    </div>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             style="width: ${Math.round(presentCount / totalStudents * 100)}%" 
+                                             aria-valuenow="${presentCount}" aria-valuemin="0" aria-valuemax="${totalStudents}">
+                                            ${Math.round(presentCount / totalStudents * 100)}%
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">STT</th>
+                                        <th scope="col">Họ Tên</th>
+                                        <th scope="col">Trạng Thái</th>
+                                        <th scope="col">Ghi Chú</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${studentsHtml}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                } else {
+                    contentElement.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i> ${result.message || 'Không thể tải dữ liệu điểm danh'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Lỗi khi tải chi tiết điểm danh:', error);
+                contentElement.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i> Đã xảy ra lỗi khi tải dữ liệu: ${error.message}
+                    </div>
+                `;
+            }
+        }
+    });
+</script>
+
+<style>
+    .status-count {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-weight: 500;
+    }
+    
+    .absent-count {
+        background-color: #ffebee;
+        color: #f44336;
+        border: 1px solid #f44336;
+    }
+    
+    .present-count {
+        background-color: #e8f5e9;
+        color: #4caf50;
+        border: 1px solid #4caf50;
+    }
+    
+    .late-count {
+        background-color: #fff8e1;
+        color: #ff9800;
+        border: 1px solid #ff9800;
+    }
+</style>
+
+<%- include('../partials/footer') %> 

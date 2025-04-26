@@ -11,6 +11,7 @@ const academicRoutes = require('./routes/academic');
 const administrativeRoutes = require('./routes/administrative');
 const authRoutes = require('./routes/auth');
 const settingsRoutes = require('./routes/settings');
+const teacherRoutes = require('./routes/teacher');
 
 // Import controllers
 const homeController = require('./controllers/homeController');
@@ -57,6 +58,7 @@ app.use(session({
 app.use((req, res, next) => {
   res.locals.isAuthenticated = req.session.isLoggedIn;
   res.locals.user = req.session.user;
+  res.locals.userType = req.session.userType;
   res.locals.success = req.flash('success');
   res.locals.error = req.flash('error');
   next();
@@ -64,6 +66,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/teacher', teacherRoutes);
 app.use('/academic', authController.isAuthenticated, academicRoutes);
 app.use('/administrative', authController.isAuthenticated, administrativeRoutes);
 app.use('/settings', authController.isAuthenticated, settingsRoutes);
@@ -72,7 +75,20 @@ app.use('/settings', authController.isAuthenticated, settingsRoutes);
 app.get('/search', authController.isAuthenticated, homeController.search);
 
 // Home route
-app.get('/', authController.isAuthenticated, homeController.getDashboard);
+app.get('/', (req, res) => {
+  if (!req.session.isLoggedIn) {
+    return res.redirect('/auth/login');
+  }
+  
+  // Chuyển hướng dựa vào loại người dùng
+  if (req.session.userType === 'teacher') {
+    return res.redirect('/teacher/dashboard');
+  } else {
+    return res.redirect('/dashboard');
+  }
+});
+
+app.get('/dashboard', authController.isAuthenticated, authController.isAdmin, homeController.getDashboard);
 
 // Xử lý 404
 app.use((req, res) => {

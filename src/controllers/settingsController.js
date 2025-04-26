@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Teacher = require('../models/Teacher');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 const fs = require('fs');
@@ -6,8 +7,16 @@ const fs = require('fs');
 // Hiển thị trang thiết lập tài khoản
 exports.getAccount = async (req, res) => {
   try {
-    // Lấy thông tin user đầy đủ từ database
-    const user = await User.findById(req.session.user._id);
+    let user;
+    const userType = req.session.userType;
+    
+    if (userType === 'teacher') {
+      // Lấy thông tin giáo viên từ database
+      user = await Teacher.findById(req.session.user._id);
+    } else {
+      // Lấy thông tin admin từ database
+      user = await User.findById(req.session.user._id);
+    }
     
     if (!user) {
       return res.redirect('/auth/login');
@@ -15,9 +24,10 @@ exports.getAccount = async (req, res) => {
     
     res.render('settings/account', {
       title: 'Thiết Lập Tài Khoản',
-      username: user.username,
+      username: userType === 'teacher' ? user.name : user.username,
       currentDate: new Date(),
       user: user,
+      userType: userType,
       success: req.flash('success'),
       error: req.flash('error')
     });
@@ -30,19 +40,40 @@ exports.getAccount = async (req, res) => {
 // Cập nhật thông tin tài khoản
 exports.updateAccount = async (req, res) => {
   try {
-    const { username, email, currentPassword, newPassword, confirmPassword } = req.body;
+    const userType = req.session.userType;
+    let user;
     
-    // Lấy thông tin user hiện tại
-    const user = await User.findById(req.session.user._id);
-    
-    if (!user) {
-      req.flash('error', 'Không tìm thấy thông tin người dùng');
-      return res.redirect('/settings/account');
+    if (userType === 'teacher') {
+      const { name, email, phone, currentPassword, newPassword, confirmPassword } = req.body;
+      
+      // Lấy thông tin giáo viên hiện tại
+      user = await Teacher.findById(req.session.user._id);
+      
+      if (!user) {
+        req.flash('error', 'Không tìm thấy thông tin giáo viên');
+        return res.redirect('/settings/account');
+      }
+      
+      // Cập nhật thông tin cơ bản
+      user.name = name;
+      user.email = email;
+      user.phone = phone;
+      
+    } else {
+      const { username, email, currentPassword, newPassword, confirmPassword } = req.body;
+      
+      // Lấy thông tin admin hiện tại
+      user = await User.findById(req.session.user._id);
+      
+      if (!user) {
+        req.flash('error', 'Không tìm thấy thông tin người dùng');
+        return res.redirect('/settings/account');
+      }
+      
+      // Cập nhật thông tin cơ bản
+      user.username = username;
+      user.email = email;
     }
-    
-    // Cập nhật thông tin cơ bản
-    user.username = username;
-    user.email = email;
     
     // Xử lý upload avatar nếu có
     if (req.file) {
@@ -55,10 +86,13 @@ exports.updateAccount = async (req, res) => {
       user.profileImage = '/uploads/avatars/' + req.file.filename;
     }
     
+    // Lấy mật khẩu từ form
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+    
     // Xử lý thay đổi mật khẩu nếu cung cấp
     if (currentPassword && newPassword) {
       // Kiểm tra mật khẩu hiện tại
-      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      const isMatch = await user.comparePassword(currentPassword);
       
       if (!isMatch) {
         req.flash('error', 'Mật khẩu hiện tại không đúng');
@@ -80,12 +114,21 @@ exports.updateAccount = async (req, res) => {
     await user.save();
     
     // Cập nhật thông tin trong session
-    req.session.user = {
-      _id: user._id,
-      username: user.username,
-      email: user.email,
-      role: user.role
-    };
+    if (userType === 'teacher') {
+      req.session.user = {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        subject: user.subject
+      };
+    } else {
+      req.session.user = {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role
+      };
+    }
     
     req.flash('success', 'Thông tin tài khoản đã được cập nhật thành công');
     res.redirect('/settings/account');
@@ -99,8 +142,17 @@ exports.updateAccount = async (req, res) => {
 // Hiển thị trang thiết lập thông báo
 exports.getNotifications = async (req, res) => {
   try {
-    // Lấy thông tin user đầy đủ từ database
-    const user = await User.findById(req.session.user._id);
+    let user;
+    const userType = req.session.userType;
+    
+    if (userType === 'teacher') {
+      // Giáo viên không có tính năng thông báo phức tạp, chuyển hướng về trang tài khoản
+      req.flash('info', 'Tính năng này chỉ dành cho quản trị viên');
+      return res.redirect('/settings/account');
+    } else {
+      // Lấy thông tin user đầy đủ từ database
+      user = await User.findById(req.session.user._id);
+    }
     
     if (!user) {
       return res.redirect('/auth/login');
@@ -111,6 +163,7 @@ exports.getNotifications = async (req, res) => {
       username: user.username,
       currentDate: new Date(),
       user: user,
+      userType: userType,
       success: req.flash('success'),
       error: req.flash('error')
     });
@@ -123,6 +176,14 @@ exports.getNotifications = async (req, res) => {
 // Cập nhật thiết lập thông báo
 exports.updateNotifications = async (req, res) => {
   try {
+    const userType = req.session.userType;
+    
+    if (userType === 'teacher') {
+      // Giáo viên không có tính năng thông báo phức tạp, chuyển hướng về trang tài khoản
+      req.flash('info', 'Tính năng này chỉ dành cho quản trị viên');
+      return res.redirect('/settings/account');
+    }
+    
     const {
       emailNotifications,
       browserNotifications,

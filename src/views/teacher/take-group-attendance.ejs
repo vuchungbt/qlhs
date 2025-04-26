@@ -1,0 +1,308 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mb-0">Điểm Danh Nhóm: <%= group.name %></h1>
+                <div>
+                    <a href="/teacher/attendance/groups/<%= group._id %>" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-arrow-left me-1"></i> Quay Lại
+                    </a>
+                    <button type="button" id="saveAttendanceBtn" class="btn btn-outline-success">
+                        <i class="bi bi-save me-1"></i> Lưu Điểm Danh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-transparent py-3 border-bottom-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Danh sách học sinh (<%= group.students ? group.students.length : 0 %>)</h5>
+                    <div class="attendance-stats d-flex gap-2">
+                        <!-- Thống kê sẽ được cập nhật bằng JavaScript -->
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form id="attendanceForm" action="/teacher/attendance/groups/<%= group._id %>/take" method="POST">
+                        <input type="hidden" name="date" value="<%= today %>">
+                        
+                        <div class="attendance-legend d-flex mb-3">
+                            <span class="me-3"><i class="bi bi-circle-fill text-success"></i> Có mặt</span>
+                            <span class="me-3"><i class="bi bi-circle-fill text-danger"></i> Vắng mặt</span>
+                            <span><i class="bi bi-circle-fill text-warning"></i> Đi muộn</span>
+                        </div>
+                        
+                        <div class="attendance-grid">
+                            <% if (group.students && group.students.length > 0) { %>
+                                <% group.students.forEach(function(student) { 
+                                    const studentId = student._id.toString();
+                                    let defaultStatus = 'present';
+                                    
+                                    // Kiểm tra nếu đã có dữ liệu điểm danh
+                                    if (existingAttendance) {
+                                        const existingData = existingAttendance.find(item => item.studentId === studentId);
+                                        if (existingData) {
+                                            defaultStatus = existingData.status;
+                                        }
+                                    }
+                                %>
+                                    <div class="attendance-card <%= defaultStatus %>" data-student-id="<%= studentId %>">
+                                        <div class="student-info">
+                                            <div class="student-name fw-medium"><%= student.name %></div>
+                                            <div class="student-id text-muted"><small><%= student.studentId || 'Chưa có mã' %></small></div>
+                                        </div>
+                                        <div class="attendance-actions">
+                                            <button type="button" class="attendance-btn present-btn <%= defaultStatus === 'present' ? 'active' : '' %>" data-status="present" title="Có mặt">
+                                                <i class="bi bi-check-circle-fill"></i>
+                                            </button>
+                                            <button type="button" class="attendance-btn absent-btn <%= defaultStatus === 'absent' ? 'active' : '' %>" data-status="absent" title="Vắng mặt">
+                                                <i class="bi bi-x-circle-fill"></i>
+                                            </button>
+                                            <button type="button" class="attendance-btn late-btn <%= defaultStatus === 'late' ? 'active' : '' %>" data-status="late" title="Đi muộn">
+                                                <i class="bi bi-clock-fill"></i>
+                                            </button>
+                                        </div>
+                                        <input type="hidden" name="studentStatus[<%= studentId %>]" value="<%= defaultStatus %>">
+                                    </div>
+                                <% }); %>
+                            <% } else { %>
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i> Không có học sinh nào trong nhóm này.
+                                </div>
+                            <% } %>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-transparent py-3 border-bottom-0">
+                    <h5 class="mb-0">Thông Tin Điểm Danh</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="attendanceDate" class="form-label">Ngày điểm danh</label>
+                        <input type="date" class="form-control" id="attendanceDate" value="<%= today %>" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tên nhóm</label>
+                        <input type="text" class="form-control" value="<%= group.name %>" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Số học sinh</label>
+                        <input type="text" class="form-control" value="<%= group.students ? group.students.length : 0 %> học sinh" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Các lớp liên quan</label>
+                        <% if (group.schedules && group.schedules.length > 0) { %>
+                            <ul class="list-group">
+                                <% group.schedules.forEach(schedule => { %>
+                                    <li class="list-group-item"><%= schedule.name %></li>
+                                <% }); %>
+                            </ul>
+                        <% } else { %>
+                            <div class="text-muted">Không có lớp nào</div>
+                        <% } %>
+                    </div>
+                    <div class="mt-4">
+                        <button type="button" id="submitFormBtn" class="btn btn-primary w-100">
+                            <i class="bi bi-save me-1"></i> Lưu điểm danh
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .attendance-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 15px;
+    }
+    
+    .attendance-card {
+        border: 1px solid #dee2e6;
+        border-radius: 12px;
+        padding: 16px;
+        background-color: #f8f9fa;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    }
+    
+    .attendance-card:hover {
+        box-shadow: 0 5px 12px rgba(0,0,0,0.08);
+    }
+    
+    .attendance-card.present {
+        border-left: 5px solid #2ecc71;
+        background-color: rgba(46, 204, 113, 0.05);
+    }
+    
+    .attendance-card.absent {
+        background-color: rgba(231, 76, 60, 0.15);
+        border-left: 5px solid #e74c3c;
+    }
+    
+    .attendance-card.late {
+        background-color: rgba(243, 156, 18, 0.15);
+        border-left: 5px solid #f39c12;
+    }
+    
+    .student-info {
+        margin-bottom: 12px;
+        padding: 5px;
+        border-radius: 6px;
+    }
+    
+    .student-name {
+        font-weight: 500;
+        font-size: 1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .attendance-actions {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    
+    .attendance-btn {
+        border: none;
+        background: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 5px 8px;
+        border-radius: 6px;
+        color: #6c757d;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+    }
+    
+    .attendance-btn:hover {
+        background-color: rgba(0,0,0,0.05);
+        transform: scale(1.05);
+    }
+    
+    .attendance-btn.active {
+        background-color: rgba(0,0,0,0.1);
+    }
+    
+    .present-btn {
+        color: #2ecc71;
+    }
+    
+    .absent-btn {
+        color: #e74c3c;
+    }
+    
+    .late-btn {
+        color: #f39c12;
+    }
+    
+    .attendance-legend span {
+        display: inline-flex;
+        align-items: center;
+        font-size: 0.9rem;
+    }
+    
+    .attendance-legend i {
+        margin-right: 5px;
+    }
+    
+    .status-count {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 4px;
+        margin-right: 5px;
+        font-weight: 500;
+    }
+    
+    .absent-count {
+        background-color: #ffebee;
+        color: #f44336;
+        border: 1px solid #f44336;
+    }
+    
+    .present-count {
+        background-color: #e8f5e9;
+        color: #4caf50;
+        border: 1px solid #4caf50;
+    }
+    
+    .late-count {
+        background-color: #fff8e1;
+        color: #ff9800;
+        border: 1px solid #ff9800;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cập nhật thống kê ban đầu
+        updateStats();
+        
+        // Xử lý khi click vào các nút trạng thái
+        document.querySelectorAll('.attendance-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const card = this.closest('.attendance-card');
+                const status = this.getAttribute('data-status');
+                const studentId = card.getAttribute('data-student-id');
+                const statusInput = card.querySelector(`input[name="studentStatus[${studentId}]"]`);
+                
+                // Xoá các class trạng thái và active cũ
+                card.classList.remove('present', 'absent', 'late');
+                card.querySelectorAll('.attendance-btn').forEach(btn => btn.classList.remove('active'));
+                
+                // Thêm class mới và cập nhật input
+                card.classList.add(status);
+                this.classList.add('active');
+                statusInput.value = status;
+                
+                // Cập nhật thống kê
+                updateStats();
+            });
+        });
+        
+        // Xử lý nút lưu điểm danh
+        document.getElementById('submitFormBtn').addEventListener('click', function() {
+            document.getElementById('attendanceForm').submit();
+        });
+        
+        document.getElementById('saveAttendanceBtn').addEventListener('click', function() {
+            document.getElementById('attendanceForm').submit();
+        });
+        
+        // Hàm cập nhật thống kê
+        function updateStats() {
+            const presentCount = document.querySelectorAll('.attendance-card.present').length;
+            const absentCount = document.querySelectorAll('.attendance-card.absent').length;
+            const lateCount = document.querySelectorAll('.attendance-card.late').length;
+            
+            const statsContainer = document.querySelector('.attendance-stats');
+            statsContainer.innerHTML = `
+                <span class="status-count present-count">Có mặt: ${presentCount}</span>
+                <span class="status-count absent-count">Vắng: ${absentCount}</span>
+                <span class="status-count late-count">Muộn: ${lateCount}</span>
+            `;
+        }
+    });
+</script>
+
+<%- include('../partials/footer') %> 

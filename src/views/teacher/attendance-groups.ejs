@@ -1,0 +1,102 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mb-0">Quản Lý Nhóm Điểm Danh</h1>
+                <a href="/teacher/attendance/create-group" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i> Tạo Nhóm Mới
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-transparent py-3 border-bottom-0">
+                    <h5 class="mb-0">Danh Sách Nhóm Điểm Danh</h5>
+                </div>
+                <div class="card-body">
+                    <% if (groups && groups.length > 0) { %>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Tên Nhóm</th>
+                                        <th scope="col">Các Lớp</th>
+                                        <th scope="col">Số Học Sinh</th>
+                                        <th scope="col">Ngày Tạo</th>
+                                        <th scope="col">Trạng Thái</th>
+                                        <th scope="col">Thao Tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% groups.forEach(function(group) { %>
+                                        <tr>
+                                            <td><%= group.name %></td>
+                                            <td>
+                                                <% if (group.schedules && group.schedules.length > 0) { %>
+                                                    <% group.schedules.forEach((schedule, index) => { %>
+                                                        <%= schedule.name %><%= index < group.schedules.length - 1 ? ', ' : '' %>
+                                                    <% }); %>
+                                                <% } else { %>
+                                                    <span class="text-muted">Không có lớp nào</span>
+                                                <% } %>
+                                            </td>
+                                            <td><%= group.students ? group.students.length : 0 %> học sinh</td>
+                                            <td><%= moment(group.createdAt).format('DD/MM/YYYY') %></td>
+                                            <td>
+                                                <% if (group.active) { %>
+                                                    <span class="badge bg-success">Đang sử dụng</span>
+                                                <% } else { %>
+                                                    <span class="badge bg-secondary">Không sử dụng</span>
+                                                <% } %>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a href="/teacher/attendance/groups/<%= group._id %>" class="btn btn-sm btn-outline-primary">
+                                                        <i class="bi bi-eye"></i> Chi tiết
+                                                    </a>
+                                                    <a href="/teacher/attendance/groups/<%= group._id %>/take" class="btn btn-sm btn-outline-success">
+                                                        <i class="bi bi-check2-square"></i> Điểm danh
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } else { %>
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i> Bạn chưa có nhóm điểm danh nào. Hãy tạo nhóm mới để quản lý điểm danh hiệu quả hơn.
+                        </div>
+                        <div class="text-center mt-4">
+                            <a href="/teacher/attendance/create-group" class="btn btn-primary">
+                                <i class="bi bi-plus-circle me-1"></i> Tạo Nhóm Điểm Danh
+                            </a>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Kích hoạt DataTables nếu có dữ liệu
+        if (document.querySelector('.table')) {
+            $('.table').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/vi.json'
+                },
+                order: [[3, 'desc']]
+            });
+        }
+    });
+</script>
+
+<%- include('../partials/footer') %> 

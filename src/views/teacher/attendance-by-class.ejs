@@ -1,0 +1,147 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mb-0">Quản Lý Điểm Danh Theo Lớp</h1>
+                <div>
+                    <a href="/teacher/dashboard" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-arrow-left me-1"></i> Quay Lại
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-transparent py-3 border-bottom-0">
+                    <h5 class="mb-0">Bộ lọc</h5>
+                </div>
+                <div class="card-body">
+                    <form action="/teacher/attendance" method="GET">
+                        <div class="mb-3">
+                            <label for="selectedClassId" class="form-label">Lớp học</label>
+                            <select class="form-select" id="selectedClassId" name="scheduleId">
+                                <option value="">Chọn lớp học</option>
+                                <% if (schedules && schedules.length > 0) { %>
+                                    <% schedules.forEach(function(schedule) { %>
+                                        <option value="<%= schedule._id %>" <%= selectedClassId === schedule._id.toString() ? 'selected' : '' %>>
+                                            <%= schedule.name %>
+                                        </option>
+                                    <% }); %>
+                                <% } %>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="startDate" class="form-label">Từ ngày</label>
+                            <input type="date" class="form-control" id="startDate" name="startDate" value="<%= startDate %>">
+                        </div>
+                        <div class="mb-3">
+                            <label for="endDate" class="form-label">Đến ngày</label>
+                            <input type="date" class="form-control" id="endDate" name="endDate" value="<%= endDate %>">
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Lọc</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-transparent py-3 border-bottom-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <% if (selectedClass) { %>
+                            Điểm danh lớp <%= selectedClass.name %>
+                        <% } else { %>
+                            Vui lòng chọn lớp học
+                        <% } %>
+                    </h5>
+                    <% if (selectedClass) { %>
+                        <a href="/teacher/attendance/take/<%= selectedClassId %>" class="btn btn-primary btn-sm">
+                            <i class="bi bi-plus-lg me-1"></i> Điểm danh mới
+                        </a>
+                    <% } %>
+                </div>
+                <div class="card-body">
+                    <% if (selectedClass && attendanceRecords && attendanceRecords.length > 0) { %>
+                        <div class="table-responsive">
+                            <table class="table table-hover attendance-table">
+                                <thead>
+                                    <tr>
+                                        <th>Ngày</th>
+                                        <th class="text-center">Số học sinh</th>
+                                        <th class="text-center">Có mặt</th>
+                                        <th class="text-center">Vắng mặt</th>
+                                        <th class="text-center">Đi muộn</th>
+                                        <th class="text-center">Tỷ lệ có mặt</th>
+                                        <th class="text-end">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% attendanceRecords.forEach(function(record) { 
+                                        // Tính thống kê cho mỗi bản ghi
+                                        let totalStudents = record.students.length;
+                                        let presentCount = record.students.filter(s => s.status === 'present').length;
+                                        let absentCount = record.students.filter(s => s.status === 'absent').length;
+                                        let lateCount = record.students.filter(s => s.status === 'late').length;
+                                        let attendanceRate = totalStudents > 0 ? (presentCount / totalStudents) * 100 : 0;
+                                    %>
+                                        <tr>
+                                            <td><%= moment(record.date).format('DD/MM/YYYY') %></td>
+                                            <td class="text-center"><%= totalStudents %></td>
+                                            <td class="text-center">
+                                                <span class="badge bg-success"><%= presentCount %></span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-danger"><%= absentCount %></span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-warning"><%= lateCount %></span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="progress" style="height: 10px;">
+                                                    <div class="progress-bar bg-success" role="progressbar" style="width: <%= attendanceRate %>%;" 
+                                                         aria-valuenow="<%= attendanceRate %>" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+                                                <small><%= attendanceRate.toFixed(1) %>%</small>
+                                            </td>
+                                            <td class="text-end">
+                                                <a href="/teacher/attendance/class/<%= selectedClassId %>?date=<%= moment(record.date).format('YYYY-MM-DD') %>" class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i> Chi tiết
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } else if (selectedClass) { %>
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i> Không có dữ liệu điểm danh nào cho lớp này trong khoảng thời gian đã chọn.
+                        </div>
+                    <% } else { %>
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i> Vui lòng chọn lớp học để xem báo cáo điểm danh.
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tự động submit form khi chọn lớp học
+        document.getElementById('selectedClassId').addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+</script>
+
+<%- include('../partials/footer') %> 

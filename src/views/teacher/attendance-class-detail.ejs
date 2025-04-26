@@ -1,0 +1,362 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mb-0">Chi Tiết Điểm Danh - <%= schedule.name %></h1>
+                <div>
+                    <a href="/teacher/attendance" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-arrow-left me-1"></i> Quay Lại
+                    </a>
+                    <a href="/teacher/attendance/take/<%= schedule._id %>" class="btn btn-primary">
+                        <i class="bi bi-pencil me-1"></i> Cập Nhật Điểm Danh
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-transparent py-3 border-bottom-0">
+                    <h5 class="mb-0">Thông tin điểm danh</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Lớp học</label>
+                        <input type="text" class="form-control" value="<%= schedule.name %>" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ngày điểm danh</label>
+                        <input type="text" class="form-control" value="<%= moment(selectedDate).format('DD/MM/YYYY') %>" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Giáo viên</label>
+                        <input type="text" class="form-control" value="<%= teacher.name %>" readonly>
+                    </div>
+                    <% if (attendanceRecord) { %>
+                        <div class="mb-3">
+                            <label class="form-label">Thời gian tạo</label>
+                            <input type="text" class="form-control" value="<%= moment(attendanceRecord.createdAt).format('DD/MM/YYYY HH:mm') %>" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Cập nhật lần cuối</label>
+                            <input type="text" class="form-control" value="<%= moment(attendanceRecord.updatedAt).format('DD/MM/YYYY HH:mm') %>" readonly>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-transparent py-3 border-bottom-0">
+                    <h5 class="mb-0">Thống kê</h5>
+                </div>
+                <div class="card-body">
+                    <% 
+                    let totalStudents = 0;
+                    let presentCount = 0;
+                    let absentCount = 0;
+                    let lateCount = 0;
+                    let attendanceRate = 0;
+                    
+                    if (attendanceRecord && attendanceRecord.students) {
+                        totalStudents = attendanceRecord.students.length;
+                        presentCount = attendanceRecord.students.filter(s => s.status === 'present').length;
+                        absentCount = attendanceRecord.students.filter(s => s.status === 'absent').length;
+                        lateCount = attendanceRecord.students.filter(s => s.status === 'late').length;
+                        attendanceRate = totalStudents > 0 ? (presentCount / totalStudents) * 100 : 0;
+                    }
+                    %>
+                    
+                    <div class="attendance-stat-grid">
+                        <div class="attendance-stat-card bg-light-success">
+                            <div class="stat-icon text-success">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-number"><%= presentCount %></div>
+                                <div class="stat-name">Có mặt</div>
+                            </div>
+                        </div>
+                        <div class="attendance-stat-card bg-light-danger">
+                            <div class="stat-icon text-danger">
+                                <i class="bi bi-x-circle-fill"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-number"><%= absentCount %></div>
+                                <div class="stat-name">Vắng mặt</div>
+                            </div>
+                        </div>
+                        <div class="attendance-stat-card bg-light-warning">
+                            <div class="stat-icon text-warning">
+                                <i class="bi bi-clock-fill"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-number"><%= lateCount %></div>
+                                <div class="stat-name">Đi muộn</div>
+                            </div>
+                        </div>
+                        <div class="attendance-stat-card bg-light-primary">
+                            <div class="stat-icon text-primary">
+                                <i class="bi bi-people-fill"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-number"><%= totalStudents %></div>
+                                <div class="stat-name">Tổng số</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label class="form-label">Tỷ lệ điểm danh</label>
+                        <div class="progress" style="height: 15px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: <%= attendanceRate %>%;" 
+                                 aria-valuenow="<%= attendanceRate %>" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="text-end mt-1">
+                            <small><%= attendanceRate.toFixed(1) %>%</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-transparent py-3 border-bottom-0">
+                    <h5 class="mb-0">Danh sách học sinh</h5>
+                </div>
+                <div class="card-body">
+                    <% if (attendanceRecord && attendanceRecord.students && attendanceRecord.students.length > 0) { %>
+                        <div class="table-responsive">
+                            <table class="table table-hover attendance-student-table">
+                                <thead>
+                                    <tr>
+                                        <th width="50">#</th>
+                                        <th>Họ tên</th>
+                                        <th class="text-center">Trạng thái</th>
+                                        <th>Ghi chú</th>
+                                        <th class="text-end">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% attendanceRecord.students.forEach(function(student, index) { %>
+                                        <tr>
+                                            <td><%= index + 1 %></td>
+                                            <td>
+                                                <% if (typeof student.student === 'object' && student.student.name) { %>
+                                                    <%= student.student.name %>
+                                                <% } else { %>
+                                                    <em>Không xác định</em>
+                                                <% } %>
+                                            </td>
+                                            <td class="text-center">
+                                                <% if (student.status === 'present') { %>
+                                                    <span class="badge bg-success">Có mặt</span>
+                                                <% } else if (student.status === 'absent') { %>
+                                                    <span class="badge bg-danger">Vắng mặt</span>
+                                                <% } else if (student.status === 'late') { %>
+                                                    <span class="badge bg-warning">Đi muộn</span>
+                                                <% } else { %>
+                                                    <span class="badge bg-secondary">Không xác định</span>
+                                                <% } %>
+                                            </td>
+                                            <td><%= student.note || '' %></td>
+                                            <td class="text-end">
+                                                <button type="button" class="btn btn-sm btn-outline-primary edit-attendance-btn" 
+                                                        data-student-id="<%= student.student._id || student.student %>"
+                                                        data-student-name="<%= typeof student.student === 'object' && student.student.name ? student.student.name : 'Không xác định' %>"
+                                                        data-status="<%= student.status %>"
+                                                        data-note="<%= student.note || '' %>">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } else { %>
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i> Chưa có dữ liệu điểm danh cho lớp này vào ngày đã chọn.
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Chỉnh sửa Điểm danh -->
+<div class="modal fade" id="editAttendanceModal" tabindex="-1" aria-labelledby="editAttendanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editAttendanceModalLabel">Cập nhật điểm danh</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editAttendanceForm">
+                    <input type="hidden" id="editStudentId" name="studentId">
+                    <input type="hidden" id="editScheduleId" name="scheduleId" value="<%= schedule._id %>">
+                    <input type="hidden" id="editDate" name="date" value="<%= moment(selectedDate).format('YYYY-MM-DD') %>">
+                    
+                    <div class="mb-3">
+                        <label for="editStudentName" class="form-label">Họ tên học sinh</label>
+                        <input type="text" class="form-control" id="editStudentName" readonly>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Trạng thái điểm danh</label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="status" id="statusPresent" value="present">
+                                <label class="form-check-label" for="statusPresent">
+                                    Có mặt
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="status" id="statusAbsent" value="absent">
+                                <label class="form-check-label" for="statusAbsent">
+                                    Vắng mặt
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="status" id="statusLate" value="late">
+                                <label class="form-check-label" for="statusLate">
+                                    Đi muộn
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editNote" class="form-label">Ghi chú</label>
+                        <textarea class="form-control" id="editNote" name="note" rows="3" placeholder="Nhập ghi chú (nếu có)"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="saveAttendanceChanges">Lưu thay đổi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .attendance-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .attendance-stat-card {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        border-radius: 8px;
+    }
+    
+    .bg-light-success {
+        background-color: rgba(40, 167, 69, 0.15);
+    }
+    
+    .bg-light-danger {
+        background-color: rgba(220, 53, 69, 0.15);
+    }
+    
+    .bg-light-warning {
+        background-color: rgba(255, 193, 7, 0.15);
+    }
+    
+    .bg-light-primary {
+        background-color: rgba(0, 123, 255, 0.15);
+    }
+    
+    .stat-icon {
+        font-size: 2rem;
+        margin-right: 15px;
+    }
+    
+    .stat-info {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    
+    .stat-name {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mở modal chỉnh sửa điểm danh
+        const editButtons = document.querySelectorAll('.edit-attendance-btn');
+        const editModal = new bootstrap.Modal(document.getElementById('editAttendanceModal'));
+        
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const studentId = this.getAttribute('data-student-id');
+                const studentName = this.getAttribute('data-student-name');
+                const status = this.getAttribute('data-status');
+                const note = this.getAttribute('data-note');
+                
+                // Điền dữ liệu vào form
+                document.getElementById('editStudentId').value = studentId;
+                document.getElementById('editStudentName').value = studentName;
+                document.getElementById('editNote').value = note;
+                
+                // Chọn trạng thái
+                document.querySelector(`input[name="status"][value="${status}"]`).checked = true;
+                
+                // Hiển thị modal
+                editModal.show();
+            });
+        });
+        
+        // Xử lý lưu thay đổi
+        document.getElementById('saveAttendanceChanges').addEventListener('click', function() {
+            const formData = new FormData(document.getElementById('editAttendanceForm'));
+            const data = {};
+            
+            for (const [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            
+            // Gửi yêu cầu AJAX để cập nhật
+            fetch('/teacher/attendance/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // Đóng modal và tải lại trang
+                    editModal.hide();
+                    window.location.reload();
+                } else {
+                    alert('Lỗi: ' + result.message);
+                }
+            })
+            .catch(error => {
+                console.error('Lỗi:', error);
+                alert('Đã xảy ra lỗi khi cập nhật điểm danh.');
+            });
+        });
+    });
+</script>
+
+<%- include('../partials/footer') %> 

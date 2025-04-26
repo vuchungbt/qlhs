@@ -1,0 +1,220 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Thông tin phụ huynh</h1>
+        <a href="/teacher/parents" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Quay lại danh sách
+        </a>
+    </div>
+
+    <% if (parent) { %>
+        <div class="row">
+            <!-- Thông tin phụ huynh -->
+            <div class="col-lg-6">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 bg-primary text-white">
+                        <h6 class="m-0 font-weight-bold">Thông tin cá nhân</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th style="width: 30%">Họ và tên:</th>
+                                    <td><%= parent.name %></td>
+                                </tr>
+                                <tr>
+                                    <th>Mối quan hệ:</th>
+                                    <td><%= parent.relationship || 'Chưa có thông tin' %></td>
+                                </tr>
+                                <tr>
+                                    <th>Số điện thoại:</th>
+                                    <td>
+                                        <% if (parent.phone) { %>
+                                            <a href="tel:<%= parent.phone %>"><%= parent.phone %></a>
+                                        <% } else { %>
+                                            <span class="text-muted">Chưa có thông tin</span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Email:</th>
+                                    <td>
+                                        <% if (parent.email) { %>
+                                            <a href="mailto:<%= parent.email %>"><%= parent.email %></a>
+                                        <% } else { %>
+                                            <span class="text-muted">Chưa có thông tin</span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Địa chỉ:</th>
+                                    <td><%= parent.address || 'Chưa có thông tin' %></td>
+                                </tr>
+                                <tr>
+                                    <th>Nghề nghiệp:</th>
+                                    <td><%= parent.occupation || 'Chưa có thông tin' %></td>
+                                </tr>
+                                <tr>
+                                    <th>Ghi chú:</th>
+                                    <td><%= parent.notes || 'Không có ghi chú' %></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Phần liên lạc nhanh -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 bg-info text-white">
+                        <h6 class="m-0 font-weight-bold">Liên lạc nhanh</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <% if (parent.phone) { %>
+                                <a href="tel:<%= parent.phone %>" class="btn btn-outline-primary">
+                                    <i class="fas fa-phone"></i> Gọi điện
+                                </a>
+                            <% } else { %>
+                                <button class="btn btn-outline-primary" disabled>
+                                    <i class="fas fa-phone"></i> Không có số điện thoại
+                                </button>
+                            <% } %>
+                            
+                            <% if (parent.email) { %>
+                                <a href="mailto:<%= parent.email %>" class="btn btn-outline-info">
+                                    <i class="fas fa-envelope"></i> Gửi email
+                                </a>
+                            <% } else { %>
+                                <button class="btn btn-outline-info" disabled>
+                                    <i class="fas fa-envelope"></i> Không có email
+                                </button>
+                            <% } %>
+                        </div>
+                        
+                        <hr/>
+                        
+                        <button class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#contactModal">
+                            <i class="fas fa-plus-circle"></i> Thêm ghi chú liên lạc
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Danh sách học sinh và lịch sử liên lạc -->
+            <div class="col-lg-6">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 bg-success text-white">
+                        <h6 class="m-0 font-weight-bold">Học sinh</h6>
+                    </div>
+                    <div class="card-body">
+                        <% if (parent.children && parent.children.length > 0) { %>
+                            <div class="list-group">
+                                <% parent.children.forEach(function(child) { %>
+                                    <a href="/teacher/students/<%= child._id %>" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1"><%= child.name %></h6>
+                                                <small class="text-muted">Ngày sinh: <%= child.dateOfBirth ? new Date(child.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A' %></small>
+                                            </div>
+                                            <span class="badge bg-primary rounded-pill">
+                                                <%= child.className || 'Chưa có lớp' %>
+                                            </span>
+                                        </div>
+                                        <% if (child.address) { %>
+                                            <p class="mb-1 text-muted small">
+                                                <i class="fas fa-map-marker-alt"></i> <%= child.address %>
+                                            </p>
+                                        <% } %>
+                                    </a>
+                                <% }); %>
+                            </div>
+                        <% } else { %>
+                            <div class="text-center py-3">
+                                <p class="text-muted">Không có thông tin về học sinh của phụ huynh này trong các lớp của bạn.</p>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Lịch sử liên lạc -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 bg-warning text-dark">
+                        <h6 class="m-0 font-weight-bold">Lịch sử liên lạc</h6>
+                    </div>
+                    <div class="card-body">
+                        <% if (parent.contactHistory && parent.contactHistory.length > 0) { %>
+                            <div class="timeline">
+                                <% parent.contactHistory.forEach(function(contact) { %>
+                                    <div class="timeline-item mb-3 pb-3 border-bottom">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span class="badge bg-secondary">
+                                                <%= new Date(contact.date).toLocaleDateString('vi-VN') %> 
+                                                <%= new Date(contact.date).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}) %>
+                                            </span>
+                                            <span class="badge bg-info"><%= contact.method %></span>
+                                        </div>
+                                        <p class="text-dark"><%= contact.content %></p>
+                                        <small class="text-muted">Ghi chú bởi: <%= contact.teacher ? contact.teacher.name : 'Không xác định' %></small>
+                                    </div>
+                                <% }); %>
+                            </div>
+                        <% } else { %>
+                            <div class="text-center py-3">
+                                <p class="text-muted">Chưa có lịch sử liên lạc với phụ huynh này.</p>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal Thêm ghi chú liên lạc -->
+        <div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="/teacher/parents/<%= parent._id %>/contact" method="POST">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="contactModalLabel">Thêm ghi chú liên lạc</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="date" class="form-label">Ngày liên lạc</label>
+                                <input type="date" class="form-control" id="date" name="date" value="<%= new Date().toISOString().split('T')[0] %>" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="method" class="form-label">Phương thức liên lạc</label>
+                                <select class="form-select" id="method" name="method" required>
+                                    <option value="Điện thoại">Điện thoại</option>
+                                    <option value="Email">Email</option>
+                                    <option value="Trực tiếp">Trực tiếp</option>
+                                    <option value="Khác">Khác</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="content" class="form-label">Nội dung liên lạc</label>
+                                <textarea class="form-control" id="content" name="content" rows="5" required placeholder="Nhập nội dung cuộc trò chuyện/ghi chú..."></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                            <button type="submit" class="btn btn-primary">Lưu ghi chú</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    <% } else { %>
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i> Không tìm thấy thông tin phụ huynh.
+        </div>
+        <div class="text-center py-3">
+            <a href="/teacher/parents" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i> Quay lại danh sách phụ huynh
+            </a>
+        </div>
+    <% } %>
+</div>
+
+<%- include('../partials/footer') %> 

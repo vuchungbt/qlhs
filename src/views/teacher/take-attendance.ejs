@@ -1,0 +1,499 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mb-0">Điểm Danh - <%= schedule.name %></h1>
+                <div>
+                    <a href="/teacher/classes/<%= schedule._id %>" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-arrow-left me-1"></i> Quay Lại
+                    </a>
+                    <button type="button" id="saveAttendanceBtn" class="btn btn-outline-success">
+                        <i class="bi bi-save me-1"></i> Lưu Điểm Danh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-transparent py-3 border-bottom-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Danh sách học sinh</h5>
+                    <div class="attendance-stats d-flex gap-2">
+                        <!-- Thống kê sẽ được cập nhật bằng JavaScript -->
+                        <span class="status-count bg-light-success" id="presentCount">0 có mặt</span>
+                        <span class="status-count bg-light-danger" id="absentCount">0 vắng mặt</span>
+                        <span class="status-count bg-light-warning" id="lateCount">0 đi muộn</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form id="attendanceForm" action="/teacher/attendance/submit/<%= schedule._id %>" method="POST">
+                        <input type="hidden" name="date" id="hiddenAttendanceDate" value="<%= today %>">
+                        
+                        <div class="attendance-legend d-flex mb-3">
+                            <span class="me-3"><i class="bi bi-circle-fill text-success"></i> Có mặt</span>
+                            <span class="me-3"><i class="bi bi-circle-fill text-danger"></i> Vắng mặt</span>
+                            <span><i class="bi bi-circle-fill text-warning"></i> Đi muộn</span>
+                        </div>
+                        
+                        <div class="attendance-grid">
+                            <% if (students && students.length > 0) { %>
+                                <% students.forEach(function(enrollment) { 
+                                    const student = enrollment.student;
+                                    const studentId = student._id.toString();
+                                    let defaultStatus = 'present';
+                                    
+                                    // Kiểm tra nếu đã có dữ liệu điểm danh
+                                    if (existingAttendance) {
+                                        const existingData = existingAttendance.find(item => item.studentId === studentId);
+                                        if (existingData) {
+                                            defaultStatus = existingData.status;
+                                        }
+                                    }
+                                %>
+                                    <div class="attendance-card <%= defaultStatus %>" data-student-id="<%= studentId %>">
+                                        <div class="student-info">
+                                            <div class="student-name fw-medium"><%= student.name %></div>
+                                        </div>
+                                        <div class="attendance-actions">
+                                            <button type="button" class="attendance-btn present-btn <%= defaultStatus === 'present' ? 'active' : '' %>" data-status="present" title="Có mặt">
+                                                <i class="bi bi-check-circle-fill"></i>
+                                            </button>
+                                            <button type="button" class="attendance-btn absent-btn <%= defaultStatus === 'absent' ? 'active' : '' %>" data-status="absent" title="Vắng mặt">
+                                                <i class="bi bi-x-circle-fill"></i>
+                                            </button>
+                                            <button type="button" class="attendance-btn late-btn <%= defaultStatus === 'late' ? 'active' : '' %>" data-status="late" title="Đi muộn">
+                                                <i class="bi bi-clock-fill"></i>
+                                            </button>
+                                        </div>
+                                        <input type="hidden" name="studentStatus[<%= studentId %>]" value="<%= defaultStatus %>">
+                                        <div class="note-container">
+                                            <input type="text" name="studentNote[<%= studentId %>]" class="form-control form-control-sm attendance-note" 
+                                                placeholder="Ghi chú" value="<%= existingAttendance && existingAttendance.find(item => item.studentId === studentId)?.note || '' %>">
+                                        </div>
+                                    </div>
+                                <% }); %>
+                            <% } else { %>
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i> Không có học sinh nào trong lớp này.
+                                </div>
+                            <% } %>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-transparent py-3 border-bottom-0">
+                    <h5 class="mb-0">Thông Tin Điểm Danh</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="attendanceDate" class="form-label">Ngày điểm danh</label>
+                        <input type="date" class="form-control" id="attendanceDate" value="<%= today %>">
+                        <div class="form-text mt-1">
+                            <i class="bi bi-info-circle-fill me-1"></i> Nếu chọn ngày khác, hệ thống sẽ tìm dữ liệu điểm danh sẵn có hoặc tạo mới
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Lớp học</label>
+                        <input type="text" class="form-control" value="<%= schedule.name %>" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Lịch học</label>
+                        <% 
+                           let dayNames = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7']; 
+                           let dayText = '';
+                           
+                           // Xử lý hiển thị ngày học
+                           if (schedule.days && schedule.days.length > 0) {
+                               let dayIndexes = schedule.days.map(day => {
+                                   const dayMap = {
+                                       'monday': 1, 'tuesday': 2, 'wednesday': 3, 
+                                       'thursday': 4, 'friday': 5, 'saturday': 6, 'sunday': 0
+                                   };
+                                   return dayMap[day.toLowerCase()] || 0;
+                               });
+                               dayText = dayIndexes.map(idx => dayNames[idx]).join(', ');
+                           } else if (schedule.dayOfWeek) {
+                               // Nếu dayOfWeek là mảng
+                               if (Array.isArray(schedule.dayOfWeek)) {
+                                   dayText = schedule.dayOfWeek.map(day => dayNames[day]).join(', ');
+                               } else {
+                                   // Nếu dayOfWeek là số đơn lẻ
+                                   dayText = dayNames[schedule.dayOfWeek];
+                               }
+                           } else {
+                               dayText = 'Chưa cập nhật';
+                           }
+                           
+                           // Xử lý hiển thị thời gian
+                           let timeText = '';
+                           if (schedule.time && schedule.time.start && schedule.time.end) {
+                               timeText = `${schedule.time.start} - ${schedule.time.end}`;
+                           } else if (schedule.startTime && schedule.endTime) {
+                               timeText = `${schedule.startTime} - ${schedule.endTime}`;
+                           } else {
+                               timeText = 'Chưa cập nhật';
+                           }
+                        %>
+                        <input type="text" class="form-control" value="<%= dayText %>, <%= timeText %>" readonly>
+                    </div>
+                    <div class="mt-4">
+                        <button type="button" id="submitFormBtn" class="btn btn-primary w-100">
+                            <i class="bi bi-save me-1"></i> Lưu điểm danh
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-transparent py-3 border-bottom-0">
+                    <h5 class="mb-0">Tùy chọn nhanh</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="button" id="markAllPresentBtn" class="btn btn-outline-success">
+                            <i class="bi bi-check-all me-1"></i> Tất cả có mặt
+                        </button>
+                        <button type="button" id="markAllAbsentBtn" class="btn btn-outline-danger">
+                            <i class="bi bi-x-circle me-1"></i> Tất cả vắng mặt
+                        </button>
+                        <a href="/teacher/attendance" class="btn btn-outline-primary">
+                            <i class="bi bi-list-check me-1"></i> Xem báo cáo điểm danh
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .attendance-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 15px;
+    }
+    
+    .attendance-card {
+        border: 1px solid #dee2e6;
+        border-radius: 12px;
+        padding: 16px;
+        background-color: #f8f9fa;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    }
+    
+    .attendance-card:hover {
+        box-shadow: 0 5px 12px rgba(0,0,0,0.08);
+        transform: translateY(-2px);
+    }
+    
+    .attendance-card.present {
+        border-left: 5px solid #2ecc71;
+        background-color: rgba(46, 204, 113, 0.15);
+    }
+    
+    .attendance-card.absent {
+        background-color: rgba(231, 76, 60, 0.2);
+        border-left: 5px solid #e74c3c;
+    }
+    
+    .attendance-card.late {
+        border-left: 5px solid #f39c12;
+        background-color: rgba(243, 156, 18, 0.15);
+    }
+    
+    .student-info {
+        margin-bottom: 12px;
+        padding: 5px;
+        border-radius: 6px;
+        transition: background-color 0.2s;
+    }
+    
+    .student-name {
+        font-weight: 500;
+        font-size: 1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .attendance-actions {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    
+    .attendance-btn {
+        border: none;
+        background: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 5px 8px;
+        border-radius: 6px;
+        color: #6c757d;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+    }
+    
+    .attendance-btn:hover {
+        background-color: rgba(0,0,0,0.05);
+        transform: scale(1.05);
+    }
+    
+    .attendance-btn.active {
+        background-color: rgba(0,0,0,0.1);
+    }
+    
+    .present-btn {
+        color: #2ecc71;
+    }
+    
+    .absent-btn {
+        color: #e74c3c;
+    }
+    
+    .late-btn {
+        color: #f39c12;
+    }
+    
+    .present .present-btn,
+    .absent .absent-btn,
+    .late .late-btn {
+        background-color: rgba(0,0,0,0.1);
+        transform: scale(1.05);
+    }
+    
+    .attendance-note input {
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        font-size: 13px;
+        padding: 0.3rem 0.5rem;
+        transition: border-color 0.2s;
+        background-color: rgba(255, 255, 255, 0.7);
+        width: 100%;
+    }
+    
+    .attendance-note input:focus {
+        border-color: #6c757d;
+        box-shadow: none;
+        outline: none;
+        background-color: #ffffff;
+    }
+    
+    .attendance-note input::placeholder {
+        color: #adb5bd;
+        font-style: italic;
+    }
+    
+    /* Hiệu ứng khi chọn bấm vào nút trạng thái */
+    .attendance-btn:active {
+        transform: scale(0.9);
+    }
+    
+    .status-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .bg-light-success {
+        background-color: rgba(46, 204, 113, 0.15);
+        color: #2ecc71;
+    }
+    
+    .bg-light-danger {
+        background-color: rgba(231, 76, 60, 0.15);
+        color: #e74c3c;
+    }
+    
+    .bg-light-warning {
+        background-color: rgba(243, 156, 18, 0.15);
+        color: #f39c12;
+    }
+    
+    .note-container {
+        margin-top: 8px;
+    }
+    
+    .attendance-note {
+        cursor: text;
+        border-radius: 6px;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Các phần tử DOM
+        const attendanceForm = document.getElementById('attendanceForm');
+        const submitFormBtn = document.getElementById('submitFormBtn');
+        const saveAttendanceBtn = document.getElementById('saveAttendanceBtn');
+        const attendanceDateInput = document.getElementById('attendanceDate');
+        const hiddenDateInput = document.getElementById('hiddenAttendanceDate');
+        const markAllPresentBtn = document.getElementById('markAllPresentBtn');
+        const markAllAbsentBtn = document.getElementById('markAllAbsentBtn');
+        const attendanceCards = document.querySelectorAll('.attendance-card');
+        
+        // Thống kê
+        const presentCountEl = document.getElementById('presentCount');
+        const absentCountEl = document.getElementById('absentCount');
+        const lateCountEl = document.getElementById('lateCount');
+        
+        // Cập nhật thống kê
+        function updateStats() {
+            const presentCount = document.querySelectorAll('.attendance-card.present').length;
+            const absentCount = document.querySelectorAll('.attendance-card.absent').length;
+            const lateCount = document.querySelectorAll('.attendance-card.late').length;
+            
+            presentCountEl.textContent = `${presentCount} có mặt`;
+            absentCountEl.textContent = `${absentCount} vắng mặt`;
+            lateCountEl.textContent = `${lateCount} đi muộn`;
+        }
+        
+        // Cập nhật thống kê ban đầu
+        updateStats();
+        
+        // Sự kiện click vào các nút trạng thái điểm danh
+        document.querySelectorAll('.attendance-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const card = this.closest('.attendance-card');
+                const studentId = card.getAttribute('data-student-id');
+                const status = this.getAttribute('data-status');
+                const statusInput = card.querySelector(`input[name="studentStatus[${studentId}]"]`);
+                
+                // Nếu nút đã được active, nghĩa là đang bỏ chọn trạng thái đó
+                if (this.classList.contains('active')) {
+                    // Không làm gì vì luôn phải có trạng thái
+                    return;
+                }
+                
+                // Xóa tất cả trạng thái hiện tại
+                card.classList.remove('present', 'absent', 'late');
+                card.classList.add(status);
+                
+                // Cập nhật input giá trị
+                statusInput.value = status;
+                
+                // Xóa active khỏi tất cả các nút
+                card.querySelectorAll('.attendance-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                // Thêm active cho nút được click
+                this.classList.add('active');
+                
+                // Hiệu ứng trực quan
+                card.style.transition = 'all 0.3s';
+                card.style.transform = 'scale(1.05)';
+                setTimeout(() => {
+                    card.style.transform = '';
+                }, 300);
+                
+                // Cập nhật thống kê
+                updateStats();
+            });
+        });
+        
+        // Click vào card để chọn trạng thái điểm danh
+        attendanceCards.forEach(card => {
+            card.addEventListener('click', function(e) {
+                // Chỉ xử lý khi click vào card, không phải vào nút hoặc ô input ghi chú
+                if (!e.target.closest('.attendance-btn') && !e.target.closest('.attendance-note')) {
+                    const currentStatus = this.classList.contains('present') ? 'present' : 
+                                          this.classList.contains('absent') ? 'absent' : 'late';
+                    
+                    // Tìm trạng thái tiếp theo
+                    const statusOrder = ['present', 'late', 'absent'];
+                    const currentIndex = statusOrder.indexOf(currentStatus);
+                    const nextStatus = statusOrder[(currentIndex + 1) % statusOrder.length];
+                    
+                    // Kích hoạt nút tương ứng
+                    const nextButton = this.querySelector(`.${nextStatus}-btn`);
+                    if (nextButton) nextButton.click();
+                }
+            });
+        });
+        
+        // Cập nhật ngày khi thay đổi input ngày
+        attendanceDateInput.addEventListener('change', function() {
+            hiddenDateInput.value = this.value;
+            
+            // Redirect đến URL với ngày đã chọn để tải lại dữ liệu điểm danh cho ngày đó
+            window.location.href = `/teacher/attendance/take/<%= schedule._id %>?date=${this.value}`;
+        });
+        
+        // Nút lưu điểm danh
+        submitFormBtn.addEventListener('click', function() {
+            attendanceForm.submit();
+        });
+        
+        saveAttendanceBtn.addEventListener('click', function() {
+            attendanceForm.submit();
+        });
+        
+        // Đánh dấu tất cả có mặt
+        markAllPresentBtn.addEventListener('click', function() {
+            attendanceCards.forEach(card => {
+                const studentId = card.getAttribute('data-student-id');
+                const statusInput = card.querySelector(`input[name="studentStatus[${studentId}]"]`);
+                
+                // Cập nhật trạng thái
+                card.classList.remove('present', 'absent', 'late');
+                card.classList.add('present');
+                statusInput.value = 'present';
+                
+                // Cập nhật nút
+                card.querySelectorAll('.attendance-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                card.querySelector('.present-btn').classList.add('active');
+            });
+            
+            // Cập nhật thống kê
+            updateStats();
+        });
+        
+        // Đánh dấu tất cả vắng mặt
+        markAllAbsentBtn.addEventListener('click', function() {
+            attendanceCards.forEach(card => {
+                const studentId = card.getAttribute('data-student-id');
+                const statusInput = card.querySelector(`input[name="studentStatus[${studentId}]"]`);
+                
+                // Cập nhật trạng thái
+                card.classList.remove('present', 'absent', 'late');
+                card.classList.add('absent');
+                statusInput.value = 'absent';
+                
+                // Cập nhật nút
+                card.querySelectorAll('.attendance-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                card.querySelector('.absent-btn').classList.add('active');
+            });
+            
+            // Cập nhật thống kê
+            updateStats();
+        });
+    });
+</script>
+
+<%- include('../partials/footer') %> 

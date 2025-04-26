@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng Nhập Admin - Hệ thống quản lý học sinh</title>
+    <title>Đăng Nhập Giáo Viên - Hệ thống quản lý học sinh</title>
     <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="/icons/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/style.css">
@@ -25,16 +25,16 @@
             border-radius: 10px;
         }
         .card-header {
-            background: #0f172a;
+            background: #15803d;
             color: white;
             border-radius: 10px 10px 0 0 !important;
         }
         .btn-primary {
-            background-color: #0f172a;
+            background-color: #15803d;
             border: none;
         }
         .btn-primary:hover {
-            background-color: #1e293b;
+            background-color: #166534;
         }
         .logo {
             width: 80px;
@@ -49,8 +49,8 @@
     <div class="container py-3">
         <header class="pb-3 mb-4 text-center">
             <a href="/" class="d-flex align-items-center justify-content-center text-decoration-none">
-                <i class="bi bi-book me-2 text-primary" style="font-size: 2rem;"></i>
-                <span class="fs-4 fw-semibold text-primary">Hệ thống Quản lý Học sinh</span>
+                <i class="bi bi-book me-2 text-success" style="font-size: 2rem;"></i>
+                <span class="fs-4 fw-semibold text-success">Hệ thống Quản lý Học sinh</span>
             </a>
         </header>
     </div>
@@ -60,7 +60,7 @@
             <div class="card shadow border-0 rounded-3">
                 <div class="card-body p-4">
                     <div class="text-center">
-                        <h1 class="card-title h3 mb-4">Đăng nhập Quản trị viên</h1>
+                        <h1 class="card-title h3 mb-4">Đăng nhập Giáo viên</h1>
                     </div>
                     
                     <% if (errorMessage) { %>
@@ -69,10 +69,10 @@
                     </div>
                     <% } %>
                     
-                    <form action="/auth/login" method="POST">
+                    <form action="/auth/teacher-login" method="POST">
                         <div class="mb-3">
-                            <label for="username" class="form-label">Tên đăng nhập</label>
-                            <input type="text" class="form-control" id="username" name="username" placeholder="Nhập tên đăng nhập" required>
+                            <label for="username" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="username" name="username" placeholder="Nhập email" required>
                         </div>
                         
                         <div class="mb-4">
@@ -80,7 +80,7 @@
                             <input type="password" class="form-control" id="password" name="password" placeholder="Nhập mật khẩu" required>
                         </div>
                         
-                        <input type="hidden" name="userType" value="admin">
+                        <input type="hidden" name="userType" value="teacher">
                         
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">Đăng nhập</button>
@@ -88,7 +88,7 @@
                         
                         <div class="text-center mt-3">
                             <a href="#" class="small text-decoration-none">Quên mật khẩu?</a>
-                            <p class="small mt-2">Bạn là giáo viên? <a href="/auth/teacher-login" class="text-decoration-none">Đăng nhập ở đây</a></p>
+                            <p class="small mt-2">Bạn là quản trị viên? <a href="/auth/login" class="text-decoration-none">Đăng nhập ở đây</a></p>
                         </div>
                     </form>
                 </div>

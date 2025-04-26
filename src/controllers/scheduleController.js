@@ -10,6 +10,7 @@ exports.getSchedules = async (req, res) => {
     // Lấy danh sách lịch học
     const schedules = await Schedule.find()
       .populate('teacher', 'name')
+      .populate('assistantTeachers', 'name')
       .populate('students', 'name');
     
     // Lấy danh sách giáo viên và học sinh
@@ -57,7 +58,14 @@ exports.getSchedules = async (req, res) => {
 exports.createSchedule = async (req, res) => {
   try {
     const { name, teacherId, dayOfWeek, startTime, endTime, location } = req.body;
-    let { studentIds } = req.body;
+    let { studentIds, assistantTeacherIds } = req.body;
+    
+    // Đảm bảo assistantTeacherIds luôn là mảng
+    if (assistantTeacherIds) {
+      assistantTeacherIds = Array.isArray(assistantTeacherIds) ? assistantTeacherIds : [assistantTeacherIds];
+    } else {
+      assistantTeacherIds = [];
+    }
     
     // Chuyển đổi dayOfWeek từ chuỗi sang mảng nếu cần
     const days = Array.isArray(dayOfWeek) ? dayOfWeek : [dayOfWeek];
@@ -73,6 +81,7 @@ exports.createSchedule = async (req, res) => {
     console.log('Ngày được chọn (gốc):', dayOfWeek);
     console.log('Ngày được chọn (mảng):', days);
     console.log('Học sinh được chọn:', studentIds);
+    console.log('Trợ giảng được chọn:', assistantTeacherIds);
     
     // Tìm thông tin giáo viên để lấy môn học
     const teacher = await Teacher.findById(teacherId);
@@ -84,6 +93,7 @@ exports.createSchedule = async (req, res) => {
     const newSchedule = new Schedule({
       name,
       teacher: teacherId,
+      assistantTeachers: assistantTeacherIds,
       dayOfWeek: days,
       days: days,
       startTime,
@@ -172,6 +182,7 @@ exports.getEditSchedule = async (req, res) => {
     
     const schedule = await Schedule.findById(id)
       .populate('teacher')
+      .populate('assistantTeachers')
       .populate('students');
       
     if (!schedule) {
@@ -208,7 +219,14 @@ exports.updateSchedule = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, teacherId, dayOfWeek, startTime, endTime, location, status } = req.body;
-    let { studentIds } = req.body;
+    let { studentIds, assistantTeacherIds } = req.body;
+    
+    // Đảm bảo assistantTeacherIds luôn là mảng
+    if (assistantTeacherIds) {
+      assistantTeacherIds = Array.isArray(assistantTeacherIds) ? assistantTeacherIds : [assistantTeacherIds];
+    } else {
+      assistantTeacherIds = [];
+    }
     
     // Kiểm tra và đảm bảo dayOfWeek không null/undefined
     const daysInput = dayOfWeek || [];
@@ -226,11 +244,13 @@ exports.updateSchedule = async (req, res) => {
     console.log('Ngày trong tuần đã chọn (raw):', dayOfWeek);
     console.log('Ngày trong tuần đã xử lý:', days);
     console.log('Học sinh được chọn:', studentIds);
+    console.log('Trợ giảng được chọn:', assistantTeacherIds);
     
     // Đảm bảo tương thích với cả hai cấu trúc dữ liệu
     const updatedSchedule = {
       name,
       teacher: teacherId,
+      assistantTeachers: assistantTeacherIds,
       // Lưu ở cả hai định dạng để đảm bảo tương thích
       dayOfWeek: days,
       // Chỉ chuyển đổi những giá trị không null/undefined
@@ -335,6 +355,7 @@ exports.getScheduleDetail = async (req, res) => {
     
     const schedule = await Schedule.findById(id)
       .populate('teacher', 'name email phone')
+      .populate('assistantTeachers', 'name email phone')
       .populate('students', 'name class dateOfBirth');
       
     if (!schedule) {

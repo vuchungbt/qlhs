@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const teacherSchema = new mongoose.Schema({
   name: {
@@ -33,5 +34,10 @@ const teacherSchema = new mongoose.Schema({
     default: Date.now
   }
 });
+
+// Phương thức so sánh mật khẩu
+teacherSchema.methods.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
 
 module.exports = mongoose.model('Teacher', teacherSchema);

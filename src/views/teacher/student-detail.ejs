@@ -1,0 +1,164 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Thông tin học sinh: <%= student.name %></h1>
+        <div>
+            <a href="/teacher/students" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Quay lại danh sách
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Thông tin cơ bản học sinh -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Thông tin cá nhân</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex mb-3">
+                        <div class="flex-shrink-0">
+                            <% if (student.avatar) { %>
+                                <img src="<%= student.avatar %>" alt="Ảnh đại diện" class="rounded-circle" width="100" height="100">
+                            <% } else { %>
+                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white" style="width: 100px; height: 100px;">
+                                    <span style="font-size: 2rem;"><%= student.name.charAt(0) %></span>
+                                </div>
+                            <% } %>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h5 class="mt-0"><%= student.name %></h5>
+                            <p class="text-muted mb-1">Mã học sinh: <%= student.studentId || 'Chưa cấp' %></p>
+                            <p class="text-muted mb-1">Lớp: 
+                                <% if (classes && classes.length > 0) { %>
+                                    <% classes.forEach((schedule, index) => { %>
+                                        <%= schedule.name %><%= index < classes.length - 1 ? ', ' : '' %>
+                                    <% }) %>
+                                <% } else { %>
+                                    Chưa có lớp
+                                <% } %>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6>Thông tin liên hệ</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <td width="120"><i class="fas fa-phone-alt me-2"></i>Điện thoại:</td>
+                                        <td><%= student.phone || 'Chưa cập nhật' %></td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="fas fa-map-marker-alt me-2"></i>Địa chỉ:</td>
+                                        <td><%= student.address || 'Chưa cập nhật' %></td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="fas fa-birthday-cake me-2"></i>Ngày sinh:</td>
+                                        <td><%= student.birthDate ? new Date(student.birthDate).toLocaleDateString('vi-VN') : 'Chưa cập nhật' %></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thông tin phụ huynh -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">Thông tin phụ huynh</h5>
+                </div>
+                <div class="card-body">
+                    <% if (student.parents && student.parents.length > 0) { %>
+                        <% student.parents.forEach(parent => { %>
+                            <div class="mb-3 pb-3 border-bottom">
+                                <h6 class="mb-2"><%= parent.name %> (<%= parent.relationship %>)</h6>
+                                <p class="mb-1"><i class="fas fa-phone-alt me-2"></i> <%= parent.phone || 'Chưa cập nhật' %></p>
+                                <p class="mb-1"><i class="fas fa-envelope me-2"></i> <%= parent.email || 'Chưa cập nhật' %></p>
+                                <a href="/teacher/parents/<%= parent._id %>" class="btn btn-sm btn-outline-info mt-2">Xem chi tiết</a>
+                            </div>
+                        <% }) %>
+                    <% } else { %>
+                        <div class="text-center py-4">
+                            <i class="fas fa-users-slash fa-3x text-muted mb-3"></i>
+                            <p>Chưa có thông tin phụ huynh</p>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ghi chú của giáo viên -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-warning">
+                    <h5 class="card-title mb-0">Ghi chú</h5>
+                </div>
+                <div class="card-body">
+                    <form action="/teacher/students/<%= student._id %>/note" method="POST">
+                        <div class="form-group">
+                            <textarea class="form-control" name="teacherNote" rows="5" placeholder="Nhập ghi chú về học sinh..."><%= student.teacherNote || '' %></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3">Lưu ghi chú</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lịch sử điểm danh -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">Lịch sử điểm danh</h5>
+                </div>
+                <div class="card-body">
+                    <% if (attendanceHistory && attendanceHistory.length > 0) { %>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Ngày</th>
+                                        <th>Lớp</th>
+                                        <th>Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% attendanceHistory.forEach(record => { %>
+                                        <tr>
+                                            <td><%= new Date(record.date).toLocaleDateString('vi-VN') %></td>
+                                            <td><%= record.schedule ? record.schedule.name : 'Không xác định' %></td>
+                                            <td>
+                                                <% if (record.status === 'present') { %>
+                                                    <span class="badge bg-success">Có mặt</span>
+                                                <% } else if (record.status === 'absent') { %>
+                                                    <span class="badge bg-danger">Vắng mặt</span>
+                                                <% } else if (record.status === 'late') { %>
+                                                    <span class="badge bg-warning text-dark">Đi muộn</span>
+                                                <% } else { %>
+                                                    <span class="badge bg-secondary">Không xác định</span>
+                                                <% } %>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } else { %>
+                        <div class="text-center py-4">
+                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                            <p>Chưa có lịch sử điểm danh</p>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %> 

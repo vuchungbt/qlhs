@@ -41,28 +41,27 @@
                     <span><%= schedule.location %></span>
                 </div>
                 <div class="mt-3 d-flex justify-content-end">
-                    <button 
-                        class="btn btn-sm btn-outline-light rounded-circle me-2 view-students-btn"
-                        data-bs-toggle="modal"
-                        data-bs-target="#studentListModal"
-                        data-schedule-id="<%= schedule._id %>"
-                        data-schedule-name="<%= schedule.name %>"
-                        title="Xem học sinh">
-                        <i class="bi bi-people"></i>
-                    </button>
-                    <a href="/academic/schedule/<%= schedule._id %>" class="btn btn-sm btn-outline-light rounded-circle me-2" title="Xem chi tiết">
-                        <i class="bi bi-eye"></i>
-                    </a>
-                    <a href="/academic/schedule/<%= schedule._id %>/edit" class="btn btn-sm btn-outline-light rounded-circle me-2" title="Chỉnh sửa">
-                        <i class="bi bi-pencil"></i>
-                    </a>
-                    <button 
-                        class="btn btn-sm btn-outline-light rounded-circle"
-                        onclick="deleteSchedule('<%= schedule._id %>')"
-                        title="Xóa"
-                    >
-                        <i class="bi bi-trash"></i>
-                    </button>
+                    
+                    <div class="btn-group" role="group">
+                        <button 
+                            class="btn btn-sm btn-outline-light rounded-circle me-2 view-students-btn"
+                            data-bs-toggle="modal"
+                            data-bs-target="#studentListModal"
+                            data-schedule-id="<%= schedule._id %>"
+                            data-schedule-name="<%= schedule.name %>"
+                            title="Xem học sinh">
+                            <i class="bi bi-people"></i>
+                        </button> 
+                        <a href="/academic/schedule/<%= schedule._id %>" class="btn btn-sm btn-primary me-1">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="/academic/schedule/<%= schedule._id %>/edit" class="btn btn-sm btn-warning me-1">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <button class="btn btn-sm btn-danger" onclick="deleteSchedule('<%= schedule._id %>')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         <% }); %>
@@ -173,6 +172,18 @@
                             <% } %>
                         </select>
                         <small class="form-text text-muted">Giữ Ctrl để chọn nhiều học sinh</small>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="assistantTeacherIds" class="form-label">Trợ giảng</label>
+                        <select class="form-select" id="assistantTeacherIds" name="assistantTeacherIds[]" multiple>
+                            <% if (typeof teachers !== 'undefined' && teachers && teachers.length > 0) { %>
+                                <% teachers.forEach(function(teacher) { %>
+                                    <option value="<%= teacher._id %>"><%= teacher.name %></option>
+                                <% }); %>
+                            <% } %>
+                        </select>
+                        <small class="form-text text-muted">Giữ Ctrl để chọn nhiều trợ giảng</small>
                     </div>
                     
                     <div class="col-12 mt-4">

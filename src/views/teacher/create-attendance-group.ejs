@@ -1,0 +1,313 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mb-0">Tạo Nhóm Điểm Danh Mới</h1>
+                <a href="/teacher/attendance/groups" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Quay Lại
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-transparent py-3 border-bottom-0">
+                    <h5 class="mb-0">Thông Tin Nhóm</h5>
+                </div>
+                <div class="card-body">
+                    <form id="createGroupForm" action="/teacher/attendance/create-group" method="POST">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label required">Tên nhóm</label>
+                                    <input type="text" class="form-control" id="name" name="name" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Mô tả</label>
+                                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label required">Chọn lớp học</label>
+                                    <div class="class-list">
+                                        <% if (schedules && schedules.length > 0) { %>
+                                            <% schedules.forEach(function(schedule) { %>
+                                                <div class="form-check">
+                                                    <input class="form-check-input class-checkbox" type="checkbox" id="class_<%= schedule._id %>" name="scheduleIds" value="<%= schedule._id %>" data-class-id="<%= schedule._id %>">
+                                                    <label class="form-check-label" for="class_<%= schedule._id %>">
+                                                        <%= schedule.name %>
+                                                    </label>
+                                                </div>
+                                            <% }); %>
+                                        <% } else { %>
+                                            <div class="alert alert-info">
+                                                <i class="bi bi-info-circle me-2"></i> Bạn chưa được phân công lớp nào.
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4 student-selection-section" style="display: none;">
+                            <div class="col-md-12">
+                                <h5 class="mb-3">Chọn Học Sinh</h5>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div>
+                                            <input type="text" class="form-control" id="studentSearch" placeholder="Tìm kiếm học sinh...">
+                                        </div>
+                                        <div>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" id="selectAllStudents">Chọn Tất Cả</button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllStudents">Bỏ Chọn Tất Cả</button>
+                                        </div>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover" id="studentTable">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col" width="50">Chọn</th>
+                                                    <th scope="col">Họ Tên</th>
+                                                    <th scope="col">Mã Học Sinh</th>
+                                                    <th scope="col">Giới Tính</th>
+                                                    <th scope="col">Lớp</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="studentTableBody">
+                                                <tr>
+                                                    <td colspan="5" class="text-center">Vui lòng chọn ít nhất một lớp học</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                                <i class="bi bi-save me-1"></i> Tạo Nhóm Điểm Danh
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .required:after {
+        content: " *";
+        color: red;
+    }
+    .class-list {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        padding: 10px;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectedStudents = new Set();
+        const allStudents = [];
+        const classMap = {};
+        
+        // Xử lý khi chọn lớp học
+        document.querySelectorAll('.class-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const checkedClasses = document.querySelectorAll('.class-checkbox:checked');
+                const studentSelectionSection = document.querySelector('.student-selection-section');
+                
+                if (checkedClasses.length > 0) {
+                    studentSelectionSection.style.display = 'block';
+                    loadStudentsFromSelectedClasses();
+                } else {
+                    studentSelectionSection.style.display = 'none';
+                    document.getElementById('submitBtn').disabled = true;
+                }
+            });
+        });
+        
+        // Tìm kiếm học sinh
+        document.getElementById('studentSearch').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            filterStudents(searchTerm);
+        });
+        
+        // Chọn tất cả học sinh
+        document.getElementById('selectAllStudents').addEventListener('click', function() {
+            document.querySelectorAll('.student-checkbox').forEach(checkbox => {
+                checkbox.checked = true;
+                selectedStudents.add(checkbox.value);
+            });
+            updateSelectedCount();
+        });
+        
+        // Bỏ chọn tất cả học sinh
+        document.getElementById('deselectAllStudents').addEventListener('click', function() {
+            document.querySelectorAll('.student-checkbox').forEach(checkbox => {
+                checkbox.checked = false;
+                selectedStudents.delete(checkbox.value);
+            });
+            updateSelectedCount();
+        });
+        
+        // Hàm lấy danh sách học sinh từ các lớp đã chọn
+        async function loadStudentsFromSelectedClasses() {
+            const checkedClasses = document.querySelectorAll('.class-checkbox:checked');
+            const classIds = Array.from(checkedClasses).map(checkbox => checkbox.value);
+            
+            allStudents.length = 0;
+            document.getElementById('studentTableBody').innerHTML = '<tr><td colspan="5" class="text-center">Đang tải dữ liệu...</td></tr>';
+            
+            try {
+                for (const classId of classIds) {
+                    if (!classMap[classId]) {
+                        const response = await fetch(`/teacher/api/students-by-class/${classId}`);
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            classMap[classId] = result.data;
+                            
+                            // Thêm thông tin lớp vào mỗi học sinh
+                            const className = document.querySelector(`label[for="class_${classId}"]`).textContent.trim();
+                            result.data.forEach(student => {
+                                student.className = className;
+                            });
+                            
+                            allStudents.push(...result.data);
+                        }
+                    } else {
+                        allStudents.push(...classMap[classId]);
+                    }
+                }
+                
+                renderStudents(allStudents);
+            } catch (error) {
+                console.error('Lỗi khi tải danh sách học sinh:', error);
+                document.getElementById('studentTableBody').innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center text-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i> Lỗi khi tải danh sách học sinh
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+        
+        // Hàm hiển thị danh sách học sinh
+        function renderStudents(students) {
+            const tableBody = document.getElementById('studentTableBody');
+            
+            if (students.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center">Không tìm thấy học sinh nào</td>
+                    </tr>
+                `;
+                document.getElementById('submitBtn').disabled = true;
+                return;
+            }
+            
+            // Tạo dictionary để loại bỏ học sinh trùng lặp
+            const uniqueStudents = {};
+            students.forEach(student => {
+                if (!uniqueStudents[student._id]) {
+                    uniqueStudents[student._id] = student;
+                }
+            });
+            
+            let html = '';
+            Object.values(uniqueStudents).forEach(student => {
+                html += `
+                    <tr>
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input student-checkbox" type="checkbox" name="studentIds" 
+                                       value="${student._id}" id="student_${student._id}" 
+                                       ${selectedStudents.has(student._id) ? 'checked' : ''}>
+                            </div>
+                        </td>
+                        <td>${student.name}</td>
+                        <td>${student.studentId || 'N/A'}</td>
+                        <td>${student.gender === 'male' ? 'Nam' : student.gender === 'female' ? 'Nữ' : 'Khác'}</td>
+                        <td>${student.className}</td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = html;
+            
+            // Thêm sự kiện cho các checkbox học sinh
+            document.querySelectorAll('.student-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        selectedStudents.add(this.value);
+                    } else {
+                        selectedStudents.delete(this.value);
+                    }
+                    updateSelectedCount();
+                });
+            });
+            
+            updateSelectedCount();
+        }
+        
+        // Hàm lọc học sinh theo từ khóa tìm kiếm
+        function filterStudents(searchTerm) {
+            if (!searchTerm) {
+                renderStudents(allStudents);
+                return;
+            }
+            
+            const filteredStudents = allStudents.filter(student => 
+                student.name.toLowerCase().includes(searchTerm) || 
+                (student.studentId && student.studentId.toLowerCase().includes(searchTerm))
+            );
+            
+            renderStudents(filteredStudents);
+        }
+        
+        // Hàm cập nhật số lượng học sinh đã chọn
+        function updateSelectedCount() {
+            const selectedCount = selectedStudents.size;
+            document.getElementById('submitBtn').disabled = selectedCount === 0;
+        }
+        
+        // Xác nhận trước khi submit form
+        document.getElementById('createGroupForm').addEventListener('submit', function(event) {
+            const name = document.getElementById('name').value.trim();
+            const checkedClasses = document.querySelectorAll('.class-checkbox:checked');
+            const selectedStudentsCount = document.querySelectorAll('.student-checkbox:checked').length;
+            
+            if (!name) {
+                alert('Vui lòng nhập tên nhóm');
+                event.preventDefault();
+                return;
+            }
+            
+            if (checkedClasses.length === 0) {
+                alert('Vui lòng chọn ít nhất một lớp học');
+                event.preventDefault();
+                return;
+            }
+            
+            if (selectedStudentsCount === 0) {
+                alert('Vui lòng chọn ít nhất một học sinh');
+                event.preventDefault();
+                return;
+            }
+        });
+    });
+</script>
+
+<%- include('../partials/footer') %> 

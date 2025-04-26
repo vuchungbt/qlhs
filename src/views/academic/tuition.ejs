@@ -1,243 +1,296 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <%- include('../partials/header') %>
-  <title><%= title %></title>
-  <style>
-    .stats-card {
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      transition: all 0.3s;
-      margin-bottom: 20px;
-    }
-    
-    .stats-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-    }
-    
-    .card-tuition {
-      border-left: 4px solid #3498db;
-    }
-    
-    .card-paid {
-      border-left: 4px solid #2ecc71;
-    }
-    
-    .card-pending {
-      border-left: 4px solid #f39c12;
-    }
-    
-    .card-overdue {
-      border-left: 4px solid #e74c3c;
-    }
-    
-    .status-paid {
-      color: #2ecc71;
-      font-weight: bold;
-    }
-    
-    .status-pending {
-      color: #f39c12;
-      font-weight: bold;
-    }
-    
-    .status-overdue {
-      color: #e74c3c;
-      font-weight: bold;
-    }
-    
-    .btn-tuition {
-      margin-right: 5px;
-      margin-bottom: 5px;
-    }
-    
-    .month-selector {
-      padding: 15px;
-      background: #f8f9fa;
-      border-radius: 10px;
-      margin-bottom: 20px;
-    }
-    
-    .table-hover tbody tr:hover {
-      background-color: rgba(52, 152, 219, 0.1);
-    }
-  </style>
-</head>
-<body>
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-money-bill-wave"></i> Quản Lý Học Phí</h2>
-    <div>
-      <a href="/academic/sync-enrollments" class="btn btn-warning me-2">
-        <i class="fas fa-sync"></i> Đồng Bộ Enrollment
-      </a>
-    </div>
+<%- include('../partials/header') %>
+
+<% const currentYear = new Date().getFullYear(); %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2><i class="fas fa-money-bill-wave"></i> Quản Lý Học Phí</h2>
+  <div>
+    <a href="/academic/sync-enrollments" class="btn btn-warning me-2">
+      <i class="fas fa-sync"></i> Đồng Bộ Enrollment
+    </a>
   </div>
-  
-  <!-- Thẻ thống kê -->
-  <div class="row mb-4">
-    <div class="col-md-3">
-      <div class="card stats-card card-tuition">
-        <div class="card-body">
-          <h5 class="card-title">Tổng Học Phí</h5>
-          <h3 class="card-text text-primary">
-            <%= stats.totalAmount.toLocaleString('vi-VN') %> ₫
-          </h3>
-          <p class="card-text text-muted">
-            <small>Tháng <%= selectedMonth %>/<%= selectedYear %></small>
-          </p>
-        </div>
-      </div>
-    </div>
-    
-    <div class="col-md-3">
-      <div class="card stats-card card-paid">
-        <div class="card-body">
-          <h5 class="card-title">Đã Thanh Toán</h5>
-          <h3 class="card-text text-success">
-            <%= stats.paidAmount.toLocaleString('vi-VN') %> ₫
-          </h3>
-          <p class="card-text text-muted">
-            <small><%= stats.paidCount %> phiếu học phí</small>
-          </p>
-        </div>
-      </div>
-    </div>
-    
-    <div class="col-md-3">
-      <div class="card stats-card card-pending">
-        <div class="card-body">
-          <h5 class="card-title">Chưa Thanh Toán</h5>
-          <h3 class="card-text text-warning">
-            <%= stats.pendingAmount.toLocaleString('vi-VN') %> ₫
-          </h3>
-          <p class="card-text text-muted">
-            <small><%= stats.pendingCount %> phiếu học phí</small>
-          </p>
-        </div>
-      </div>
-    </div>
-    
-    <div class="col-md-3">
-      <div class="card stats-card card-overdue">
-        <div class="card-body">
-          <h5 class="card-title">Quá Hạn</h5>
-          <h3 class="card-text text-danger">
-            <%= stats.overdueCount %>
-          </h3>
-          <p class="card-text text-muted">
-            <small>phiếu học phí</small>
-          </p>
-        </div>
+</div>
+
+<!-- Thẻ thống kê -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card stats-card card-tuition">
+      <div class="card-body">
+        <h5 class="card-title">Tổng Học Phí</h5>
+        <h3 class="card-text text-primary">
+          <%= stats.totalAmount.toLocaleString('vi-VN') %> ₫
+        </h3>
+        <p class="card-text text-muted">
+          <small>Tháng <%= selectedMonth %>/<%= selectedYear %></small>
+        </p>
       </div>
     </div>
   </div>
   
-  <!-- Bộ lọc tháng/năm -->
-  <div class="month-selector">
-    <form id="monthYearForm" method="GET" action="/academic/tuition">
-      <div class="row">
-        <div class="col-md-4">
-          <div class="form-group">
-            <label for="month">Tháng</label>
-            <select class="form-control" id="month" name="month">
-              <% for(let i = 1; i <= 12; i++) { %>
-                <option value="<%= i %>" <%= selectedMonth == i ? 'selected' : '' %>>
-                  Tháng <%= i %>
-                </option>
-              <% } %>
-            </select>
-          </div>
-        </div>
-        
-        <div class="col-md-4">
-          <div class="form-group">
-            <label for="year">Năm</label>
-            <select class="form-control" id="year" name="year">
-              <% 
-              const currentYear = new Date().getFullYear();
-              for(let i = currentYear - 2; i <= currentYear + 1; i++) { 
-              %>
-                <option value="<%= i %>" <%= selectedYear == i ? 'selected' : '' %>>
-                  <%= i %>
-                </option>
-              <% } %>
-            </select>
-          </div>
-        </div>
-        
-        <div class="col-md-4 d-flex align-items-end">
-          <button type="submit" class="btn btn-primary">
-            <i class="fas fa-search"></i> Xem
-          </button>
+  <div class="col-md-3">
+    <div class="card stats-card card-paid">
+      <div class="card-body">
+        <h5 class="card-title">Đã Thanh Toán</h5>
+        <h3 class="card-text text-success">
+          <%= stats.paidAmount.toLocaleString('vi-VN') %> ₫
+        </h3>
+        <p class="card-text text-muted">
+          <small><%= stats.paidCount %> phiếu học phí</small>
+        </p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3">
+    <div class="card stats-card card-pending">
+      <div class="card-body">
+        <h5 class="card-title">Chưa Thanh Toán</h5>
+        <h3 class="card-text text-warning">
+          <%= stats.pendingAmount.toLocaleString('vi-VN') %> ₫
+        </h3>
+        <p class="card-text text-muted">
+          <small><%= stats.pendingCount %> phiếu học phí</small>
+        </p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3">
+    <div class="card stats-card card-overdue">
+      <div class="card-body">
+        <h5 class="card-title">Quá Hạn</h5>
+        <h3 class="card-text text-danger">
+          <%= stats.overdueCount %>
+        </h3>
+        <p class="card-text text-muted">
+          <small>phiếu học phí</small>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bộ lọc tháng/năm -->
+<div class="month-selector">
+  <form id="monthYearForm" method="GET" action="/academic/tuition">
+    <div class="row">
+      <div class="col-md-4">
+        <div class="form-group">
+          <label for="month">Tháng</label>
+          <select class="form-control" id="month" name="month">
+            <% for(let i = 1; i <= 12; i++) { %>
+              <option value="<%= i %>" <%= selectedMonth == i ? 'selected' : '' %>>
+                Tháng <%= i %>
+              </option>
+            <% } %>
+          </select>
         </div>
       </div>
-    </form>
-  </div>
-  
-  <!-- Danh sách lớp học và học phí -->
-  <div class="card">
-    <div class="card-header bg-primary text-white">
-      <h5><i class="fas fa-list mr-2"></i> Danh Sách Lớp Học</h5>
-    </div>
-    <div class="card-body">
-      <% if (schedules && schedules.length > 0) { %>
-        <div class="table-responsive">
-          <table class="table table-hover">
-            <thead class="thead-light">
-              <tr>
-                <th>Lớp</th>
-                <th>Giáo Viên</th>
-                <th>Tổng Học Sinh</th>
-                <th>Thao Tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% schedules.forEach(schedule => { %>
-                <tr>
-                  <td><%= schedule.name %></td>
-                  <td><%= schedule.teacher ? schedule.teacher.name : 'Chưa phân công' %></td>
-                  <td>
-                    <% if (typeof schedule.studentCount !== 'undefined') { %>
-                      <%= schedule.studentCount %>
-                    <% } else { %>
-                      <%= schedule.students ? schedule.students.length : 0 %> 
-                      <small class="text-muted">(chưa cập nhật)</small>
-                    <% } %>
-                  </td>
-                  <td>
-                    <a href="/academic/tuition/class/<%= schedule._id %>?month=<%= selectedMonth %>&year=<%= selectedYear %>" 
-                       class="btn btn-sm btn-info">
-                      <i class="fas fa-eye"></i> Xem Chi Tiết
-                    </a>
-                    <a href="/academic/tuition/report/<%= schedule._id %>" 
-                       class="btn btn-sm btn-primary">
-                      <i class="fas fa-chart-line"></i> Báo Cáo
-                    </a>
-                  </td>
-                </tr>
-              <% }) %>
-            </tbody>
-          </table>
-        </div>
-      <% } else { %>
-        <div class="alert alert-info">
-          <i class="fas fa-info-circle mr-2"></i> Chưa có lớp học nào được tạo.
-        </div>
-      <% } %>
-    </div>
-  </div>
-  
-  <%- include('../partials/footer') %>
-  
-  <script>
-    $(document).ready(function() {
       
-      // Chọn tháng, năm tự động submit form
-      $('#month, #year').change(function() {
-        $('#monthYearForm').submit();
-      });
+      <div class="col-md-4">
+        <div class="form-group">
+          <label for="year">Năm</label>
+          <select class="form-control" id="year" name="year">
+            <% for(let i = currentYear - 2; i <= currentYear + 1; i++) { %>
+              <option value="<%= i %>" <%= selectedYear == i ? 'selected' : '' %>>
+                <%= i %>
+              </option>
+            <% } %>
+          </select>
+        </div>
+      </div>
+      
+      <div class="col-md-4 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-search"></i> Xem
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Danh sách lớp học và học phí -->
+<div class="card">
+  <div class="card-header bg-primary text-white">
+    <h5><i class="fas fa-list mr-2"></i> Danh Sách Lớp Học</h5>
+  </div>
+  <div class="card-body">
+    <% if (schedules && schedules.length > 0) { %>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="thead-light">
+            <tr>
+              <th>Lớp</th>
+              <th>Giáo Viên</th>
+              <th>Tổng Học Sinh</th>
+              <th>Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% schedules.forEach(schedule => { %>
+              <tr>
+                <td><%= schedule.name %></td>
+                <td><%= schedule.teacher ? schedule.teacher.name : 'Chưa phân công' %></td>
+                <td>
+                  <% if (typeof schedule.studentCount !== 'undefined') { %>
+                    <%= schedule.studentCount %>
+                  <% } else { %>
+                    <%= schedule.students ? schedule.students.length : 0 %> 
+                    <small class="text-muted">(chưa cập nhật)</small>
+                  <% } %>
+                </td>
+                <td>
+                  <a href="/academic/tuition/class/<%= schedule._id %>?month=<%= selectedMonth %>&year=<%= selectedYear %>" 
+                     class="btn btn-sm btn-info">
+                    <i class="fas fa-eye"></i> Xem Chi Tiết
+                  </a>
+                  <a href="/academic/tuition/report/<%= schedule._id %>" 
+                     class="btn btn-sm btn-primary">
+                    <i class="fas fa-chart-line"></i> Báo Cáo
+                  </a>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <div class="alert alert-info">
+        <i class="fas fa-info-circle mr-2"></i> Chưa có lớp học nào được tạo.
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<style>
+  .stats-card {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s;
+    margin-bottom: 20px;
+  }
+  
+  .stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .card-tuition {
+    border-left: 4px solid #3498db;
+  }
+  
+  .card-paid {
+    border-left: 4px solid #2ecc71;
+  }
+  
+  .card-pending {
+    border-left: 4px solid #f39c12;
+  }
+  
+  .card-overdue {
+    border-left: 4px solid #e74c3c;
+  }
+  
+  .status-paid {
+    color: #2ecc71;
+    font-weight: bold;
+  }
+  
+  .status-pending {
+    color: #f39c12;
+    font-weight: bold;
+  }
+  
+  .status-overdue {
+    color: #e74c3c;
+    font-weight: bold;
+  }
+  
+  .btn-tuition {
+    margin-right: 5px;
+    margin-bottom: 5px;
+  }
+  
+  .month-selector {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .table-hover tbody tr:hover {
+    background-color: rgba(52, 152, 219, 0.1);
+  }
+</style>
+
+<script>
+  $(document).ready(function() {
+    // Chọn tháng, năm tự động submit form
+    $('#month, #year').change(function() {
+      $('#monthYearForm').submit();
     });
-  </script>
-</body>
-</html> 
+    
+    // Xử lý định dạng tiền tệ cho các input số tiền
+    function formatMoney(input) {
+      // Xóa tất cả ký tự không phải số
+      let value = input.value.replace(/\D/g, '');
+      
+      // Định dạng số với dấu phân cách hàng nghìn theo chuẩn tiền Việt Nam
+      if (value !== '') {
+        value = new Intl.NumberFormat('vi-VN').format(parseInt(value));
+      }
+      
+      // Gán lại giá trị đã định dạng
+      input.value = value;
+    }
+    
+    // Xử lý khi gửi form để chuyển về dạng số
+    function prepareMoneyInput(inputId) {
+      const input = document.getElementById(inputId);
+      if (input) {
+        input.value = input.value.replace(/\D/g, '');
+      }
+    }
+    
+    // Áp dụng định dạng tiền tệ cho tất cả input có class money-input
+    $('.money-input').on('input', function() {
+      formatMoney(this);
+    });
+    
+    // Xử lý khi submit form
+    $('#addTuitionForm').submit(function() {
+      prepareMoneyInput('amount');
+    });
+    
+    $('#editTuitionForm').submit(function() {
+      prepareMoneyInput('editAmount');
+    });
+    
+    // Thêm định dạng tiền tệ khi hiển thị modal
+    $('.edit-tuition-btn').click(function() {
+      const tuitionId = $(this).data('id');
+      const scheduleId = $(this).data('schedule');
+      const studentId = $(this).data('student');
+      const amount = $(this).data('amount');
+      const month = $(this).data('month');
+      const year = $(this).data('year');
+      const note = $(this).data('note');
+      const status = $(this).data('status');
+      const dueDate = $(this).data('duedate');
+      
+      $('#editTuitionId').val(tuitionId);
+      $('#editScheduleId').val(scheduleId);
+      $('#editStudentId').val(studentId);
+      $('#editAmount').val(parseInt(amount).toLocaleString('vi-VN'));
+      $('#editMonth').val(month);
+      $('#editYear').val(year);
+      $('#editNote').val(note);
+      $('#editStatus').val(status);
+      $('#editDueDate').val(dueDate);
+      
+      editTuitionModal.show();
+    });
+  });
+</script>
+
+<%- include('../partials/footer') %> 

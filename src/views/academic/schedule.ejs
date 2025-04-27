@@ -26,7 +26,7 @@
                 <h5 class="mb-3"><%= schedule.name %></h5>
                 <div class="teacher-name">
                     <i class="bi bi-person-circle"></i>
-                    <span><%= schedule.teacher.name %></span>
+                    <span><%= schedule.teacher ? schedule.teacher.name : 'Chưa phân công' %></span>
                 </div>
                 <div class="class-schedule">
                     <i class="bi bi-calendar-event"></i>

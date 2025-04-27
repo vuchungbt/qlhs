@@ -21,6 +21,7 @@ router.delete('/schedule/:id', ensureAuthenticated, scheduleController.deleteSch
 
 // API để lấy danh sách học sinh của lịch học
 router.get('/schedule/:id/students-data', ensureAuthenticated, scheduleController.getScheduleStudentsData);
+router.get('/students/by-schedule/:id', ensureAuthenticated, scheduleController.getScheduleStudentsData);
 
 // Quản lý học sinh
 router.get('/students', ensureAuthenticated, academicController.getStudents);
@@ -64,6 +65,7 @@ router.get('/attendance/student/:id', ensureAuthenticated, academicController.ge
 router.get('/attendance', ensureAuthenticated, academicController.getAttendance);
 router.post('/attendance', ensureAuthenticated, academicController.batchAttendance);
 router.post('/attendance/update', ensureAuthenticated, academicController.updateAttendance);
+router.post('/attendance/update/:id', ensureAuthenticated, academicController.updateAttendance);
 router.delete('/attendance/:id', ensureAuthenticated, academicController.deleteAttendance);
 
 // Tuition by student - simple views

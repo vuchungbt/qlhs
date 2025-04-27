@@ -85,6 +85,7 @@ exports.getTeacherDetail = async (req, res) => {
 // Cập nhật thông tin giáo viên
 exports.updateTeacher = async (req, res) => {
   try {
+    console.log('Request body:', req.body);
     const { name, email, phone, password, subject, status } = req.body;
     
     // Chuẩn bị dữ liệu cập nhật
@@ -101,12 +102,36 @@ exports.updateTeacher = async (req, res) => {
       updateData.password = await bcrypt.hash(password, 10);
     }
     
-    await Teacher.findByIdAndUpdate(req.params.id, updateData);
+    const updatedTeacher = await Teacher.findByIdAndUpdate(
+      req.params.id, 
+      updateData,
+      { new: true, runValidators: true }
+    );
     
-    res.redirect('/administrative/teachers');
+    if (!updatedTeacher) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Không tìm thấy giáo viên' 
+      });
+    }
+    
+    // Trả về phản hồi JSON thay vì chuyển hướng
+    return res.status(200).json({
+      success: true,
+      message: 'Cập nhật thông tin giáo viên thành công',
+      data: {
+        id: updatedTeacher._id,
+        name: updatedTeacher.name,
+        email: updatedTeacher.email
+      }
+    });
   } catch (err) {
     console.error('Lỗi khi cập nhật giáo viên:', err);
-    res.status(500).send('Lỗi server');
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Lỗi server khi cập nhật giáo viên',
+      error: err.message
+    });
   }
 };
 

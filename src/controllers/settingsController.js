@@ -59,6 +59,50 @@ exports.updateAccount = async (req, res) => {
       user.email = email;
       user.phone = phone;
       
+      // Xử lý upload avatar nếu có
+      if (req.file) {
+        // Nếu đã có avatar cũ, xóa file
+        if (user.profileImage && fs.existsSync(path.join(__dirname, '..', 'public', user.profileImage))) {
+          fs.unlinkSync(path.join(__dirname, '..', 'public', user.profileImage));
+        }
+        
+        // Cập nhật đường dẫn avatar mới
+        user.profileImage = '/uploads/avatars/' + req.file.filename;
+      }
+      
+      // Xử lý thay đổi mật khẩu nếu cung cấp
+      if (currentPassword && newPassword) {
+        // Kiểm tra mật khẩu hiện tại
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        
+        if (!isMatch) {
+          req.flash('error', 'Mật khẩu hiện tại không đúng');
+          return res.redirect('/settings/account');
+        }
+        
+        // Kiểm tra mật khẩu mới và xác nhận
+        if (newPassword !== confirmPassword) {
+          req.flash('error', 'Mật khẩu xác nhận không khớp');
+          return res.redirect('/settings/account');
+        }
+        
+        // Hash mật khẩu mới
+        const hashedPassword = await bcrypt.hash(newPassword, 12);
+        user.password = hashedPassword;
+      }
+      
+      // Lưu các thay đổi
+      await user.save();
+      
+      // Cập nhật thông tin trong session
+      req.session.user = {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        subject: user.subject,
+        profileImage: user.profileImage
+      };
+      
     } else {
       const { username, email, currentPassword, newPassword, confirmPassword } = req.body;
       
@@ -73,60 +117,49 @@ exports.updateAccount = async (req, res) => {
       // Cập nhật thông tin cơ bản
       user.username = username;
       user.email = email;
-    }
-    
-    // Xử lý upload avatar nếu có
-    if (req.file) {
-      // Nếu đã có avatar cũ, xóa file
-      if (user.profileImage && fs.existsSync(path.join(__dirname, '..', 'public', user.profileImage))) {
-        fs.unlinkSync(path.join(__dirname, '..', 'public', user.profileImage));
+      
+      // Xử lý upload avatar nếu có
+      if (req.file) {
+        // Nếu đã có avatar cũ, xóa file
+        if (user.profileImage && fs.existsSync(path.join(__dirname, '..', 'public', user.profileImage))) {
+          fs.unlinkSync(path.join(__dirname, '..', 'public', user.profileImage));
+        }
+        
+        // Cập nhật đường dẫn avatar mới
+        user.profileImage = '/uploads/avatars/' + req.file.filename;
       }
       
-      // Cập nhật đường dẫn avatar mới
-      user.profileImage = '/uploads/avatars/' + req.file.filename;
-    }
-    
-    // Lấy mật khẩu từ form
-    const { currentPassword, newPassword, confirmPassword } = req.body;
-    
-    // Xử lý thay đổi mật khẩu nếu cung cấp
-    if (currentPassword && newPassword) {
-      // Kiểm tra mật khẩu hiện tại
-      const isMatch = await user.comparePassword(currentPassword);
-      
-      if (!isMatch) {
-        req.flash('error', 'Mật khẩu hiện tại không đúng');
-        return res.redirect('/settings/account');
+      // Xử lý thay đổi mật khẩu nếu cung cấp
+      if (currentPassword && newPassword) {
+        // Kiểm tra mật khẩu hiện tại
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        
+        if (!isMatch) {
+          req.flash('error', 'Mật khẩu hiện tại không đúng');
+          return res.redirect('/settings/account');
+        }
+        
+        // Kiểm tra mật khẩu mới và xác nhận
+        if (newPassword !== confirmPassword) {
+          req.flash('error', 'Mật khẩu xác nhận không khớp');
+          return res.redirect('/settings/account');
+        }
+        
+        // Hash mật khẩu mới
+        const hashedPassword = await bcrypt.hash(newPassword, 12);
+        user.password = hashedPassword;
       }
       
-      // Kiểm tra mật khẩu mới và xác nhận
-      if (newPassword !== confirmPassword) {
-        req.flash('error', 'Mật khẩu xác nhận không khớp');
-        return res.redirect('/settings/account');
-      }
+      // Lưu các thay đổi
+      await user.save();
       
-      // Hash mật khẩu mới
-      const hashedPassword = await bcrypt.hash(newPassword, 12);
-      user.password = hashedPassword;
-    }
-    
-    // Lưu các thay đổi
-    await user.save();
-    
-    // Cập nhật thông tin trong session
-    if (userType === 'teacher') {
-      req.session.user = {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        subject: user.subject
-      };
-    } else {
+      // Cập nhật thông tin trong session
       req.session.user = {
         _id: user._id,
         username: user.username,
         email: user.email,
-        role: user.role
+        role: user.role,
+        profileImage: user.profileImage
       };
     }
     

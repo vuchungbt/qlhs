@@ -1005,6 +1005,11 @@ exports.getAttendanceByStudent = async (req, res) => {
       const schedule = await Schedule.findById(selectedClassId).populate('students');
       if (schedule && schedule.students) {
         students = schedule.students;
+        // Log để debug
+        console.log(`Lớp học ${selectedClassId} có ${students.length} học sinh`);
+      } else {
+        console.log(`Lớp học ${selectedClassId} không có học sinh hoặc không tìm thấy`);
+        students = [];
       }
     } else {
       // Nếu không chọn lớp, lấy tất cả học sinh
@@ -1018,24 +1023,87 @@ exports.getAttendanceByStudent = async (req, res) => {
     if (selectedStudentId) {
       selectedStudent = await Student.findById(selectedStudentId);
       
+      console.log(`Tìm điểm danh cho học sinh: ${selectedStudentId}, tên: ${selectedStudent?.name}`);
+      console.log(`Thời gian từ: ${startDate.format('DD/MM/YYYY')} đến: ${endDate.format('DD/MM/YYYY')}`);
+      
       // Xây dựng query điều kiện
-      const query = {
-        student: selectedStudentId,
-        date: {
-          $gte: startDate.toDate(),
-          $lte: endDate.toDate()
-        }
+      let query = {};
+      
+      // Cấu trúc có 2 loại:
+      // 1. Attendance có trường student trực tiếp
+      // 2. Attendance có mảng students chứa học sinh
+      
+      // Tìm trong cả hai cấu trúc dữ liệu
+      query = {
+        $or: [
+          // Trường hợp 1: record.student trực tiếp
+          {
+            student: selectedStudentId,
+            date: {
+              $gte: startDate.toDate(),
+              $lte: endDate.toDate()
+            }
+          },
+          // Trường hợp 2: record.students là mảng các học sinh
+          {
+            'students.student': selectedStudentId,
+            date: {
+              $gte: startDate.toDate(),
+              $lte: endDate.toDate()
+            }
+          }
+        ]
       };
       
       // Nếu có lớp được chọn, thêm điều kiện lớp
       if (selectedClassId) {
-        query.schedule = selectedClassId;
+        query.$or[0].schedule = selectedClassId;
+        query.$or[1].schedule = selectedClassId;
       }
       
-      // Lấy lịch sử điểm danh
-      attendanceRecords = await Attendance.find(query)
+      console.log('Query điểm danh:', JSON.stringify(query, null, 2));
+      
+      // Lấy lịch sử điểm danh trực tiếp
+      const directRecords = await Attendance.find(query.$or[0])
         .populate('schedule', 'name')
         .sort({ date: -1 });
+        
+      console.log(`Tìm thấy ${directRecords.length} bản ghi điểm danh trực tiếp`);
+      
+      // Lấy điểm danh từ mảng students
+      const groupRecords = await Attendance.find(query.$or[1])
+        .populate('schedule', 'name')
+        .sort({ date: -1 });
+        
+      console.log(`Tìm thấy ${groupRecords.length} bản ghi điểm danh từ nhóm`);
+      
+      // Xử lý kết quả từ groupRecords
+      const processedGroupRecords = [];
+      
+      groupRecords.forEach(record => {
+        // Tìm thông tin học sinh trong mảng students
+        const studentRecord = record.students.find(s => 
+          s.student.toString() === selectedStudentId
+        );
+        
+        if (studentRecord) {
+          // Tạo bản ghi mới với cấu trúc tương thích
+          const processedRecord = {
+            _id: record._id,
+            schedule: record.schedule,
+            date: record.date,
+            student: { _id: selectedStudentId },
+            status: studentRecord.status,
+            note: studentRecord.note || ''
+          };
+          
+          processedGroupRecords.push(processedRecord);
+        }
+      });
+      
+      // Gộp kết quả từ cả hai nguồn
+      attendanceRecords = [...directRecords, ...processedGroupRecords];
+      console.log(`Tổng số bản ghi điểm danh: ${attendanceRecords.length}`);
     }
     
     // Tính toán thống kê điểm danh

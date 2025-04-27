@@ -116,7 +116,11 @@
         <!-- User Profile Info -->
         <% if (typeof teacher !== 'undefined' && teacher) { %>
         <div class="user-profile mt-4 d-flex align-items-center">
-            <img src="<%= teacher.profileImage || '/images/default-avatar.png' %>" alt="<%= teacher.name || teacher.username %>" class="rounded-circle me-2" width="32" height="32">
+            <% if (teacher.profileImage) { %>
+                <img src="<%= teacher.profileImage %>" alt="<%= teacher.name || teacher.username %>" class="rounded-circle me-2" width="32" height="32">
+            <% } else { %>
+                <i class="bi bi-person-circle fs-5 me-2 text-white"></i>
+            <% } %>
             <div class="sidebar-text">
                 <div class="fw-bold"><%= teacher.name || teacher.username %></div>
                 <small class="text-muted">Giáo viên</small>

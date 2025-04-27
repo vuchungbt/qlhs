@@ -417,10 +417,17 @@ h5 {
     margin: 0;
     border: 1px solid rgba(0, 0, 0, 0.15);
     background-clip: padding-box;
+    transform: translateY(10px);
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .dropdown-menu.show {
     display: block;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
 }
 
 .dropdown-item {
@@ -429,16 +436,25 @@ h5 {
     padding: 0.5rem 1rem;
     color: #212529;
     text-decoration: none;
-    transition: all 0.2s;
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
     text-align: left;
     white-space: nowrap;
     background-color: transparent;
     border: 0;
+    font-weight: 400;
+    line-height: 1.5;
+    font-size: 0.875rem;
 }
 
 .dropdown-item:hover {
     background-color: #f8f9fa;
-    color: #212529;
+    color: #16181b;
+}
+
+.dropdown-item:active, .dropdown-item:focus {
+    background-color: #e9ecef;
+    color: #16181b;
+    outline: none;
 }
 
 /* Hover hiệu ứng cho nút toggle sidebar */

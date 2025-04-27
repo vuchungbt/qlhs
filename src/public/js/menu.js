@@ -23,6 +23,29 @@ function highlightCurrentPage() {
     const currentPath = window.location.pathname;
     const menuLinks = document.querySelectorAll('.sidebar .nav-link');
     
+    // Xử lý trường hợp đặc biệt cho attendance/student
+    if (currentPath.includes('/attendance/student')) {
+        menuLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            if (!href || href === "#") return;
+            
+            // Chỉ active menu điểm danh, không active menu học sinh
+            if (href === '/academic/attendance') {
+                link.classList.add('active');
+                link.style.borderLeft = '4px solid #3b82f6';
+                link.style.paddingLeft = '12px';
+                link.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+            } else if (href === '/academic/students') {
+                // Đảm bảo rằng menu học sinh không được active
+                link.classList.remove('active');
+                link.style.borderLeft = '';
+                link.style.paddingLeft = '';
+                link.style.backgroundColor = '';
+            }
+        });
+        return;
+    }
+    
     menuLinks.forEach(link => {
         // Kiểm tra xem URL hiện tại có khớp với href của link không
         const href = link.getAttribute('href');
@@ -175,16 +198,52 @@ function showNotification(message, type = 'info') {
 
 // Khởi tạo menu dropdown
 function initializeDropdowns() {
-    const dropdownTriggers = document.querySelectorAll('.dropdown-toggle');
-    dropdownTriggers.forEach(trigger => {
-        trigger.addEventListener('click', function(e) {
+    // Kích hoạt tất cả dropdown thủ công
+    const dropdownToggleList = document.querySelectorAll('.dropdown-toggle');
+    dropdownToggleList.forEach(dropdownToggle => {
+        // Đảm bảo sự kiện click được đăng ký đúng
+        dropdownToggle.addEventListener('click', function(e) {
             e.preventDefault();
-            const parent = this.parentElement;
-            parent.classList.toggle('show');
-            const dropdownMenu = parent.querySelector('.dropdown-menu');
-            if (dropdownMenu) {
-                dropdownMenu.classList.toggle('show');
-            }
+            e.stopPropagation();
+            
+            // Lấy dropdown menu liên quan
+            const dropdownMenu = this.nextElementSibling;
+            
+            // Đóng tất cả dropdown menu khác
+            const allDropdownMenus = document.querySelectorAll('.dropdown-menu.show');
+            allDropdownMenus.forEach(menu => {
+                if (menu !== dropdownMenu) {
+                    menu.classList.remove('show');
+                }
+            });
+            
+            // Toggle dropdown hiện tại
+            dropdownMenu.classList.toggle('show');
+            
+            // Toggle class show cho dropdown container
+            this.parentElement.classList.toggle('show');
         });
     });
+    
+    // Đóng dropdown khi click bên ngoài
+    document.addEventListener('click', function(e) {
+        // Kiểm tra xem người dùng đã click vào dropdown toggle hay không
+        const isDropdownToggle = e.target.classList.contains('dropdown-toggle') || 
+                                e.target.closest('.dropdown-toggle');
+        
+        if (!isDropdownToggle) {
+            // Đóng tất cả dropdown nếu click bên ngoài
+            const dropdownMenus = document.querySelectorAll('.dropdown-menu.show');
+            dropdownMenus.forEach(menu => {
+                menu.classList.remove('show');
+                
+                // Cũng xóa class show trên phần tử cha
+                if (menu.parentElement) {
+                    menu.parentElement.classList.remove('show');
+                }
+            });
+        }
+    });
+    
+    console.log('Dropdown menu đã được khởi tạo thủ công');
 } 

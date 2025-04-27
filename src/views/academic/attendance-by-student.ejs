@@ -74,7 +74,7 @@
         </div>
         <h4 class="mb-3">Vui lòng chọn một học sinh</h4>
         <p class="text-muted mb-4">Chọn lớp học và học sinh từ form bên trên để xem lịch sử điểm danh</p>
-        <% if (!students || students.length === 0 && selectedClassId) { %>
+        <% if (selectedClassId && (!students || students.length === 0)) { %>
             <div class="alert alert-warning d-inline-block">
                 <i class="bi bi-exclamation-triangle-fill me-2"></i>
                 Không tìm thấy học sinh nào trong lớp đã chọn
@@ -103,10 +103,10 @@
                         <% } %>
                     </div>
                     <div>
-                        <a href="/academic/attendance/student/<%= selectedStudent._id %>" class="btn btn-sm btn-primary">
+                        <!-- <a href="/academic/attendance/student/<%= selectedStudent._id %>" class="btn btn-sm btn-primary">
                             <i class="bi bi-calendar3 me-1"></i>
                             Xem lịch sử điểm danh theo tháng
-                        </a>
+                        </a> -->
                     </div>
                 </div>
             </div>
@@ -233,10 +233,23 @@
         <p class="text-muted mb-4">Không có điểm danh nào cho học sinh này trong thời gian đã chọn</p>
         
         <% if (selectedClassId) { %>
+            <div class="alert alert-info mb-4">
+                <strong>Thông tin tìm kiếm:</strong><br>
+                Học sinh: <%= selectedStudent ? selectedStudent.name : 'Không xác định' %><br>
+                Lớp: <%= schedules.find(s => s._id.toString() === selectedClassId)?.name || 'Không xác định' %><br>
+                Thời gian: <%= moment(startDate).format('DD/MM/YYYY') %> - <%= moment(endDate).format('DD/MM/YYYY') %>
+            </div>
+            
             <a href="/academic/attendance/class/<%= selectedClassId %>" class="btn btn-primary">
                 <i class="bi bi-plus-circle me-1"></i>
                 Tạo điểm danh mới
             </a>
+        <% } else { %>
+            <div class="alert alert-info mb-4">
+                <strong>Thông tin tìm kiếm:</strong><br>
+                Học sinh: <%= selectedStudent ? selectedStudent.name : 'Không xác định' %><br>
+                Thời gian: <%= moment(startDate).format('DD/MM/YYYY') %> - <%= moment(endDate).format('DD/MM/YYYY') %>
+            </div>
         <% } %>
     </div>
 <% } %>
@@ -448,11 +461,22 @@
                         });
                         studentSelect.disabled = false;
                     } else {
+                        // Lớp không có học sinh nào
+                        studentSelect.innerHTML = '<option value="">Không có học sinh trong lớp này</option>';
                         studentSelect.disabled = true;
+                        
+                        // Hiển thị thông báo (nếu cần)
+                        showToast('Lớp học này không có học sinh nào', 'warning');
                     }
                 })
                 .catch(error => {
                     console.error('Lỗi khi lấy danh sách học sinh:', error);
+                    const studentSelect = document.getElementById('studentId');
+                    studentSelect.innerHTML = '<option value="">Lỗi khi tải dữ liệu</option>';
+                    studentSelect.disabled = true;
+                    
+                    // Hiển thị thông báo lỗi
+                    showToast('Lỗi khi tải danh sách học sinh', 'danger');
                 });
         }
         
@@ -657,6 +681,22 @@
                 toast.remove();
             });
         }
+        
+        // Script đặc biệt để đảm bảo chỉ có một menu active
+        console.log("Đang xử lý đặc biệt cho trang attendance-by-student");
+        
+        // Đảm bảo chỉ menu Điểm Danh active
+        document.querySelectorAll('.sidebar .nav-link').forEach(function(link) {
+            // Xóa active class từ tất cả menu ngoại trừ Điểm Danh
+            if (link.getAttribute('href') !== '/academic/attendance') {
+                link.classList.remove('active');
+            } else {
+                link.classList.add('active');
+            }
+        });
+        
+        // Log để debug
+        console.log("Đã xóa active class từ các menu không liên quan");
     });
 </script>
 

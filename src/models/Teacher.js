@@ -32,6 +32,10 @@ const teacherSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  profileImage: {
+    type: String,
+    required: false
   }
 });
 

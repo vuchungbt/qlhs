@@ -122,7 +122,8 @@ exports.postLogin = async (req, res) => {
       _id: user._id,
       username: user.username,
       email: user.email,
-      role: user.role
+      role: user.role,
+      profileImage: user.profileImage
     };
     
     return req.session.save(err => {
@@ -184,7 +185,8 @@ exports.postTeacherLogin = async (req, res) => {
       _id: teacher._id,
       name: teacher.name,
       email: teacher.email,
-      subject: teacher.subject
+      subject: teacher.subject,
+      profileImage: teacher.profileImage
     };
     
     return req.session.save(err => {

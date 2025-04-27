@@ -438,23 +438,38 @@
         if (saveEditTeacher) {
             saveEditTeacher.addEventListener('click', function() {
                 const form = document.getElementById('editTeacherForm');
+                
+                // Tạo object data từ form
                 const formData = new FormData(form);
                 const teacherId = document.getElementById('editTeacherId').value;
                 
+                // Convert FormData thành JSON
+                const data = {};
+                formData.forEach((value, key) => {
+                    data[key] = value;
+                });
+                
+                console.log('Dữ liệu gửi lên:', data);
+                
                 fetch(`/administrative/teachers/${teacherId}`, {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
                 })
                 .then(response => {
                     if (response.ok) {
                         window.location.reload();
                     } else {
-                        alert('Đã xảy ra lỗi khi cập nhật giáo viên.');
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.message || 'Đã xảy ra lỗi khi cập nhật giáo viên.');
+                        });
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Đã xảy ra lỗi khi cập nhật giáo viên.');
+                    alert(error.message || 'Đã xảy ra lỗi khi cập nhật giáo viên.');
                 });
             });
         }

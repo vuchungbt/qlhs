@@ -390,6 +390,15 @@ exports.getScheduleStudentsData = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Không tìm thấy lịch học' });
     }
 
+    // Kiểm tra nếu không có học sinh hoặc mảng học sinh rỗng
+    if (!schedule.students || schedule.students.length === 0) {
+      return res.json({ 
+        success: true, 
+        students: [], 
+        message: 'Lịch học này không có học sinh nào' 
+      });
+    }
+
     res.json({ success: true, students: schedule.students });
 
   } catch (error) {

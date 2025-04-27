@@ -54,8 +54,15 @@
                         <div class="row">
                             <div class="col-md-4 mb-4 text-center">
                                 <div class="profile-image-container mb-3">
-                                    <img id="profilePreview" src="<%= user.profileImage || '/images/default-avatar.png' %>" 
+                                    <% if (user.profileImage) { %>
+                                        <img id="profilePreview" src="<%= user.profileImage %>" 
                                          alt="Profile Image" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                                    <% } else { %>
+                                        <div id="defaultAvatar" class="rounded-circle bg-light d-flex align-items-center justify-content-center mb-3" style="width: 150px; height: 150px;">
+                                            <i class="bi bi-person-circle text-secondary" style="font-size: 4rem;"></i>
+                                        </div>
+                                        <img id="profilePreview" src="" alt="Profile Image" class="img-fluid rounded-circle mb-3 d-none" style="width: 150px; height: 150px; object-fit: cover;">
+                                    <% } %>
                                 </div>
                                 <div class="mb-3">
                                     <label for="profileImage" class="form-label">Hình đại diện</label>
@@ -154,7 +161,15 @@
         if (file) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                document.getElementById('profilePreview').src = e.target.result;
+                const preview = document.getElementById('profilePreview');
+                preview.src = e.target.result;
+                preview.classList.remove('d-none');
+                
+                // Ẩn avatar mặc định nếu có
+                const defaultAvatar = document.getElementById('defaultAvatar');
+                if (defaultAvatar) {
+                    defaultAvatar.classList.add('d-none');
+                }
             }
             reader.readAsDataURL(file);
         }

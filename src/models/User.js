@@ -23,7 +23,7 @@ const UserSchema = new mongoose.Schema({
   },
   profileImage: {
     type: String,
-    default: '/images/default-avatar.png'
+    default: null
   },
   notificationPreferences: {
     email: {

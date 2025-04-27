@@ -1,5 +1,40 @@
 <!-- Sidebar -->
 <div class="col-auto min-vh-100 bg-dark text-white sidebar" style="padding: 0;">
+    <%
+    // Logic server-side để xác định menu active
+    const currentPath = locals.currentPath || '';
+    
+    // Áp dụng active menu dựa trên đường dẫn hiện tại - SỬA LẠI HOÀN TOÀN
+    function isMenuActive(menuPath) {
+        // *** XỬ LÝ ĐẶC BIỆT: TRƯỜNG HỢP /attendance/student ***
+        if (currentPath.includes('/attendance/student')) {
+            // CHỈ MENU ĐIỂM DANH ĐƯỢC ACTIVE
+            return menuPath === '/academic/attendance';
+        }
+        
+        // Các trường hợp khác
+        if (menuPath === '/') {
+            return currentPath === '/';
+        }
+        
+        // Kiểm tra khớp chính xác
+        if (currentPath === menuPath) {
+            return true;
+        }
+        
+        // Kiểm tra prefix path
+        if (currentPath.startsWith(menuPath + '/')) {
+            // Đảm bảo không bị nhầm giữa /students và /attendance/student
+            if (menuPath === '/academic/students' && currentPath.includes('/attendance')) {
+                return false;
+            }
+            return true;
+        }
+        
+        return false;
+    }
+    %>
+    
     <div class="p-3">
         <div class="d-flex align-items-center mb-4">
             <i class="bi bi-grid-1x2-fill me-2 sidebar-icon"></i>
@@ -20,7 +55,7 @@
         <div class="mb-2">
             <ul class="nav flex-column">
                 <li class="nav-item">
-                    <a href="/" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Trang chủ">
+                    <a href="/" class="nav-link text-white <%= isMenuActive('/') ? 'active' : '' %>" data-bs-toggle="tooltip" data-bs-placement="right" title="Trang chủ">
                         <i class="bi bi-house-door sidebar-icon"></i>
                         <span class="sidebar-text">Dashboard</span>
                     </a>
@@ -32,31 +67,31 @@
             <div class="sidebar-heading sidebar-text">ACADEMIC</div>
             <ul class="nav flex-column">
                 <li class="nav-item">
-                    <a href="/academic/schedule" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Xem lịch học các lớp">
+                    <a href="/academic/schedule" class="nav-link text-white <%= isMenuActive('/academic/schedule') ? 'active' : '' %>" data-bs-toggle="tooltip" data-bs-placement="right" title="Xem lịch học các lớp">
                         <i class="bi bi-book sidebar-icon"></i>
                         <span class="sidebar-text">Lịch Học</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="/academic/students" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Quản lý thông tin học sinh">
+                    <a href="/academic/students" class="nav-link text-white <%= isMenuActive('/academic/students') ? 'active' : '' %>" data-bs-toggle="tooltip" data-bs-placement="right" title="Quản lý thông tin học sinh">
                         <i class="bi bi-info-circle sidebar-icon"></i>
                         <span class="sidebar-text">Thông Tin Học Sinh</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="/academic/parents" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Quản lý thông tin phụ huynh">
+                    <a href="/academic/parents" class="nav-link text-white <%= isMenuActive('/academic/parents') ? 'active' : '' %>" data-bs-toggle="tooltip" data-bs-placement="right" title="Quản lý thông tin phụ huynh">
                         <i class="bi bi-people sidebar-icon"></i>
                         <span class="sidebar-text">Thông Tin Phụ Huynh</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="/academic/attendance" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Điểm danh học sinh">
+                    <a href="/academic/attendance" class="nav-link text-white <%= isMenuActive('/academic/attendance') ? 'active' : '' %>" data-bs-toggle="tooltip" data-bs-placement="right" title="Điểm danh học sinh">
                         <i class="bi bi-star sidebar-icon"></i>
                         <span class="sidebar-text">Điểm Danh</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="/academic/tuition" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Quản lý học phí">
+                    <a href="/academic/tuition" class="nav-link text-white <%= isMenuActive('/academic/tuition') ? 'active' : '' %>" data-bs-toggle="tooltip" data-bs-placement="right" title="Quản lý học phí">
                         <i class="bi bi-cash-coin sidebar-icon"></i>
                         <span class="sidebar-text">Học Phí</span>
                     </a>
@@ -68,7 +103,7 @@
             <div class="sidebar-heading sidebar-text">ADMINISTRATIVE</div>
             <ul class="nav flex-column">
                 <li class="nav-item">
-                    <a href="/administrative/teachers" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Quản lý thông tin giáo viên">
+                    <a href="/administrative/teachers" class="nav-link text-white <%= isMenuActive('/administrative/teachers') ? 'active' : '' %>" data-bs-toggle="tooltip" data-bs-placement="right" title="Quản lý thông tin giáo viên">
                         <i class="bi bi-person-gear sidebar-icon"></i>
                         <span class="sidebar-text">Quản Lý Giáo Viên</span>
                     </a>
@@ -80,13 +115,13 @@
             <div class="sidebar-heading sidebar-text">SETTINGS</div>
             <ul class="nav flex-column">
                 <li class="nav-item">
-                    <a href="/settings/account" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Thay đổi cài đặt tài khoản">
+                    <a href="/settings/account" class="nav-link text-white <%= isMenuActive('/settings/account') ? 'active' : '' %>" data-bs-toggle="tooltip" data-bs-placement="right" title="Thay đổi cài đặt tài khoản">
                         <i class="bi bi-gear sidebar-icon"></i>
                         <span class="sidebar-text">Account Settings</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="/settings/notifications" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Điều chỉnh thông báo">
+                    <a href="/settings/notifications" class="nav-link text-white <%= isMenuActive('/settings/notifications') ? 'active' : '' %>" data-bs-toggle="tooltip" data-bs-placement="right" title="Điều chỉnh thông báo">
                         <i class="bi bi-bell sidebar-icon"></i>
                         <span class="sidebar-text">Notification Preferences</span>
                     </a>
@@ -95,7 +130,7 @@
         </div>
 
         <div class="mt-5">
-            <a href="/auth/logout" class="nav-link text-white" data-bs-toggle="tooltip" data-bs-placement="right" title="Đăng xuất khỏi hệ thống">
+            <a href="/auth/logout" class="nav-link text-white <%= isMenuActive('/auth/logout') ? 'active' : '' %>" data-bs-toggle="tooltip" data-bs-placement="right" title="Đăng xuất khỏi hệ thống">
                 <i class="bi bi-box-arrow-right sidebar-icon"></i>
                 <span class="sidebar-text">Logout</span>
             </a>
@@ -104,7 +139,11 @@
         <!-- User Profile Info -->
         <% if (typeof user !== 'undefined' && user) { %>
         <div class="user-profile mt-4 d-flex align-items-center">
-            <img src="<%= user.profileImage || '/images/default-avatar.png' %>" alt="<%= user.username %>" class="rounded-circle me-2" width="32" height="32">
+            <% if (user.profileImage) { %>
+                <img src="<%= user.profileImage %>" alt="<%= user.username %>" class="rounded-circle me-2" width="32" height="32">
+            <% } else { %>
+                <i class="bi bi-person-circle fs-5 me-2 text-white"></i>
+            <% } %>
             <div class="sidebar-text">
                 <div class="fw-bold"><%= user.username %></div>
                 <small class="text-muted"><%= user.role %></small>
@@ -179,6 +218,7 @@
         background-color: rgba(255, 255, 255, 0.1);
     }
     
+    /* Style đơn giản cho menu active - GIỮ LẠI BACKGROUND MỜ */
     .nav-link.active {
         background-color: rgba(255, 255, 255, 0.2);
     }
@@ -408,18 +448,5 @@
         
         // Xử lý khi thay đổi kích thước cửa sổ
         window.addEventListener('resize', handleResize);
-        
-        // Đánh dấu menu active dựa trên URL hiện tại
-        const currentPath = window.location.pathname;
-        const menuLinks = document.querySelectorAll('.sidebar .nav-link');
-        
-        menuLinks.forEach(link => {
-            const href = link.getAttribute('href');
-            if (!href || href === "#") return;
-            
-            if (href === currentPath || (currentPath.includes(href) && href !== '/')) {
-                link.classList.add('active');
-            }
-        });
     });
 </script>

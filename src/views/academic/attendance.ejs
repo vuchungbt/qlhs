@@ -3,7 +3,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="mb-0">Điểm Danh - <%= moment(selectedDate).format('DD/MM/YYYY') %></h1>
     <div class="d-flex align-items-center">
-        <div class="dropdown me-2">
+        <!-- <div class="dropdown me-2">
             <button class="btn btn-outline-primary dropdown-toggle" type="button" id="viewOptions" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="bi bi-eye me-1"></i> Xem điểm danh
             </button>
@@ -13,7 +13,7 @@
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="/academic/attendance"><i class="bi bi-calendar-date me-2 text-primary"></i> Điểm danh hôm nay</a></li>
             </ul>
-        </div>
+        </div> -->
         <select id="classFilter" class="form-select me-2" style="max-width: 200px;">
             <option value="">Tất cả học sinh</option>
             <% if (schedules && schedules.length > 0) { %>

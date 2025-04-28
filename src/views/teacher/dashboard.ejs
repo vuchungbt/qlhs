@@ -114,30 +114,7 @@
                 </div>
             </div>
 
-            <div class="card shadow-sm mb-4 border-0">
-                <div class="card-header bg-transparent border-0 py-3">
-                    <h5 class="mb-0">Điểm Danh Gần Đây</h5>
-                </div>
-                <div class="card-body p-0">
-                    <% if (recentAttendance && recentAttendance.length > 0) { %>
-                        <ul class="list-group list-group-flush">
-                            <% recentAttendance.forEach(function(record) { %>
-                                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                    <div>
-                                        <h6 class="mb-0"><%= record.schedule ? record.schedule.className : 'Không xác định' %></h6>
-                                        <small class="text-muted"><%= moment(record.date).format('DD/MM/YYYY') %></small>
-                                    </div>
-                                    <span class="badge bg-success">Đã điểm danh</span>
-                                </li>
-                            <% }); %>
-                        </ul>
-                    <% } else { %>
-                        <div class="p-3 text-center">
-                            <p class="mb-0 text-muted">Chưa có điểm danh nào gần đây</p>
-                        </div>
-                    <% } %>
-                </div>
-            </div>
+             
         </div>
     </div>
 

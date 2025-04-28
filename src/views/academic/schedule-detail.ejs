@@ -29,13 +29,45 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <p class="mb-1"><strong>Giáo viên:</strong></p>
-                            <p><%= schedule.teacher ? schedule.teacher.name : '(Chưa phân công)' %></p>
+                            <p><span class="badge bg-success"> <%= schedule.teacher ? schedule.teacher.name : '(Chưa phân công)' %></span>
+                                </p>
                         </div>
                         <div class="col-md-6">
                             <p class="mb-1"><strong>Lịch học:</strong></p>
                             <p><%= schedule.scheduleDisplay %></p>
                         </div>
                     </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <p class="mb-2"><strong>Trợ giảng:</strong></p>
+                            <% if(schedule.assistantTeachers && schedule.assistantTeachers.length > 0) { %>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Tên trợ giảng</th>
+                                                <th>Email</th>
+                                                <th>Số điện thoại</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% schedule.assistantTeachers.forEach(function(teacher) { %>
+                                                <tr>
+                                                    <td><%= teacher.name %></td>
+                                                    <td><%= teacher.email || '(Chưa cập nhật)' %></td>
+                                                    <td><%= teacher.phone || '(Chưa cập nhật)' %></td>
+                                                </tr>
+                                            <% }); %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <% } else { %>
+                                <p class="text-muted">Không có trợ giảng</p>
+                            <% } %>
+                        </div>
+                    </div>
+                    
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <p class="mb-1"><strong>Giờ bắt đầu:</strong></p>
@@ -68,7 +100,7 @@
                                     <thead>
                                         <tr>
                                             <th>Tên học sinh</th> 
-                                            <th>Ngày sinh</th>
+                                            <th>Trạng thái</th>
                                             <th>Thao tác</th>
                                         </tr>
                                     </thead>
@@ -76,7 +108,13 @@
                                         <% schedule.students.forEach(function(student) { %>
                                             <tr>
                                                 <td><%= student.name %></td> 
-                                                <td><%= student.dateOfBirth ? moment(student.dateOfBirth).format('DD/MM/YYYY') : 'Chưa cập nhật' %></td>
+                                                <td>
+                                                   <% if(student.status === 'active') { %>
+                                                       <span class="badge bg-success rounded-pill">Đang học</span>
+                                                   <% } else { %>
+                                                       <span class="badge bg-danger rounded-pill">Đã nghỉ học</span>
+                                                   <% } %>
+                                                </td>
                                                 <td>
                                                     <a href="/academic/students/<%= student._id %>" class="btn btn-sm btn-outline-primary">
                                                         <i class="bi bi-eye"></i>

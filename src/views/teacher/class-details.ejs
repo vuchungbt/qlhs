@@ -31,7 +31,8 @@
                                     <tr>
                                         <th style="font-weight: 500">Họ Tên</th>
                                         <th style="font-weight: 500">Phụ Huynh</th>
-                                          </tr>
+                                        <th style="font-weight: 500">Trạng Thái</th>
+                                    </tr>
                                 </thead>
                                 <tbody>
                                     <% students.forEach(function(enrollment) { %>
@@ -49,6 +50,27 @@
                                                 <% } else { %>
                                                     <%= enrollment.student.parentName || 'Chưa cập nhật' %>
                                                 <% } %>
+                                            </td>
+                                            <td>
+                                                <% 
+                                                let statusBadge = '';
+                                                let statusText = '';
+                                                
+                                                if(enrollment.student.status === 'active') {
+                                                    statusBadge = 'bg-success';
+                                                    statusText = 'Đang học';
+                                                } else if(enrollment.student.status === 'inactive') {
+                                                    statusBadge = 'bg-danger';
+                                                    statusText = 'Đã nghỉ';
+                                                    if(enrollment.student.endDate) {
+                                                        statusText += ' (' + moment(enrollment.student.endDate).format('DD/MM/YYYY') + ')';
+                                                    }
+                                                } else {
+                                                    statusBadge = 'bg-secondary';
+                                                    statusText = enrollment.student.status || 'Không xác định';
+                                                }
+                                                %>
+                                                <span class="badge <%= statusBadge %>"><%= statusText %></span>
                                             </td>
                                              
                                         </tr>

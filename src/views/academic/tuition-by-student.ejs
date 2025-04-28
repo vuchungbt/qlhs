@@ -552,7 +552,7 @@
 <div class="modal fade" id="addTuitionModal" tabindex="-1" aria-labelledby="addTuitionModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form action="/academic/tuition/create" method="POST">
+            <form action="/academic/tuition/create" method="POST" id="addTuitionForm">
                 <div class="modal-header">
                     <h5 class="modal-title" id="addTuitionModalLabel">Thêm học phí mới</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -742,16 +742,46 @@
             input.addEventListener('input', function() {
                 formatMoney(this);
             });
+            
+            // Định dạng ban đầu nếu đã có giá trị
+            if (input.value) {
+                formatMoney(input);
+            }
         });
         
         // Xử lý khi submit form để đảm bảo giá trị tiền tệ được gửi ở dạng số
         document.querySelectorAll('form').forEach(form => {
-            form.addEventListener('submit', function() {
+            form.addEventListener('submit', function(e) {
+                // Xử lý tất cả input tiền tệ trước khi submit
                 this.querySelectorAll('.money-input').forEach(input => {
                     input.value = input.value.replace(/\D/g, '');
                 });
             });
         });
+        
+        // Xử lý riêng biệt cho form thêm học phí
+        const addTuitionForm = document.getElementById('addTuitionForm');
+        if (addTuitionForm) {
+            addTuitionForm.addEventListener('submit', function(e) {
+                const amountInput = this.querySelector('#tuitionAmount');
+                if (amountInput) {
+                    console.log('Xử lý số tiền trước khi submit:', amountInput.value);
+                    amountInput.value = amountInput.value.replace(/\D/g, '');
+                    console.log('Số tiền sau khi xử lý:', amountInput.value);
+                }
+            });
+        }
+        
+        // Xử lý riêng biệt cho form sửa học phí
+        const editTuitionForm = document.getElementById('editTuitionForm');
+        if (editTuitionForm) {
+            editTuitionForm.addEventListener('submit', function(e) {
+                const amountInput = this.querySelector('#editTuitionAmount');
+                if (amountInput) {
+                    amountInput.value = amountInput.value.replace(/\D/g, '');
+                }
+            });
+        }
         
         // Xử lý khi nhấn nút thanh toán
         const recordPaymentBtns = document.querySelectorAll('.record-payment-btn');

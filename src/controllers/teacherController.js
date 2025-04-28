@@ -190,10 +190,10 @@ exports.showClassDetails = async (req, res) => {
       status: 'active'
     }).populate({
       path: 'student',
-      select: 'name contactNumber parentName parent notes',
+      select: 'name contactNumber parentName address notes parent status endDate',
       populate: {
         path: 'parent',
-        select: 'name phone email address occupation'
+        select: 'name phone email'
       }
     });
     
@@ -246,15 +246,29 @@ exports.showAttendance = async (req, res) => {
       });
     }
     
+    // Xác định ngày cần điểm danh (từ query param hoặc ngày hiện tại)
+    const selectedDate = req.query.date ? new Date(req.query.date) : new Date();
+    selectedDate.setHours(0, 0, 0, 0);
+    
     // Lấy danh sách học sinh trong lớp
     const enrollments = await Enrollment.find({
       class: scheduleId,
       status: 'active'
-    }).populate('student', 'name contactNumber');
+    }).populate('student', 'name contactNumber status endDate');
     
-    // Xác định ngày cần điểm danh (từ query param hoặc ngày hiện tại)
-    const selectedDate = req.query.date ? new Date(req.query.date) : new Date();
-    selectedDate.setHours(0, 0, 0, 0);
+    // Lọc học sinh để chỉ hiển thị những học sinh đang học (active) và chưa đến ngày nghỉ học
+    const filteredEnrollments = enrollments.filter(enrollment => {
+      // Kiểm tra học sinh có tồn tại và có trạng thái
+      if (!enrollment.student) return false;
+      
+      // Kiểm tra trạng thái active
+      if (enrollment.student.status !== 'active') return false;
+      
+      // Kiểm tra ngày nghỉ học: nếu có ngày nghỉ học (endDate) và ngày điểm danh sau ngày nghỉ học, thì không hiển thị
+      if (enrollment.student.endDate && new Date(enrollment.student.endDate) < selectedDate) return false;
+      
+      return true;
+    });
     
     // Kiểm tra xem đã có dữ liệu điểm danh cho ngày đã chọn chưa
     const existingAttendance = await Attendance.findOne({
@@ -280,7 +294,7 @@ exports.showAttendance = async (req, res) => {
       title: `Điểm Danh - ${schedule.name}`,
       teacherName: req.session.user.name,
       schedule: schedule,
-      students: enrollments,
+      students: filteredEnrollments,
       existingAttendance: attendanceData,
       today: moment(selectedDate).format('YYYY-MM-DD')
     });
@@ -533,7 +547,7 @@ exports.showMyStudents = async (req, res) => {
       status: 'active'
     }).populate({
       path: 'student',
-      select: 'name contactNumber parentName address notes parent',
+      select: 'name contactNumber parentName address notes parent status endDate',
       populate: {
         path: 'parent',
         select: 'name phone email'
@@ -556,6 +570,12 @@ exports.showMyStudents = async (req, res) => {
       if (!uniqueStudents.has(studentId)) {
         const studentObj = student.toObject();
         studentObj.classes = [];
+        
+        // Đảm bảo trường status có giá trị
+        if (!studentObj.status) {
+          studentObj.status = 'active'; // Giá trị mặc định là 'active' nếu không có
+        }
+        
         uniqueStudents.set(studentId, studentObj);
       }
       
@@ -570,6 +590,20 @@ exports.showMyStudents = async (req, res) => {
     // Chuyển map thành mảng để render
     const allStudents = Array.from(uniqueStudents.values());
     
+    // Thiết lập trạng thái học sinh một cách rõ ràng
+    allStudents.forEach(student => {
+      // Nếu không có trạng thái hoặc không phải là giá trị hợp lệ
+      if (!student.status || !['active', 'inactive'].includes(student.status)) {
+        student.status = 'active'; // Mặc định là active
+      }
+    });
+    
+    // Kiểm tra trạng thái học sinh
+    console.log('Danh sách học sinh:');
+    allStudents.forEach((student, index) => {
+      console.log(`Học sinh ${index + 1}: ${student.name}, Trạng thái: ${student.status}`);
+    });
+    
     // Lấy danh sách lớp để hiển thị bộ lọc
     const classOptions = schedules.map(schedule => ({
       id: schedule._id,
@@ -579,7 +613,8 @@ exports.showMyStudents = async (req, res) => {
     res.render('teacher/students', {
       title: 'Danh sách học sinh',
       students: allStudents,
-      classes: classOptions
+      classes: classOptions,
+      moment: moment
     });
   } catch (err) {
     console.error('Lỗi khi hiển thị danh sách học sinh:', err);
@@ -1778,15 +1813,30 @@ exports.showTakeGroupAttendance = async (req, res) => {
       teacher: teacherId
     })
     .populate('schedules', 'name')
-    .populate('students', 'name studentId gender');
+    .populate('students', 'name studentId gender status endDate');
     
     if (!group) {
       req.flash('error', 'Không tìm thấy nhóm điểm danh hoặc bạn không có quyền truy cập');
       return res.redirect('/teacher/attendance/groups');
     }
     
-    // Kiểm tra nếu đã có điểm danh hôm nay
+    // Xác định ngày điểm danh (ngày hiện tại)
     const today = moment().startOf('day');
+    
+    // Lọc học sinh để chỉ hiển thị những học sinh đang học (active) và chưa đến ngày nghỉ học
+    if (group.students && group.students.length > 0) {
+      group.students = group.students.filter(student => {
+        // Kiểm tra trạng thái active
+        if (student.status !== 'active') return false;
+        
+        // Kiểm tra ngày nghỉ học: nếu có ngày nghỉ học (endDate) và ngày điểm danh sau ngày nghỉ học, thì không hiển thị
+        if (student.endDate && new Date(student.endDate) < today.toDate()) return false;
+        
+        return true;
+      });
+    }
+    
+    // Kiểm tra nếu đã có điểm danh hôm nay
     const todayAttendance = await Attendance.findOne({
       group: groupId,
       date: {
@@ -2163,8 +2213,10 @@ exports.generateTuition = async (req, res) => {
       });
     }
     
-    // Tạo ngày đến hạn
+    // Tạo ngày đến hạn và ngày đầu tháng cho việc kiểm tra
     const dueDate = new Date(yearInt, monthInt - 1, dueDayInt);
+    // Ngày đầu tiên của tháng được tạo học phí - dùng để so sánh với ngày nghỉ học
+    const firstDayOfMonth = new Date(yearInt, monthInt - 1, 1);
     
     // Tạo tên học phí nếu không được cung cấp
     const tuitionName = name || `Học phí tháng ${monthInt}/${yearInt} - ${schedule.name}`;
@@ -2177,11 +2229,26 @@ exports.generateTuition = async (req, res) => {
     // Tạo học phí cho từng học sinh trong lớp
     const tuitionPromises = [];
     let successCount = 0;
+    let skippedCount = 0;
     
     for (const enrollment of enrollments) {
       try {
         if (!enrollment.student || !enrollment.student._id) {
           console.error('Học sinh không hợp lệ trong enrollment:', enrollment);
+          continue;
+        }
+        
+        // Kiểm tra trạng thái học sinh
+        if (enrollment.student.status !== 'active') {
+          console.log(`Bỏ qua học sinh ${enrollment.student.name} do trạng thái không active (${enrollment.student.status})`);
+          skippedCount++;
+          continue;
+        }
+        
+        // Kiểm tra nếu học sinh đã nghỉ học trước khi tháng học phí bắt đầu
+        if (enrollment.student.endDate && new Date(enrollment.student.endDate) < firstDayOfMonth) {
+          console.log(`Bỏ qua học sinh ${enrollment.student.name} do đã nghỉ học từ ${new Date(enrollment.student.endDate).toLocaleDateString('vi-VN')}`);
+          skippedCount++;
           continue;
         }
         
@@ -2214,9 +2281,14 @@ exports.generateTuition = async (req, res) => {
     
     await Promise.all(tuitionPromises);
     
+    let message = `Đã tạo học phí cho ${successCount} học sinh trong lớp ${schedule.name}`;
+    if (skippedCount > 0) {
+      message += `. Đã bỏ qua ${skippedCount} học sinh đã nghỉ học hoặc không còn hoạt động.`;
+    }
+    
     return res.status(200).json({ 
       success: true, 
-      message: `Đã tạo học phí cho ${successCount} học sinh trong lớp ${schedule.name}` 
+      message: message
     });
   } catch (error) {
     console.error('Lỗi khi tạo học phí hàng loạt:', error);
@@ -2230,6 +2302,7 @@ exports.generateTuition = async (req, res) => {
 // Tạo học phí thủ công cho một học sinh
 exports.createManualTuition = async (req, res) => {
   try {
+    console.log('createManualTuition - Dữ liệu nhận được:', req.body);
     const { scheduleId, studentId, amount, month, year, dueDay, name, status, notes } = req.body;
     const teacherId = req.session.user._id;
     
@@ -2310,23 +2383,7 @@ exports.createManualTuition = async (req, res) => {
     
     // Tạo ngày đến hạn
     const dueDate = new Date(yearInt, monthInt - 1, dueDayInt);
-    
-    // Kiểm tra xem đã có học phí này chưa
-    const startDate = new Date(yearInt, monthInt - 1, 1);
-    const endDate = new Date(yearInt, monthInt, 0);
-    
-    const existingTuition = await Tuition.findOne({
-      schedule: scheduleId,
-      student: studentId,
-      dueDate: { $gte: startDate, $lte: endDate }
-    });
-    
-    if (existingTuition) {
-      return res.status(400).json({
-        success: false,
-        message: `Học sinh này đã có học phí cho tháng ${monthInt}/${yearInt}`
-      });
-    }
+ 
     
     console.log(`Tạo học phí thủ công cho học sinh ${student.name} (ID: ${studentId}) trong lớp ${schedule.name}, tháng ${monthInt}/${yearInt}, số tiền ${amountFloat}, ngày đến hạn ${dueDate.toLocaleDateString()}`);
     

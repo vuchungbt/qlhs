@@ -257,13 +257,20 @@
       formatMoney(this);
     });
     
-    // Xử lý khi submit form
+    // Xử lý khi submit form - cách cũ, chỉ xử lý form cụ thể
     $('#addTuitionForm').submit(function() {
       prepareMoneyInput('amount');
     });
     
     $('#editTuitionForm').submit(function() {
       prepareMoneyInput('editAmount');
+    });
+    
+    // Thêm xử lý cho tất cả form có chứa input tiền tệ
+    $('form').submit(function() {
+      $(this).find('.money-input').each(function() {
+        this.value = this.value.replace(/\D/g, '');
+      });
     });
     
     // Thêm định dạng tiền tệ khi hiển thị modal

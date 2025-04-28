@@ -517,8 +517,12 @@ exports.getAttendance = async (req, res) => {
     
     if (selectedClassId) {
       // Nếu có lớp được chọn, lấy học sinh của lớp đó
-      const selectedSchedule = await Schedule.findById(selectedClassId).populate('students');
+      const selectedSchedule = await Schedule.findById(selectedClassId).populate({
+        path: 'students',
+        match: { status: 'active' } // Chỉ lấy học sinh có trạng thái 'active'
+      });
       students = selectedSchedule ? selectedSchedule.students : [];
+      console.log(`Đã lọc học sinh active cho lớp ${selectedClassId}: ${students.length} học sinh`);
     } else {
       // Nếu không chọn lớp nào, không hiển thị học sinh
       students = [];
@@ -825,7 +829,7 @@ exports.getAttendanceByClassDetail = async (req, res) => {
     
     // Lấy thông tin lớp học
     const schedule = await Schedule.findById(classId)
-      .populate('students', 'name')
+      .populate('students', 'name status endDate') // Thêm trường status và endDate
       .populate('teacher', 'name');
     
     if (!schedule) {
@@ -843,7 +847,7 @@ exports.getAttendanceByClassDetail = async (req, res) => {
     }).populate({
       path: 'students.student',
       model: 'Student',
-      select: 'name'
+      select: 'name status endDate' // Thêm trường status và endDate
     });
     
     // Tạo map để tra cứu nhanh điểm danh của học sinh
@@ -851,6 +855,14 @@ exports.getAttendanceByClassDetail = async (req, res) => {
     if (attendanceRecord && attendanceRecord.students) {
       attendanceRecord.students.forEach(studentAttendance => {
         attendanceMap[studentAttendance.student._id.toString()] = studentAttendance;
+      });
+    }
+    
+    // Thêm debug để kiểm tra
+    console.log('Thông tin học sinh trong lớp:');
+    if (schedule.students && schedule.students.length > 0) {
+      schedule.students.forEach(student => {
+        console.log(`- Học sinh: ${student.name}, Trạng thái: ${student.status || 'không có'}`);
       });
     }
     
@@ -950,21 +962,79 @@ exports.updateAttendance = async (req, res) => {
 // Xóa điểm danh
 exports.deleteAttendance = async (req, res) => {
   try {
-    const attendance = await Attendance.findById(req.params.id);
+    console.log('=== XÓA ĐIỂM DANH ===');
+    console.log('Params ID:', req.params.id);
+    console.log('Query:', req.query);
+    
+    const attendanceId = req.params.id;
+    const studentId = req.query.studentId;
+    
+    // Tìm bản ghi điểm danh
+    const attendance = await Attendance.findById(attendanceId);
     
     if (!attendance) {
+      console.log('Không tìm thấy bản ghi điểm danh với ID:', attendanceId);
       return res.status(404).json({ 
         success: false, 
         message: 'Không tìm thấy bản ghi điểm danh' 
       });
     }
     
-    await Attendance.findByIdAndDelete(req.params.id);
+    // In thông tin bản ghi điểm danh để debug
+    console.log('Tìm thấy bản ghi điểm danh:');
+    console.log('- ID:', attendance._id);
+    console.log('- Lớp:', attendance.schedule);
+    console.log('- Ngày:', attendance.date);
+    console.log('- Số học sinh:', attendance.students.length);
     
-    res.json({
-      success: true,
-      message: 'Xóa điểm danh thành công'
-    });
+    // Nếu có studentId, chỉ xóa điểm danh của học sinh cụ thể
+    if (studentId) {
+      console.log('Xóa điểm danh cho học sinh cụ thể:', studentId);
+      
+      // Tìm vị trí của học sinh trong mảng
+      const studentIndex = attendance.students.findIndex(s => 
+        s.student && s.student.toString() === studentId
+      );
+      
+      console.log('Vị trí học sinh trong mảng:', studentIndex);
+      
+      if (studentIndex >= 0) {
+        // Xóa học sinh khỏi mảng students
+        attendance.students.splice(studentIndex, 1);
+        console.log('Đã xóa học sinh khỏi mảng, số học sinh còn lại:', attendance.students.length);
+        
+        // Nếu không còn học sinh nào, xóa toàn bộ bản ghi
+        if (attendance.students.length === 0) {
+          await Attendance.findByIdAndDelete(attendanceId);
+          console.log('Đã xóa toàn bộ bản ghi điểm danh vì không còn học sinh nào');
+        } else {
+          // Lưu lại bản ghi sau khi xóa học sinh
+          await attendance.save();
+          console.log('Đã lưu bản ghi điểm danh sau khi xóa học sinh');
+        }
+        
+        return res.json({
+          success: true,
+          message: 'Đã xóa điểm danh của học sinh thành công'
+        });
+      } else {
+        console.log('Không tìm thấy học sinh trong bản ghi điểm danh');
+        return res.status(404).json({
+          success: false,
+          message: 'Không tìm thấy học sinh trong bản ghi điểm danh'
+        });
+      }
+    } else {
+      // Xóa toàn bộ bản ghi điểm danh
+      console.log('Xóa toàn bộ bản ghi điểm danh');
+      await Attendance.findByIdAndDelete(attendanceId);
+      console.log('Đã xóa bản ghi điểm danh thành công');
+      
+      return res.json({
+        success: true,
+        message: 'Xóa điểm danh thành công'
+      });
+    }
   } catch (err) {
     console.error('Lỗi khi xóa điểm danh:', err);
     res.status(500).json({ 
@@ -1542,7 +1612,7 @@ exports.deleteTuition = async (req, res) => {
       req.flash('error_msg', 'Không tìm thấy thông tin học phí');
       return res.redirect('/academic/tuition');
     }
-
+    
     const tuition = await Tuition.findByIdAndDelete(tuitionId);
     
     if (!tuition) {
@@ -1593,7 +1663,7 @@ exports.deleteTuitionApi = async (req, res) => {
         message: 'Không tìm thấy thông tin học phí' 
       });
     }
-
+    
     const tuition = await Tuition.findByIdAndDelete(tuitionId);
     
     if (!tuition) {
@@ -1775,8 +1845,8 @@ exports.recordTuitionPayment = async (req, res) => {
     });
   } catch (error) {
     console.error('Lỗi khi ghi nhận thanh toán học phí:', error);
-    return res.status(500).json({ 
-      success: false, 
+      return res.status(500).json({
+        success: false,
       message: 'Đã xảy ra lỗi khi ghi nhận thanh toán học phí' 
     });
   }
@@ -1977,7 +2047,7 @@ exports.generateClassTuition = async (req, res) => {
     await Promise.all(tuitionPromises);
     
     return res.status(200).json({ 
-      success: true, 
+      success: true,
       message: `Đã tạo học phí cho ${successCount} học sinh trong lớp ${schedule.name}` 
     });
   } catch (error) {
@@ -2002,7 +2072,7 @@ exports.generateTuition = async (req, res) => {
     
     // Log từng trường dữ liệu sau khi parse
     console.log('generateTuition - Dữ liệu sau khi parse:', {
-      scheduleId: scheduleId, 
+      scheduleId: scheduleId,
       month: month,
       year: year,
       dueDay: dueDay,
@@ -2303,7 +2373,7 @@ exports.syncEnrollments = async (req, res) => {
         // Tạo enrollment mới cho học sinh
         console.log(`- Tạo enrollment mới cho học sinh ${studentId}`);
         const newEnrollment = new Enrollment({
-          student: studentId,
+      student: studentId,
           class: schedule._id,
           status: 'active',
           academicYear: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1),
@@ -2549,7 +2619,7 @@ exports.createManualTuition = async (req, res) => {
       month, 
       year, 
       dueDay, 
-      name, 
+      name,
       status, 
       notes 
     } = req.body;

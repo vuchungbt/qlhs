@@ -48,6 +48,7 @@ router.get('/tuition', ensureTeacherLoggedIn, teacherController.showTuition);
 router.post('/tuition/payment', ensureTeacherLoggedIn, teacherController.recordTuitionPayment);
 router.post('/tuition/generate', ensureTeacherLoggedIn, teacherController.generateTuition);
 router.post('/tuition/create', ensureTeacherLoggedIn, teacherController.createManualTuition);
+router.post('/tuition/create-manual', ensureTeacherLoggedIn, teacherController.createManualTuition);
 router.post('/tuition/update', ensureTeacherLoggedIn, teacherController.updateTuition);
 router.post('/tuition/update-note', ensureTeacherLoggedIn, teacherController.updateTuitionNote);
 router.post('/tuition/delete', ensureTeacherLoggedIn, teacherController.deleteTuition);

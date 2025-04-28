@@ -32,7 +32,7 @@
                     <div class="input-group date-selector">
                         <input type="date" class="form-control" id="dateSelector" value="<%= moment(selectedDate).format('YYYY-MM-DD') %>">
                         <button class="btn btn-primary" type="button" id="goToDate">
-                            <i class="bi bi-calendar3"></i> Chọn ngày
+                            <i class="bi bi-calendar3"></i> Xem
                         </button>
                     </div>
                 </div>
@@ -73,7 +73,14 @@
                         %>
                             <tr data-student-id="<%= student._id %>" data-attendance-id="<%= attendanceId %>" class="<%= status === 'absent' ? 'absent-highlight' : '' %>">
                                 <td><%= index + 1 %></td>
-                                <td class="fw-medium"><%= student.name %></td>
+                                <td class="fw-medium">
+                                    <%= student.name %>
+                                    <% if (student.status === 'inactive') { %>
+                                        <div class="small text-muted mt-1">
+                                            <span class="badge bg-danger ms-1 align-middle" style="font-size: 0.7rem;">Đã nghỉ</span>
+                                        </div>
+                                    <% } %> 
+                                </td>
                                 <td>
                                     <select class="form-select status-select">
                                         <option value="" <%= !status ? 'selected' : '' %>>-- Chọn trạng thái --</option>
@@ -90,11 +97,11 @@
                                         <button class="btn btn-sm btn-primary me-1 save-btn" title="Lưu">
                                             <i class="bi bi-save"></i>
                                         </button>
-                                        <% if (attendance) { %>
+                                        <!-- <% if (attendance) { %>
                                             <button class="btn btn-sm btn-outline-danger delete-btn" title="Xóa" data-id="<%= attendance._id %>">
                                                 <i class="bi bi-trash"></i>
                                             </button>
-                                        <% } %>
+                                        <% } %> -->
                                     </div>
                                 </td>
                             </tr>
@@ -338,18 +345,40 @@
         
         // Hàm xử lý xóa điểm danh
         function handleDelete() {
-            if (confirm('Bạn có chắc chắn muốn xóa bản ghi điểm danh này?')) {
-                const btn = this;
-                const attendanceId = btn.dataset.id;
+            const btn = this;
+            const attendanceId = btn.dataset.id;
+            const row = btn.closest('tr');
+            const studentId = row.dataset.studentId;
+            const studentName = row.querySelector('td:nth-child(2)').textContent.trim();
+            
+            // Kiểm tra attendanceId có hợp lệ không
+            if (!attendanceId || attendanceId === 'undefined' || attendanceId === 'null') {
+                console.error('ID điểm danh không hợp lệ:', attendanceId);
+                alert('Không thể xóa: ID điểm danh không hợp lệ');
+                return;
+            }
+            
+            // Kiểm tra studentId có hợp lệ không
+            if (!studentId) {
+                console.error('ID học sinh không hợp lệ:', studentId);
+                alert('Không thể xóa: ID học sinh không hợp lệ');
+                return;
+            }
+            
+            if (confirm(`Bạn có chắc chắn muốn xóa điểm danh của học sinh ${studentName}?`)) {
+                console.log('Đang xóa điểm danh với ID:', attendanceId, 'cho học sinh:', studentId);
                 
-                fetch(`/academic/attendance/${attendanceId}`, {
+                fetch(`/academic/attendance/${attendanceId}?studentId=${studentId}`, {
                     method: 'DELETE'
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Lỗi HTTP: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success) {
-                        const row = btn.closest('tr');
-                        
                         // Reset form
                         row.querySelector('.status-select').value = '';
                         row.querySelector('.note-input').value = '';
@@ -371,8 +400,8 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Lỗi khi xóa điểm danh:', error);
-                    alert('Có lỗi xảy ra khi xóa điểm danh!');
+                    console.error('Lỗi khi xóa điểm danh:', error, 'URL:', `/academic/attendance/${attendanceId}?studentId=${studentId}`);
+                    alert('Có lỗi xảy ra khi xóa điểm danh: ' + error.message);
                 });
             }
         }

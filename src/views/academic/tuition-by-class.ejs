@@ -716,7 +716,8 @@
         const scheduleId = $('#modalScheduleId').val();
         const month = $('#modalMonth').val();
         const year = $('#modalYear').val();
-        const amount = $('#modalAmount').val();
+        // Xử lý số tiền, loại bỏ tất cả dấu phân tách nghìn, chỉ giữ lại số
+        let amount = $('#modalAmount').val().replace(/\D/g, '');
         const dueDay = $('#modalDueDay').val();
         const name = $('#modalName').val();
         const status = $('#modalStatus').val();
@@ -730,6 +731,8 @@
           alert('Vui lòng nhập ngày đến hạn hợp lệ (1-31)');
           return;
         }
+        
+        console.log('Số tiền sau khi xử lý:', amount);
         
         // Tạo học phí với dữ liệu từ form
         generateTuition(scheduleId, month, year, amount, dueDay, name, status);
@@ -1090,8 +1093,8 @@
             scheduleId: scheduleId,
             month: month,
             year: year,
-            // Thêm các tham số này để đồng bộ với trang chính
-            amount: amount || null,
+            // Đảm bảo amount là giá trị số nguyên đã xử lý
+            amount: amount,
             dueDay: dueDay || null,
             name: name || 'Học phí tháng ' + month + '/' + year,
             status: status || 'pending'
@@ -1248,4 +1251,4 @@
     });
   </script>
 </body>
-</html> </html> 
+</html> 

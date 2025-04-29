@@ -13,10 +13,10 @@
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-white py-3">
             <div class="row align-items-center">
-                <div class="col-md-4 mb-2 mb-md-0">
+                <div class="col-md-8 mb-2 mb-md-0">
                     <h5 class="mb-0 text-primary">Phụ huynh của học sinh</h5>
                 </div>
-                <div class="col-md-4 mb-2 mb-md-0">
+                <!-- <div class="col-md-4 mb-2 mb-md-0">
                     <select id="classFilter" class="form-select">
                         <option value="">Tất cả lớp học</option>
                         <% if (classOptions && classOptions.length > 0) { %>
@@ -25,12 +25,12 @@
                             <% }) %>
                         <% } %>
                     </select>
-                </div>
+                </div> -->
                 <div class="col-md-4">
                     <div class="input-group">
                         <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm phụ huynh...">
                         <button class="btn btn-outline-secondary" type="button" id="searchButton">
-                            <i class="fas fa-search"></i>
+                            <i class="bi bi-search"></i>
                         </button>
                     </div>
                 </div>
@@ -47,7 +47,7 @@
                                 <th>Điện thoại</th>
                                 <th>Email</th>
                                 <th>Học sinh</th>
-                                <th>Thao tác</th>
+                                <!-- <th>Thao tác</th> -->
                             </tr>
                         </thead>
                         <tbody>
@@ -81,11 +81,11 @@
                                             <span class="text-muted">Không có thông tin</span>
                                         <% } %>
                                     </td>
-                                    <td>
+                                    <!-- <td>
                                         <a href="/teacher/parents/<%= parent._id %>" class="btn btn-sm btn-primary">
                                             <i class="fas fa-eye"></i> Chi tiết
                                         </a>
-                                    </td>
+                                    </td> -->
                                 </tr>
                             <% }); %>
                         </tbody>
@@ -106,12 +106,13 @@
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
     const classFilter = document.getElementById('classFilter');
+    const searchButton = document.getElementById('searchButton');
     const parentsTable = document.getElementById('parentsTable');
     const tableRows = parentsTable ? parentsTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr') : [];
     
     function filterTable() {
         const searchTerm = searchInput.value.toLowerCase();
-        const selectedClass = classFilter.value;
+        const selectedClass = classFilter ? classFilter.value : '';
         
         for (let i = 0; i < tableRows.length; i++) {
             const row = tableRows[i];
@@ -131,9 +132,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Event listeners
-    searchInput.addEventListener('keyup', filterTable);
-    document.getElementById('searchButton').addEventListener('click', filterTable);
-    classFilter.addEventListener('change', filterTable);
+    if (searchInput) {
+        searchInput.addEventListener('keyup', filterTable);
+    }
+    if (classFilter) {
+        classFilter.addEventListener('change', filterTable);
+    }
+    if (searchButton) {
+        searchButton.addEventListener('click', filterTable);
+    }
 });
 </script>
 

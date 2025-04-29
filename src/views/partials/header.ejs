@@ -337,6 +337,15 @@
                             </a>
                         </li>
                         
+                        <% if (locals.userType === 'admin' || (typeof user !== 'undefined' && user && user.role === 'admin')) { %>
+                        <li class="nav-item">
+                            <a class="nav-link <% if (typeof title !== 'undefined' && title.includes('Backup')) { %>active<% } %>" href="/admin/backup">
+                                <i class="bi bi-database-fill-check"></i>
+                                Backup Dữ liệu
+                            </a>
+                        </li>
+                        <% } %>
+                        
                         <li class="nav-header">CÀI ĐẶT</li>
                         
                         <li class="nav-item">

@@ -108,6 +108,14 @@
                         <span class="sidebar-text">Quản Lý Giáo Viên</span>
                     </a>
                 </li>
+                <% if (locals.userType === 'admin') { %>
+                <li class="nav-item">
+                    <a href="/admin/backup" class="nav-link text-white <%= isMenuActive('/admin/backup') ? 'active' : '' %>" data-bs-toggle="tooltip" data-bs-placement="right" title="Backup và phục hồi dữ liệu">
+                        <i class="bi bi-database-fill-check sidebar-icon"></i>
+                        <span class="sidebar-text">Backup Dữ Liệu</span>
+                    </a>
+                </li>
+                <% } %>
             </ul>
         </div>
 

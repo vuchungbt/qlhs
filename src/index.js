@@ -12,10 +12,12 @@ const administrativeRoutes = require('./routes/administrative');
 const authRoutes = require('./routes/auth');
 const settingsRoutes = require('./routes/settings');
 const teacherRoutes = require('./routes/teacher');
+const adminRoutes = require('./routes/admin');
 
 // Import controllers
 const homeController = require('./controllers/homeController');
 const authController = require('./controllers/authController');
+const backupController = require('./controllers/backupController');
 
 const app = express();
 
@@ -44,7 +46,9 @@ app.use(session({
   saveUninitialized: false,
   store: MongoStore.create({ 
     mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/school_dashboard',
-    ttl: 24 * 60 * 60 // 1 day
+    ttl: 24 * 60 * 60, // 1 day
+    autoRemove: 'native', // Sử dụng cơ chế tự động xóa của MongoDB
+    touchAfter: 24 * 3600 // Chỉ cập nhật session mỗi 24h thay vì mỗi request
   }),
   cookie: {
     maxAge: 1000 * 60 * 60 * 24, // 1 day
@@ -71,6 +75,7 @@ app.use('/teacher', teacherRoutes);
 app.use('/academic', authController.isAuthenticated, academicRoutes);
 app.use('/administrative', authController.isAuthenticated, administrativeRoutes);
 app.use('/settings', authController.isAuthenticated, settingsRoutes);
+app.use('/admin', adminRoutes);
 
 // Global search
 app.get('/search', authController.isAuthenticated, homeController.search);
@@ -113,7 +118,19 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Thiết lập backup tự động
+const scheduleBackupCheck = () => {
+  // Kiểm tra và thực hiện backup mỗi 12 giờ
+  setInterval(async () => {
+    await backupController.checkAndRunAutoBackup();
+  }, 12 * 60 * 60 * 1000); // 12 giờ
+  
+  // Kiểm tra ngay khi khởi động server
+  backupController.checkAndRunAutoBackup();
+};
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server đang chạy trên cổng ${PORT}`);
+  scheduleBackupCheck();
 });

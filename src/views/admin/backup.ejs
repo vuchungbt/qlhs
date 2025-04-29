@@ -1,0 +1,214 @@
+<%- include('../partials/header') %>
+
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Quản lý Backup Cơ sở dữ liệu</h1>
+  </div>
+
+  <% if (!isMongoDumpAvailable) { %>
+  <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert">
+    <h5 class="mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i> Chú ý: Công cụ MongoDB Database Tools chưa được cài đặt!</h5>
+    <p class="mb-1">Để sử dụng tính năng backup, bạn cần cài đặt MongoDB Database Tools trên máy chủ:</p>
+    <div class="mt-2">
+      <% if (platform === 'win32') { %>
+        <p class="mb-1"><strong>Hướng dẫn cài đặt cho Windows:</strong></p>
+        <ol class="mb-2">
+          <li>Tải MongoDB Database Tools từ <a href="https://www.mongodb.com/try/download/database-tools" target="_blank">trang chính thức</a></li>
+          <li>Cài đặt và thêm đường dẫn cài đặt vào biến môi trường PATH</li>
+          <li>Khởi động lại máy chủ</li>
+        </ol>
+      <% } else { %>
+        <p class="mb-1"><strong>Hướng dẫn cài đặt cho Ubuntu:</strong></p>
+        <pre class="bg-dark text-white p-2 rounded">sudo apt-get install -y mongodb-database-tools</pre>
+      <% } %>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  <% } %>
+
+  <% if (success && success.length > 0) { %>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      <%= success %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% } %>
+
+  <% if (error && error.length > 0) { %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <%= error %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% } %>
+
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Cấu hình Backup Tự động</h5>
+        </div>
+        <div class="card-body">
+          <form action="/admin/backup/settings" method="POST">
+            <div class="form-check mb-3">
+              <input type="checkbox" class="form-check-input" id="autoBackup" name="autoBackup" <%= backupConfig.autoBackup ? 'checked' : '' %> <%= !isMongoDumpAvailable ? 'disabled' : '' %>>
+              <label class="form-check-label" for="autoBackup">Bật backup tự động</label>
+            </div>
+            
+            <div class="mb-3">
+              <label for="backupInterval" class="form-label">Khoảng thời gian backup (ngày)</label>
+              <input type="number" class="form-control" id="backupInterval" name="backupInterval" min="1" max="30" value="<%= backupConfig.backupInterval %>" <%= !isMongoDumpAvailable ? 'disabled' : '' %>>
+              <div class="form-text">Hệ thống sẽ tự động backup dữ liệu sau mỗi số ngày được thiết lập.</div>
+            </div>
+            
+            <% if (backupConfig.lastBackup) { %>
+              <div class="mb-3">
+                <p class="mb-1">Lần backup cuối: <span class="fw-bold"><%= new Date(backupConfig.lastBackup).toLocaleString('vi-VN') %></span></p>
+              </div>
+            <% } %>
+            
+            <button type="submit" class="btn btn-primary" <%= !isMongoDumpAvailable ? 'disabled' : '' %>>Lưu cấu hình</button>
+            <% if (!isMongoDumpAvailable) { %>
+              <div class="form-text text-warning mt-2">
+                <i class="bi bi-info-circle"></i> Vui lòng cài đặt MongoDB Database Tools để kích hoạt chức năng này.
+              </div>
+            <% } %>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">Backup Thủ công</h5>
+        </div>
+        <div class="card-body">
+          <p>Tạo bản backup mới ngay lập tức. Quá trình này có thể mất vài phút tùy thuộc vào kích thước dữ liệu.</p>
+          <p class="text-warning mb-4"><i class="bi bi-exclamation-triangle"></i> Lưu ý: Không đóng trình duyệt trong quá trình tạo backup.</p>
+          
+          <form action="/admin/backup/create" method="POST">
+            <button type="submit" class="btn btn-success" <%= !isMongoDumpAvailable ? 'disabled' : '' %>>
+              <i class="bi bi-database-fill-check me-1"></i> Tạo backup ngay
+            </button>
+
+            <% if (!isMongoDumpAvailable) { %>
+              <div class="form-text text-warning mt-2">
+                <i class="bi bi-info-circle"></i> Vui lòng cài đặt MongoDB Database Tools để kích hoạt chức năng này.
+              </div>
+            <% } %>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="card shadow-sm">
+    <div class="card-header bg-dark text-white">
+      <h5 class="mb-0">Danh sách Backup</h5>
+    </div>
+    <div class="card-body">
+      <% if (backups && backups.length > 0) { %>
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Tên File</th>
+                <th>Kích thước</th>
+                <th>Ngày tạo</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% backups.forEach(backup => { %>
+                <tr>
+                  <td><%= backup.filename %></td>
+                  <td><%= backup.size %></td>
+                  <td><%= backup.createdAt %></td>
+                  <td>
+                    <div class="btn-group" role="group">
+                      <a href="/admin/backup/download/<%= backup.filename %>" class="btn btn-sm btn-primary">
+                        <i class="bi bi-download"></i> Tải về
+                      </a>
+                      <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#restoreModal<%= backup.filename.replace(/\./g, '_') %>" <%= !isMongoDumpAvailable ? 'disabled' : '' %>>
+                        <i class="bi bi-arrow-counterclockwise"></i> Phục hồi
+                      </button>
+                      <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal<%= backup.filename.replace(/\./g, '_') %>">
+                        <i class="bi bi-trash"></i> Xóa
+                      </button>
+                    </div>
+                    
+                    <!-- Modal Xác nhận Phục hồi -->
+                    <div class="modal fade" id="restoreModal<%= backup.filename.replace(/\./g, '_') %>" tabindex="-1" aria-hidden="true">
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                          <div class="modal-header bg-warning text-dark">
+                            <h5 class="modal-title">Xác nhận phục hồi</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+                          <div class="modal-body">
+                            <p class="fw-bold">Bạn có chắc chắn muốn phục hồi dữ liệu từ bản backup này?</p>
+                            <p class="text-danger">
+                              <i class="bi bi-exclamation-triangle"></i> Cảnh báo: Toàn bộ dữ liệu hiện tại sẽ bị thay thế bởi dữ liệu trong bản backup này!
+                            </p>
+                            <p>Tên file: <%= backup.filename %></p>
+                            <p>Ngày tạo: <%= backup.createdAt %></p>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <form action="/admin/backup/restore/<%= backup.filename %>" method="POST">
+                              <button type="submit" class="btn btn-warning">Xác nhận phục hồi</button>
+                            </form>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Modal Xác nhận Xóa -->
+                    <div class="modal fade" id="deleteModal<%= backup.filename.replace(/\./g, '_') %>" tabindex="-1" aria-hidden="true">
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                          <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title">Xác nhận xóa</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+                          <div class="modal-body">
+                            <p>Bạn có chắc chắn muốn xóa bản backup này?</p>
+                            <p>Tên file: <%= backup.filename %></p>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <form action="/admin/backup/delete/<%= backup.filename %>" method="POST">
+                              <button type="submit" class="btn btn-danger">Xác nhận xóa</button>
+                            </form>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } else { %>
+        <div class="alert alert-info mb-0">
+          <i class="bi bi-info-circle me-2"></i>Chưa có bản backup nào. Hãy tạo backup mới.
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Tự động đóng thông báo sau 5 giây
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      const alerts = document.querySelectorAll('.alert:not(.alert-warning)');
+      alerts.forEach(alert => {
+        const bsAlert = new bootstrap.Alert(alert);
+        bsAlert.close();
+      });
+    }, 5000);
+  });
+</script>
+
+<%- include('../partials/footer') %> 

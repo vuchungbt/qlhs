@@ -86,7 +86,17 @@ exports.getTeacherDetail = async (req, res) => {
 exports.updateTeacher = async (req, res) => {
   try {
     console.log('Request body:', req.body);
-    const { name, email, phone, password, subject, status } = req.body;
+    const { teacherId, name, email, phone, password, subject, status } = req.body;
+    
+    // Xác định ID từ params hoặc body
+    const id = req.params.id || teacherId;
+    
+    if (!id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'ID giáo viên không được cung cấp' 
+      });
+    }
     
     // Chuẩn bị dữ liệu cập nhật
     const updateData = {
@@ -103,7 +113,7 @@ exports.updateTeacher = async (req, res) => {
     }
     
     const updatedTeacher = await Teacher.findByIdAndUpdate(
-      req.params.id, 
+      id, 
       updateData,
       { new: true, runValidators: true }
     );
@@ -115,23 +125,37 @@ exports.updateTeacher = async (req, res) => {
       });
     }
     
-    // Trả về phản hồi JSON thay vì chuyển hướng
-    return res.status(200).json({
-      success: true,
-      message: 'Cập nhật thông tin giáo viên thành công',
-      data: {
-        id: updatedTeacher._id,
-        name: updatedTeacher.name,
-        email: updatedTeacher.email
-      }
-    });
+    // Kiểm tra nếu request là XHR (AJAX)
+    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+      return res.status(200).json({
+        success: true,
+        message: 'Cập nhật thông tin giáo viên thành công',
+        data: {
+          id: updatedTeacher._id,
+          name: updatedTeacher.name,
+          email: updatedTeacher.email
+        }
+      });
+    } else {
+      // Nếu là form submission thông thường, redirect với thông báo flash
+      req.flash('success', 'Cập nhật thông tin giáo viên thành công');
+      return res.redirect('/administrative/teachers');
+    }
   } catch (err) {
     console.error('Lỗi khi cập nhật giáo viên:', err);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Lỗi server khi cập nhật giáo viên',
-      error: err.message
-    });
+    
+    // Kiểm tra nếu request là XHR (AJAX)
+    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Lỗi server khi cập nhật giáo viên',
+        error: err.message
+      });
+    } else {
+      // Nếu là form submission thông thường
+      req.flash('error', 'Lỗi khi cập nhật giáo viên: ' + err.message);
+      return res.redirect('/administrative/teachers');
+    }
   }
 };
 

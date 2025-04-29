@@ -1,0 +1,9 @@
+{
+  "ignore": [
+    "backups/*",
+    "src/public/uploads/*", 
+    "node_modules/*"
+  ],
+  "watch": ["src/**/*"],
+  "ext": "js,json,ejs"
+} 

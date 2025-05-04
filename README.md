@@ -13,11 +13,13 @@ cd school-dashboard
 
 # Cài đặt các gói phụ thuộc
 npm install
+>>cài đặt database mongodb và MongoDB Database Tools version 100 - mongodb dump dùng để thực hiện chức năng backup database
 ```
 
 ## Cấu hình
 
-Tạo file `.env` với nội dung sau:
+Tạo file `.env` database local với nội dung sau:
+Hãy nhớ thay đổi secret và đường dẫn database nếu dùng mongodb cloud
 
 ```
 PORT=3000

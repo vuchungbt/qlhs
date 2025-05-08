@@ -126,7 +126,7 @@
                                         <th scope="col">Số Học Sinh</th>
                                         <th scope="col">Có Mặt</th>
                                         <th scope="col">Vắng Mặt</th>
-                                        <th scope="col">Đi Muộn</th>
+                                        <th scope="col">Không học</th>
                                         <th scope="col">Tỷ Lệ</th>
                                         <th scope="col" width="100">Thao Tác</th>
                                     </tr>
@@ -390,7 +390,7 @@
                                         '<span class="badge bg-success">Có mặt</span>' : 
                                       student.status === 'absent' ? 
                                         '<span class="badge bg-danger">Vắng mặt</span>' : 
-                                        '<span class="badge bg-warning">Đi muộn</span>'
+                                        '<span class="badge bg-warning">Không học</span>'
                                     }
                                 </td>
                                 <td>${student.note || '-'}</td>
@@ -413,7 +413,7 @@
                                     <div class="attendance-stats d-flex gap-2 mb-2">
                                         <span class="status-count present-count">Có mặt: ${presentCount}</span>
                                         <span class="status-count absent-count">Vắng: ${absentCount}</span>
-                                        <span class="status-count late-count">Muộn: ${lateCount}</span>
+                                        <span class="status-count late-count">Không học: ${lateCount}</span>
                                     </div>
                                     <div class="progress" style="height: 20px;">
                                         <div class="progress-bar bg-success" role="progressbar" 

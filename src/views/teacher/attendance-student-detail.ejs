@@ -100,7 +100,7 @@
                             </div>
                             <div class="stat-info">
                                 <div class="stat-number"><%= lateCount %></div>
-                                <div class="stat-name">Đi muộn</div>
+                                <div class="stat-name">Không học</div>
                             </div>
                         </div>
                         <div class="attendance-stat-card bg-light-primary">
@@ -170,7 +170,7 @@
                                                 <% } else if (record.status === 'absent') { %>
                                                     <span class="badge bg-danger">Vắng mặt</span>
                                                 <% } else if (record.status === 'late') { %>
-                                                    <span class="badge bg-warning">Đi muộn</span>
+                                                    <span class="badge bg-warning">Không học</span>
                                                 <% } else { %>
                                                     <span class="badge bg-secondary">Không xác định</span>
                                                 <% } %>
@@ -249,7 +249,7 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="status" id="statusLate" value="late">
                                 <label class="form-check-label" for="statusLate">
-                                    Đi muộn
+                                    Không học
                                 </label>
                             </div>
                         </div>
@@ -364,7 +364,7 @@
                     borderWidth: 1
                 },
                 {
-                    label: 'Đi muộn',
+                    label: 'Không học',
                     data: [<% monthlyStats.forEach(function(month) { %><%= month.late %>, <% }); %>],
                     backgroundColor: 'rgba(255, 193, 7, 0.5)',
                     borderColor: 'rgba(255, 193, 7, 1)',

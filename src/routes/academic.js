@@ -60,6 +60,7 @@ router.get('/attendance/class/:id', ensureAuthenticated, academicController.getA
 // Quản lý điểm danh theo học sinh
 router.get('/attendance/student', ensureAuthenticated, academicController.getAttendanceByStudent);
 router.get('/attendance/student/:id', ensureAuthenticated, academicController.getAttendanceByStudentDetail);
+router.get('/api/attendance/stats', ensureAuthenticated, academicController.getStudentAttendanceStats);
 
 // Routes điểm danh
 router.get('/attendance', ensureAuthenticated, academicController.getAttendance);

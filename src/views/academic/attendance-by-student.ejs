@@ -68,19 +68,98 @@
 </div>
 
 <% if (!selectedStudentId) { %>
-    <div class="text-center py-5 my-5">
-        <div class="mb-4">
-            <i class="bi bi-person-badge text-muted" style="font-size: 4rem;"></i>
-        </div>
-        <h4 class="mb-3">Vui lòng chọn một học sinh</h4>
-        <p class="text-muted mb-4">Chọn lớp học và học sinh từ form bên trên để xem lịch sử điểm danh</p>
-        <% if (selectedClassId && (!students || students.length === 0)) { %>
-            <div class="alert alert-warning d-inline-block">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                Không tìm thấy học sinh nào trong lớp đã chọn
+    <% if (selectedClassId && students && students.length > 0) { %>
+        <!-- Hiển thị danh sách học sinh trong lớp -->
+        <div class="card border-0 shadow-sm rounded-3 overflow-hidden mb-4">
+            <div class="card-header bg-transparent py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-people-fill me-2 text-primary"></i>
+                    <% const selectedClass = schedules.find(s => s._id.toString() === selectedClassId); %>
+                    Danh sách học sinh lớp <%= selectedClass ? selectedClass.name : '' %>
+                </h5>
             </div>
-        <% } %>
-    </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 50px; font-weight: 500">STT</th>
+                                <th style="font-weight: 500">Họ tên</th>
+                                <th style="width: 100px; text-align: center; font-weight: 500">Tổng buổi</th>
+                                <th style="width: 100px; text-align: center; font-weight: 500">Có mặt</th>
+                                <th style="width: 100px; text-align: center; font-weight: 500">Vắng mặt</th>
+                                <th style="width: 100px; text-align: center; font-weight: 500">Không học</th>
+                                <th style="width: 200px; font-weight: 500">Tỷ lệ có mặt</th>
+                                <th style="width: 100px; font-weight: 500">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% students.forEach(function(student, index) { %>
+                                <tr>
+                                    <td><%= index + 1 %></td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle bg-primary text-white me-2">
+                                                <%= student.name.charAt(0).toUpperCase() %>
+                                            </div>
+                                            <div>
+                                                <%= student.name %>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center" id="total-<%= student._id %>">
+                                        <div class="spinner-border spinner-border-sm" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center" id="present-<%= student._id %>">
+                                        <div class="spinner-border spinner-border-sm text-success" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center" id="absent-<%= student._id %>">
+                                        <div class="spinner-border spinner-border-sm text-danger" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center" id="late-<%= student._id %>">
+                                        <div class="spinner-border spinner-border-sm text-warning" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 10px;" id="progress-container-<%= student._id %>">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: 0%;" id="progress-<%= student._id %>"></div>
+                                        </div>
+                                        <small class="d-block text-end mt-1" id="progress-text-<%= student._id %>">0%</small>
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="/academic/attendance/student?studentId=<%= student._id %>&classId=<%= selectedClassId %>&startDate=<%= startDate %>&endDate=<%= endDate %>" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    <% } else { %>
+        <div class="text-center py-5 my-5">
+            <div class="mb-4">
+                <i class="bi bi-person-badge text-muted" style="font-size: 4rem;"></i>
+            </div>
+            <h4 class="mb-3">Vui lòng chọn một lớp học</h4>
+            <p class="text-muted mb-4">Chọn lớp học từ form bên trên để xem danh sách học sinh và thông tin điểm danh</p>
+            <% if (selectedClassId && (!students || students.length === 0)) { %>
+                <div class="alert alert-warning d-inline-block">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Không tìm thấy học sinh nào trong lớp đã chọn
+                </div>
+            <% } %>
+        </div>
+    <% } %>
 <% } else if (attendanceRecords && attendanceRecords.length > 0) { %>
     <div class="row mb-4">
         <div class="col-md-6">
@@ -149,7 +228,7 @@
                                 <div class="stat-value">
                                     <%= stats.late %>
                                 </div>
-                                <div class="stat-label">Đi muộn</div>
+                                <div class="stat-label">Không học</div>
                             </div>
                         </div>
                     </div>
@@ -186,7 +265,10 @@
                     </thead>
                     <tbody>
                         <% attendanceRecords.forEach((record, index) => { %>
-                            <tr data-attendance-id="<%= record._id %>" data-student-id="<%= record.student._id %>" class="<%= record.status === 'absent' ? 'absent-highlight' : '' %>">
+                            <tr data-attendance-id="<%= record._id %>" 
+                                data-student-id="<%= record.student._id %>" 
+                                data-schedule-id="<%= record.schedule && record.schedule._id ? record.schedule._id : '' %>"
+                                class="<%= record.status === 'absent' ? 'absent-highlight' : '' %>">
                                 <td><%= index + 1 %></td>
                                 <td><%= moment(record.date).format('DD/MM/YYYY') %></td>
                                 <td>
@@ -201,7 +283,7 @@
                                         data-original="<%= record.status %>" data-status="<%= record.status %>">
                                         <option value="present" <%= record.status === 'present' ? 'selected' : '' %>>Có mặt</option>
                                         <option value="absent" <%= record.status === 'absent' ? 'selected' : '' %>>Vắng mặt</option>
-                                        <option value="late" <%= record.status === 'late' ? 'selected' : '' %>>Đi muộn</option>
+                                        <option value="late" <%= record.status === 'late' ? 'selected' : '' %>>Không học</option>
                                     </select>
                                 </td>
                                 <td>
@@ -405,6 +487,41 @@
         gap: 1rem;
         flex-wrap: wrap;
     }
+    
+    .status-count {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-weight: 500;
+    }
+    
+    .absent-count {
+        background-color: #ffebee;
+        color: #f44336;
+        border: 1px solid #f44336;
+    }
+    
+    .present-count {
+        background-color: #e8f5e9;
+        color: #4caf50;
+        border: 1px solid #4caf50;
+    }
+    
+    .late-count {
+        background-color: #fff8e1;
+        color: #ff9800;
+        border: 1px solid #ff9800;
+    }
+    
+    .avatar-circle {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
 </style>
 
 <script>
@@ -528,13 +645,24 @@
                         note
                     };
                     
-                    // Nếu cần, có thể lấy thêm studentId từ thuộc tính data-student-id của row
+                    // Lấy studentId từ thuộc tính data-student-id của row
                     if (row.dataset.studentId) {
                         data.studentId = row.dataset.studentId;
                     }
                     
-                    // Nếu cần, có thể lấy thêm date từ các cell của row (tùy thuộc vào cấu trúc bảng)
-                    const dateCell = row.querySelector('td:nth-child(2)'); // Giả sử cột thứ 2 chứa ngày tháng
+                    // Lấy scheduleId từ row hoặc từ filter lớp đang chọn
+                    if (row.dataset.scheduleId) {
+                        data.scheduleId = row.dataset.scheduleId;
+                    } else {
+                        // Lấy từ dropdown lớp học
+                        const classIdSelect = document.getElementById('classId');
+                        if (classIdSelect && classIdSelect.value) {
+                            data.scheduleId = classIdSelect.value;
+                        }
+                    }
+                    
+                    // Lấy date từ các cell của row 
+                    const dateCell = row.querySelector('td:nth-child(2)'); // Cột thứ 2 chứa ngày tháng
                     if (dateCell) {
                         const dateText = dateCell.textContent.trim();
                         if (dateText) {
@@ -546,7 +674,20 @@
                         }
                     }
                     
-                    const response = await fetch(`/academic/attendance/update/${attendanceId}`, {
+                    console.log('Dữ liệu gửi đi:', data);
+                    
+                    // Kiểm tra xem đủ thông tin bắt buộc chưa
+                    if (!data.studentId || !data.scheduleId || !data.date) {
+                        alert('Thiếu thông tin bắt buộc: ID học sinh, lớp học hoặc ngày điểm danh');
+                        return;
+                    }
+                    
+                    // Thêm attendanceId vào dữ liệu nếu có
+                    if (attendanceId) {
+                        data.attendanceId = attendanceId;
+                    }
+                    
+                    const response = await fetch(`/academic/attendance/update`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -697,6 +838,60 @@
         
         // Log để debug
         console.log("Đã xóa active class từ các menu không liên quan");
+        
+        // Nếu đang ở trang danh sách học sinh (có lớp được chọn, chưa chọn học sinh)
+        const selectedClassId = document.getElementById('classId').value;
+        if (selectedClassId && !document.getElementById('studentId').value) {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            // Lấy tất cả học sinh từ bảng và tải dữ liệu điểm danh
+            const rows = document.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const studentId = row.querySelector('a').href.split('studentId=')[1]?.split('&')[0];
+                if (studentId) {
+                    fetchAttendanceStats(studentId, selectedClassId, startDate, endDate);
+                }
+            });
+        }
+        
+        // Hàm lấy thống kê điểm danh cho một học sinh
+        function fetchAttendanceStats(studentId, classId, startDate, endDate) {
+            // Tạo URL API để lấy dữ liệu
+            const apiUrl = `/academic/api/attendance/stats?studentId=${studentId}&classId=${classId}&startDate=${startDate}&endDate=${endDate}`;
+            
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const stats = data.stats;
+                        const totalAttendance = stats.present + stats.absent + stats.late;
+                        const attendanceRate = totalAttendance > 0 ? ((stats.present / totalAttendance) * 100).toFixed(1) : '0.0';
+                        
+                        // Cập nhật giao diện
+                        document.getElementById(`total-${studentId}`).innerHTML = `<span class="badge bg-primary">${totalAttendance}</span>`;
+                        document.getElementById(`present-${studentId}`).innerHTML = `<span class="badge bg-success">${stats.present}</span>`;
+                        document.getElementById(`absent-${studentId}`).innerHTML = `<span class="badge bg-danger">${stats.absent}</span>`;
+                        document.getElementById(`late-${studentId}`).innerHTML = `<span class="badge bg-warning">${stats.late}</span>`;
+                        
+                        // Cập nhật progress bar
+                        document.getElementById(`progress-${studentId}`).style.width = `${attendanceRate}%`;
+                        document.getElementById(`progress-text-${studentId}`).innerText = `${attendanceRate}%`;
+                    } else {
+                        console.error('Lỗi khi lấy dữ liệu điểm danh:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Lỗi khi gọi API:', error);
+                    // Hiển thị thông báo lỗi
+                    document.getElementById(`total-${studentId}`).innerHTML = '<span class="text-danger">Lỗi</span>';
+                    document.getElementById(`present-${studentId}`).innerHTML = '<span class="text-danger">Lỗi</span>';
+                    document.getElementById(`absent-${studentId}`).innerHTML = '<span class="text-danger">Lỗi</span>';
+                    document.getElementById(`late-${studentId}`).innerHTML = '<span class="text-danger">Lỗi</span>';
+                    document.getElementById(`progress-container-${studentId}`).style.display = 'none';
+                    document.getElementById(`progress-text-${studentId}`).innerText = 'Lỗi dữ liệu';
+                });
+        }
     });
 </script>
 

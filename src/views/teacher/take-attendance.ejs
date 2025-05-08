@@ -26,7 +26,7 @@
                         <!-- Thống kê sẽ được cập nhật bằng JavaScript -->
                         <span class="status-count bg-light-success" id="presentCount">0 có mặt</span>
                         <span class="status-count bg-light-danger" id="absentCount">0 vắng mặt</span>
-                        <span class="status-count bg-light-warning" id="lateCount">0 đi muộn</span>
+                        <span class="status-count bg-light-warning" id="lateCount">0 không học</span>
                     </div>
                 </div>
                 <div class="card-body">
@@ -36,7 +36,7 @@
                         <div class="attendance-legend d-flex mb-3">
                             <span class="me-3"><i class="bi bi-circle-fill text-success"></i> Có mặt</span>
                             <span class="me-3"><i class="bi bi-circle-fill text-danger"></i> Vắng mặt</span>
-                            <span><i class="bi bi-circle-fill text-warning"></i> Đi muộn</span>
+                            <span><i class="bi bi-circle-fill text-warning"></i> Không học</span>
                         </div>
                         
                         <div class="attendance-grid">
@@ -65,7 +65,7 @@
                                             <button type="button" class="attendance-btn absent-btn <%= defaultStatus === 'absent' ? 'active' : '' %>" data-status="absent" title="Vắng mặt">
                                                 <i class="bi bi-x-circle-fill"></i>
                                             </button>
-                                            <button type="button" class="attendance-btn late-btn <%= defaultStatus === 'late' ? 'active' : '' %>" data-status="late" title="Đi muộn">
+                                            <button type="button" class="attendance-btn late-btn <%= defaultStatus === 'late' ? 'active' : '' %>" data-status="late" title="Không học">
                                                 <i class="bi bi-clock-fill"></i>
                                             </button>
                                         </div>
@@ -365,7 +365,7 @@
             
             presentCountEl.textContent = `${presentCount} có mặt`;
             absentCountEl.textContent = `${absentCount} vắng mặt`;
-            lateCountEl.textContent = `${lateCount} đi muộn`;
+            lateCountEl.textContent = `${lateCount} không học`;
         }
         
         // Cập nhật thống kê ban đầu

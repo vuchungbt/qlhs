@@ -48,7 +48,7 @@
         <div class="attendance-legend d-flex">
             <span class="me-3"><i class="bi bi-circle-fill text-success"></i> Có mặt</span>
             <span class="me-3"><i class="bi bi-circle-fill text-danger"></i> Vắng mặt</span>
-            <span><i class="bi bi-circle-fill text-warning"></i> Đi muộn</span>
+            <span><i class="bi bi-circle-fill text-warning"></i> Không học</span>
         </div>
     </div>
     <div class="card-body p-0">
@@ -86,7 +86,7 @@
                                         <option value="" <%= !status ? 'selected' : '' %>>-- Chọn trạng thái --</option>
                                         <option value="present" <%= status === 'present' ? 'selected' : '' %>>Có mặt</option>
                                         <option value="absent" <%= status === 'absent' ? 'selected' : '' %>>Vắng mặt</option>
-                                        <option value="late" <%= status === 'late' ? 'selected' : '' %>>Đi muộn</option>
+                                        <option value="late" <%= status === 'late' ? 'selected' : '' %>>Không học</option>
                                     </select>
                                 </td>
                                 <td>

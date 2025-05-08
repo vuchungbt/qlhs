@@ -60,7 +60,7 @@
                                                      data-bs-trigger="hover focus" 
                                                      data-bs-placement="top" 
                                                      data-bs-html="true"
-                                                     data-bs-content="<strong>Lớp:</strong> <%= day.attendance.schedule ? day.attendance.schedule.name : 'Không có thông tin' %><br><strong>Trạng thái:</strong> <%= day.attendance.status === 'present' ? 'Có mặt' : (day.attendance.status === 'absent' ? 'Vắng mặt' : 'Đi muộn') %><% if (day.attendance.note) { %><br><strong>Ghi chú:</strong> <%= day.attendance.note %><% } %>">
+                                                     data-bs-content="<strong>Lớp:</strong> <%= day.attendance.schedule ? day.attendance.schedule.name : 'Không có thông tin' %><br><strong>Trạng thái:</strong> <%= day.attendance.status === 'present' ? 'Có mặt' : (day.attendance.status === 'absent' ? 'Vắng mặt' : 'Không học') %><% if (day.attendance.note) { %><br><strong>Ghi chú:</strong> <%= day.attendance.note %><% } %>">
                                                     <i class="bi <%= day.attendance.status === 'present' ? 'bi-check-circle-fill' : (day.attendance.status === 'absent' ? 'bi-x-circle-fill' : 'bi-clock-fill') %>"></i>
                                                 </div>
                                             <% } %>
@@ -167,7 +167,7 @@
                             <div class="attendance-stat late-stat">
                                 <div class="stat-value"><%= stats.late %></div>
                                 <div class="stat-icon"><i class="bi bi-clock-fill"></i></div>
-                                <div class="stat-label">Đi muộn</div>
+                                <div class="stat-label">Không học</div>
                             </div>
                         </div>
                     </div>
@@ -220,7 +220,7 @@
                                     <% } else if (record.status === 'absent') { %>
                                         <span class="badge bg-danger rounded-pill">Vắng mặt</span>
                                     <% } else if (record.status === 'late') { %>
-                                        <span class="badge bg-warning text-dark rounded-pill">Đi muộn</span>
+                                        <span class="badge bg-warning text-dark rounded-pill">Không học</span>
                                     <% } %>
                                 </td>
                                 <td><%= record.note || '-' %></td>
@@ -527,7 +527,7 @@
         const attendanceChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: ['Có mặt', 'Vắng mặt', 'Đi muộn'],
+                labels: ['Có mặt', 'Vắng mặt', 'Không học'],
                 datasets: [{
                     data: [
                         <%- stats.present ? stats.present : 0 %>, 

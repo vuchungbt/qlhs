@@ -62,7 +62,7 @@
         <div class="attendance-legend d-flex mb-3">
             <span class="me-3"><i class="bi bi-circle-fill text-success"></i> Có mặt</span>
             <span class="me-3"><i class="bi bi-circle-fill text-danger"></i> Vắng mặt</span>
-            <span><i class="bi bi-circle-fill text-warning"></i> Đi muộn</span>
+            <span><i class="bi bi-circle-fill text-warning"></i> Không học</span>
         </div>
         
         <div class="attendance-grid">
@@ -86,7 +86,7 @@
                             <button class="attendance-btn absent-btn" data-status="absent" title="Vắng mặt">
                                 <i class="bi bi-x-circle-fill"></i>
                             </button>
-                            <button class="attendance-btn late-btn" data-status="late" title="Đi muộn">
+                            <button class="attendance-btn late-btn" data-status="late" title="Không học">
                                 <i class="bi bi-clock-fill"></i>
                             </button>
                         </div>
@@ -149,7 +149,7 @@
                                     <% } else if (record.status === 'absent') { %>
                                         <span class="badge bg-danger rounded-pill">Vắng mặt</span>
                                     <% } else if (record.status === 'late') { %>
-                                        <span class="badge bg-warning text-dark rounded-pill">Đi muộn</span>
+                                        <span class="badge bg-warning text-dark rounded-pill">Không học</span>
                                     <% } %>
                                 </td>
                                 <td><%= record.note || '-' %></td>
@@ -380,7 +380,7 @@
         background-color: rgba(67, 97, 238, 0.03);
     }
     
-    /* Highlight học sinh vắng mặt và đi muộn */
+    /* Highlight học sinh vắng mặt và không học */
     tr.absent-highlight {
         background-color: rgba(231, 76, 60, 0.15) !important;
         border-left: 4px solid #e74c3c !important;
@@ -473,7 +473,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Bấm vào nút trạng thái (Có mặt, Vắng mặt, Đi muộn) cho từng học sinh
+    // Bấm vào nút trạng thái (Có mặt, Vắng mặt, Không học) cho từng học sinh
     document.querySelectorAll('.attendance-btn').forEach(button => {
         button.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -647,7 +647,7 @@ function updateAttendanceStats() {
         statsContainer.innerHTML = `
             <span class="status-count present-count ms-2">Có mặt: ${presentCount}</span>
             <span class="status-count absent-count ms-2">Vắng: ${absentCount}</span>
-            <span class="status-count late-count ms-2">Muộn: ${lateCount}</span>
+            <span class="status-count late-count ms-2">Không học: ${lateCount}</span>
         `;
     }
 }

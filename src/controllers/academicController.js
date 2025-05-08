@@ -885,10 +885,15 @@ exports.getAttendanceByClassDetail = async (req, res) => {
 // Cập nhật điểm danh
 exports.updateAttendance = async (req, res) => {
   try {
-    const { studentId, date, status, note, scheduleId } = req.body;
+    console.log('===== CẬP NHẬT ĐIỂM DANH =====');
+    console.log('Body data:', req.body);
+    console.log('Headers:', req.headers['content-type']);
+    
+    const { studentId, date, status, note, scheduleId, attendanceId } = req.body;
     
     // Kiểm tra dữ liệu đầu vào
     if (!studentId || !scheduleId || !status || !date) {
+      console.log('Thiếu dữ liệu:', { studentId, scheduleId, status, date });
       return res.status(400).json({
         success: false,
         message: 'Dữ liệu không hợp lệ. Vui lòng cung cấp đủ thông tin.'
@@ -897,26 +902,39 @@ exports.updateAttendance = async (req, res) => {
     
     // Chuyển đổi ngày thành đầu ngày để tránh vấn đề múi giờ
     const attendanceDate = moment(date).startOf('day').toDate();
+    console.log('Ngày điểm danh:', attendanceDate);
     
     // Tìm bản ghi điểm danh cho lớp và ngày đã chọn
-    let attendanceRecord = await Attendance.findOne({
-      schedule: scheduleId,
-      date: {
-        $gte: moment(attendanceDate).startOf('day').toDate(),
-        $lte: moment(attendanceDate).endOf('day').toDate()
-      }
-    });
+    let attendanceRecord;
+    
+    if (attendanceId) {
+      console.log('Tìm bản ghi theo attendanceId:', attendanceId);
+      attendanceRecord = await Attendance.findById(attendanceId);
+    } else {
+      console.log('Tìm bản ghi theo lớp và ngày');
+      attendanceRecord = await Attendance.findOne({
+        schedule: scheduleId,
+        date: {
+          $gte: moment(attendanceDate).startOf('day').toDate(),
+          $lte: moment(attendanceDate).endOf('day').toDate()
+        }
+      });
+    }
     
     if (attendanceRecord) {
+      console.log('Đã tìm thấy bản ghi điểm danh:', attendanceRecord._id);
       // Kiểm tra xem học sinh đã có trong danh sách điểm danh chưa
       const studentIndex = attendanceRecord.students.findIndex(
-        s => s.student._id && s.student._id.toString() === studentId || s.student.toString() === studentId
+        s => s.student && ((s.student._id && s.student._id.toString() === studentId) || s.student.toString() === studentId)
       );
+      
+      console.log('Vị trí học sinh trong mảng:', studentIndex);
       
       if (studentIndex >= 0) {
         // Cập nhật thông tin điểm danh của học sinh
         attendanceRecord.students[studentIndex].status = status;
         attendanceRecord.students[studentIndex].note = note || '';
+        console.log('Đã cập nhật trạng thái cho học sinh thành:', status);
       } else {
         // Thêm học sinh vào danh sách điểm danh
         attendanceRecord.students.push({
@@ -924,12 +942,15 @@ exports.updateAttendance = async (req, res) => {
           status: status,
           note: note || ''
         });
+        console.log('Đã thêm học sinh mới vào bản ghi điểm danh');
       }
       
       attendanceRecord.updatedAt = new Date();
       await attendanceRecord.save();
+      console.log('Đã lưu bản ghi điểm danh');
     } else {
       // Tạo bản ghi điểm danh mới
+      console.log('Không tìm thấy bản ghi điểm danh, tạo mới');
       attendanceRecord = new Attendance({
         schedule: scheduleId,
         date: attendanceDate,
@@ -943,6 +964,7 @@ exports.updateAttendance = async (req, res) => {
       });
       
       await attendanceRecord.save();
+      console.log('Đã tạo bản ghi điểm danh mới:', attendanceRecord._id);
     }
     
     res.status(200).json({
@@ -2915,3 +2937,117 @@ exports.saveAttendance = async (req, res) => {
     res.status(500).json({ success: false, message: 'Lỗi server: ' + err.message });
   }
 }; 
+
+// API endpoint để lấy thống kê điểm danh cho một học sinh
+exports.getStudentAttendanceStats = async (req, res) => {
+  try {
+    const { studentId, classId, startDate, endDate } = req.query;
+    
+    if (!studentId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu ID học sinh'
+      });
+    }
+    
+    // Tạo khoảng thời gian
+    const startDateObj = startDate ? moment(startDate).startOf('day') : moment().subtract(30, 'days').startOf('day');
+    const endDateObj = endDate ? moment(endDate).endOf('day') : moment().endOf('day');
+    
+    console.log(`Lấy thống kê điểm danh cho học sinh ${studentId} từ ${startDateObj.format('DD/MM/YYYY')} đến ${endDateObj.format('DD/MM/YYYY')}`);
+    
+    // Xây dựng query điều kiện
+    let query = {
+      $or: [
+        // Trường hợp 1: record.student trực tiếp
+        {
+          student: studentId,
+          date: {
+            $gte: startDateObj.toDate(),
+            $lte: endDateObj.toDate()
+          }
+        },
+        // Trường hợp 2: record.students là mảng các học sinh
+        {
+          'students.student': studentId,
+          date: {
+            $gte: startDateObj.toDate(),
+            $lte: endDateObj.toDate()
+          }
+        }
+      ]
+    };
+    
+    // Nếu có lớp được chọn, thêm điều kiện lớp
+    if (classId) {
+      query.$or[0].schedule = classId;
+      query.$or[1].schedule = classId;
+    }
+    
+    // Lấy lịch sử điểm danh trực tiếp
+    const directRecords = await Attendance.find(query.$or[0])
+      .populate('schedule', 'name')
+      .sort({ date: -1 });
+      
+    // Lấy điểm danh từ mảng students
+    const groupRecords = await Attendance.find(query.$or[1])
+      .populate('schedule', 'name')
+      .sort({ date: -1 });
+      
+    // Xử lý kết quả từ groupRecords
+    const processedGroupRecords = [];
+    
+    groupRecords.forEach(record => {
+      // Tìm thông tin học sinh trong mảng students
+      const studentRecord = record.students.find(s => 
+        s.student && (s.student._id && s.student._id.toString() === studentId || s.student.toString() === studentId)
+      );
+      
+      if (studentRecord) {
+        // Tạo bản ghi mới với cấu trúc tương thích
+        const processedRecord = {
+          _id: record._id,
+          schedule: record.schedule,
+          date: record.date,
+          student: { _id: studentId },
+          status: studentRecord.status,
+          note: studentRecord.note || ''
+        };
+        
+        processedGroupRecords.push(processedRecord);
+      }
+    });
+    
+    // Gộp kết quả từ cả hai nguồn
+    const attendanceRecords = [...directRecords, ...processedGroupRecords];
+    
+    // Tính toán thống kê điểm danh
+    const stats = {
+      present: 0,
+      absent: 0,
+      late: 0,
+      total: attendanceRecords.length
+    };
+    
+    // Nếu có dữ liệu điểm danh, tính toán các thống kê
+    if (attendanceRecords && attendanceRecords.length > 0) {
+      attendanceRecords.forEach(record => {
+        if (record.status === 'present') stats.present++;
+        else if (record.status === 'absent') stats.absent++;
+        else if (record.status === 'late') stats.late++;
+      });
+    }
+    
+    return res.json({
+      success: true,
+      stats,
+      attendanceCount: attendanceRecords.length
+    });
+  } catch (err) {
+    console.error('Lỗi khi lấy thống kê điểm danh của học sinh:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi server: ' + err.message
+    });
+  }
+};

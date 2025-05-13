@@ -2036,14 +2036,31 @@ exports.generateClassTuition = async (req, res) => {
     const paymentDay = schedule.tuitionDueDay || 10;
     const dueDate = new Date(year, month - 1, paymentDay);
     const tuitionName = `Học phí tháng ${month}/${year} - ${schedule.name}`;
+    // Ngày đầu tiên của tháng được tạo học phí - dùng để so sánh với ngày nghỉ học
+    const startDate = new Date(year, month - 1, 1);
     
     const tuitionPromises = [];
     let successCount = 0;
+    let skippedCount = 0;
     
     for (const enrollment of enrollments) {
       try {
         if (!enrollment.student || !enrollment.student._id) {
           console.error('Học sinh không hợp lệ trong enrollment:', enrollment);
+          continue;
+        }
+        
+        // Kiểm tra trạng thái học sinh
+        if (enrollment.student.status !== 'active') {
+          console.log(`Bỏ qua học sinh ${enrollment.student.name} - Trạng thái: ${enrollment.student.status}`);
+          skippedCount++;
+          continue;
+        }
+        
+        // Kiểm tra nếu học sinh đã nghỉ học trước khi tháng học phí bắt đầu
+        if (enrollment.student.endDate && new Date(enrollment.student.endDate) <= startDate) {
+          console.log(`Bỏ qua học sinh ${enrollment.student.name} - Đã nghỉ học từ: ${new Date(enrollment.student.endDate).toLocaleDateString()}`);
+          skippedCount++;
           continue;
         }
         
@@ -2070,7 +2087,7 @@ exports.generateClassTuition = async (req, res) => {
     
     return res.status(200).json({ 
       success: true,
-      message: `Đã tạo học phí cho ${successCount} học sinh trong lớp ${schedule.name}` 
+      message: `Đã tạo học phí cho ${successCount} học sinh trong lớp ${schedule.name}. Đã bỏ qua ${skippedCount} học sinh đã nghỉ học.` 
     });
   } catch (error) {
     console.error('Lỗi khi tạo học phí cho lớp:', error);
@@ -2203,6 +2220,7 @@ exports.generateTuition = async (req, res) => {
     const tuitionName = name || `Học phí tháng ${monthInt}/${yearInt} - ${scheduleInfo.name}`;
     const tuitionPromises = [];
     let successCount = 0;
+    let skippedCount = 0;
     const createdTuitions = [];
     
     // Xác định trạng thái học phí (mặc định là 'pending' nếu không được cung cấp hoặc không hợp lệ)
@@ -2213,6 +2231,20 @@ exports.generateTuition = async (req, res) => {
       try {
         if (!enrollment.student || !enrollment.student._id) {
           console.error('Học sinh không hợp lệ trong enrollment:', enrollment);
+          continue;
+        }
+        
+        // Kiểm tra trạng thái học sinh
+        if (enrollment.student.status !== 'active') {
+          console.log(`Bỏ qua học sinh ${enrollment.student.name} - Trạng thái: ${enrollment.student.status}`);
+          skippedCount++;
+          continue;
+        }
+        
+        // Kiểm tra nếu học sinh đã nghỉ học trước khi tháng học phí bắt đầu
+        if (enrollment.student.endDate && new Date(enrollment.student.endDate) <= startDate) {
+          console.log(`Bỏ qua học sinh ${enrollment.student.name} - Đã nghỉ học từ: ${new Date(enrollment.student.endDate).toLocaleDateString()}`);
+          skippedCount++;
           continue;
         }
         
@@ -2254,14 +2286,14 @@ exports.generateTuition = async (req, res) => {
       statusCountMap[tuition.status] = (statusCountMap[tuition.status] || 0) + 1;
     }
     
-    console.log(`Đã tạo ${successCount} học phí, trong đó: 
+    console.log(`Đã tạo ${successCount} học phí, bỏ qua ${skippedCount} học sinh đã nghỉ học.
       - ${statusCountMap.pending || 0} có trạng thái 'pending'
       - ${statusCountMap.paid || 0} có trạng thái 'paid'`);
     
     // Trả về kết quả thành công
     return res.status(200).json({ 
       success: true, 
-      message: `Đã tạo học phí cho ${successCount} học sinh trong lớp ${scheduleInfo.name} với trạng thái '${tuitionStatus === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}'.` 
+      message: `Đã tạo học phí cho ${successCount} học sinh trong lớp ${scheduleInfo.name} với trạng thái '${tuitionStatus === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}'. Đã bỏ qua ${skippedCount} học sinh đã nghỉ học.` 
     });
   } catch (err) {
     console.error('Lỗi khi tạo học phí hàng loạt:', err);
@@ -2395,7 +2427,7 @@ exports.syncEnrollments = async (req, res) => {
         // Tạo enrollment mới cho học sinh
         console.log(`- Tạo enrollment mới cho học sinh ${studentId}`);
         const newEnrollment = new Enrollment({
-      student: studentId,
+          student: studentId,
           class: schedule._id,
           status: 'active',
           academicYear: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1),
@@ -2698,6 +2730,8 @@ exports.createManualTuition = async (req, res) => {
       });
     }
     
+    // Bỏ kiểm tra trạng thái học sinh - cho phép thêm học phí kể cả khi học sinh đã nghỉ học
+    
     const schedule = await Schedule.findById(scheduleId);
     if (!schedule) {
       return res.status(404).json({ 
@@ -2706,19 +2740,13 @@ exports.createManualTuition = async (req, res) => {
       });
     }
     
-    // Kiểm tra xem học sinh có đang học trong lớp không
+    // Kiểm tra enrollment nhưng không bắt buộc phải active
     const enrollment = await Enrollment.findOne({
       student: studentId,
-      class: scheduleId,
-      status: 'active'
+      class: scheduleId
     });
     
-    if (!enrollment) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Học sinh không thuộc lớp học này hoặc không còn hoạt động' 
-      });
-    }
+    // Không bắt buộc học sinh phải còn học trong lớp
     
     // Tạo ngày đến hạn
     const dueDate = new Date(yearInt, monthInt - 1, dueDayInt);
@@ -2768,112 +2796,6 @@ exports.createManualTuition = async (req, res) => {
     });
   }
 };
-
-// Đồng bộ hóa enrollment
-exports.syncEnrollments = async (req, res) => {
-  try {
-    console.log('Bắt đầu đồng bộ hóa dữ liệu Enrollment...');
-    
-    // Lấy tất cả lớp học
-    const schedules = await Schedule.find().select('_id name students');
-    console.log(`Tìm thấy ${schedules.length} lớp học`);
-    
-    let totalSynced = 0;
-    let totalCreated = 0;
-    
-    // Duyệt qua từng lớp
-    for (const schedule of schedules) {
-      console.log(`\nĐang đồng bộ cho lớp ${schedule.name} (${schedule._id})`);
-      console.log(`Số học sinh trong mảng students: ${schedule.students ? schedule.students.length : 0}`);
-      
-      if (!schedule.students || schedule.students.length === 0) {
-        console.log('Lớp này không có học sinh, bỏ qua.');
-        continue;
-      }
-      
-      // Lấy danh sách enrollment hiện tại
-      const existingEnrollments = await Enrollment.find({
-        class: schedule._id
-      });
-      
-      console.log(`Số enrollment hiện tại: ${existingEnrollments.length}`);
-      
-      // Lấy danh sách student IDs từ các enrollment hiện tại
-      const existingStudentIds = existingEnrollments.map(e => e.student.toString());
-      
-      // Duyệt qua từng học sinh trong mảng students
-      const newEnrollmentPromises = [];
-      
-      for (const studentId of schedule.students) {
-        // Bỏ qua nếu đã có enrollment
-        if (existingStudentIds.includes(studentId.toString())) {
-          console.log(`- Học sinh ${studentId} đã có enrollment, kiểm tra trạng thái`);
-          
-          // Kiểm tra trạng thái enrollment
-          const enrollment = existingEnrollments.find(e => 
-            e.student.toString() === studentId.toString()
-          );
-          
-          // Nếu enrollment không active, cập nhật thành active
-          if (enrollment && enrollment.status !== 'active') {
-            console.log(`  Cập nhật trạng thái enrollment từ ${enrollment.status} thành active`);
-            enrollment.status = 'active';
-            await enrollment.save();
-            totalSynced++;
-          }
-          
-          continue;
-        }
-        
-        // Tạo enrollment mới cho học sinh
-        console.log(`- Tạo enrollment mới cho học sinh ${studentId}`);
-        const newEnrollment = new Enrollment({
-          student: studentId,
-          class: schedule._id,
-          status: 'active',
-          academicYear: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1),
-          enrollmentDate: new Date()
-        });
-        
-        newEnrollmentPromises.push(newEnrollment.save());
-        totalCreated++;
-      }
-      
-      // Lưu tất cả enrollment mới
-      if (newEnrollmentPromises.length > 0) {
-        await Promise.all(newEnrollmentPromises);
-        console.log(`Đã tạo ${newEnrollmentPromises.length} enrollment mới cho lớp ${schedule.name}`);
-      }
-    }
-    
-    const message = `Đồng bộ hóa hoàn tất. Đã tạo ${totalCreated} enrollment mới và cập nhật ${totalSynced} enrollment.`;
-    console.log(message);
-    
-    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
-      return res.json({
-        success: true,
-        message,
-        totalCreated,
-        totalSynced
-      });
-    }
-    
-    req.flash('success', message);
-    res.redirect('/academic/schedule');
-  } catch (error) {
-    console.error('Lỗi khi đồng bộ hóa enrollment:', error);
-    
-    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
-      return res.status(500).json({
-        success: false,
-        message: 'Lỗi khi đồng bộ hóa: ' + error.message
-      });
-    }
-    
-    req.flash('error', 'Lỗi khi đồng bộ hóa: ' + error.message);
-    res.redirect('/academic/schedule');
-  }
-}; 
 
 // Lưu điểm danh
 exports.saveAttendance = async (req, res) => {

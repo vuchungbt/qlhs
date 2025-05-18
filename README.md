@@ -9,11 +9,12 @@ Hệ thống quản lý trường học với các tính năng quản lý học 
 git clone <repository-url>
 
 # Di chuyển vào thư mục dự án
-cd school-dashboard
+cd qlhs
 
 # Cài đặt các gói phụ thuộc
 npm install
 >>cài đặt database mongodb và MongoDB Database Tools version 100 - mongodb dump dùng để thực hiện chức năng backup database
+>>Lưu ý: Nodejs version 20+ requered
 ```
 
 ## Cấu hình

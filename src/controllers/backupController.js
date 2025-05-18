@@ -159,7 +159,10 @@ exports.restoreBackup = async (req, res) => {
     const dbUri = mongoose.connection.client.s.url;
     const command = `mongorestore --uri="${dbUri}" --gzip --archive="${filePath}" --drop`;
     
-    exec(command, (error, stdout, stderr) => {
+    // Thêm maxBuffer để xử lý file backup lớn
+    const maxBufferSize = 1024 * 1024 * 100; // 100MB buffer
+    
+    exec(command, { maxBuffer: maxBufferSize }, (error, stdout, stderr) => {
       if (error) {
         console.error('Lỗi khi phục hồi backup:', error);
         req.flash('error', 'Có lỗi xảy ra khi phục hồi backup: ' + error.message);
@@ -207,7 +210,10 @@ async function createBackup() {
       const dbUri = mongoose.connection.client.s.url;
       const command = `mongodump --uri="${dbUri}" --gzip --archive="${outputFilePath}"`;
       
-      exec(command, (error, stdout, stderr) => {
+      // Thêm maxBuffer để xử lý database lớn
+      const maxBufferSize = 1024 * 1024 * 100; // 100MB buffer
+      
+      exec(command, { maxBuffer: maxBufferSize }, (error, stdout, stderr) => {
         if (error) {
           console.error('Lỗi khi tạo backup:', error);
           return reject(error);

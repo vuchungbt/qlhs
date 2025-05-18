@@ -88,7 +88,6 @@
                                 <th style="width: 100px; text-align: center; font-weight: 500">Tổng buổi</th>
                                 <th style="width: 100px; text-align: center; font-weight: 500">Có mặt</th>
                                 <th style="width: 100px; text-align: center; font-weight: 500">Vắng mặt</th>
-                                <th style="width: 100px; text-align: center; font-weight: 500">Không học</th>
                                 <th style="width: 200px; font-weight: 500">Tỷ lệ có mặt</th>
                                 <th style="width: 100px; font-weight: 500">Thao tác</th>
                             </tr>
@@ -117,11 +116,6 @@
                                     </td>
                                     <td class="text-center" id="absent-<%= student._id %>">
                                         <div class="spinner-border spinner-border-sm text-danger" role="status">
-                                            <span class="visually-hidden">Loading...</span>
-                                        </div>
-                                    </td>
-                                    <td class="text-center" id="late-<%= student._id %>">
-                                        <div class="spinner-border spinner-border-sm text-warning" role="status">
                                             <span class="visually-hidden">Loading...</span>
                                         </div>
                                     </td>
@@ -218,17 +212,6 @@
                                 <div class="stat-label">Vắng mặt</div>
                             </div>
                         </div>
-                        <div class="col-4">
-                            <div class="attendance-stat late-stat">
-                                <div class="stat-icon">
-                                    <i class="bi bi-clock-fill"></i>
-                                </div>
-                                <div class="stat-value">
-                                    <%= stats.late %>
-                                </div>
-                                <div class="stat-label">Không học</div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -281,7 +264,6 @@
                                         data-original="<%= record.status %>" data-status="<%= record.status %>">
                                         <option value="present" <%= record.status === 'present' ? 'selected' : '' %>>Có mặt</option>
                                         <option value="absent" <%= record.status === 'absent' ? 'selected' : '' %>>Vắng mặt</option>
-                                        <option value="late" <%= record.status === 'late' ? 'selected' : '' %>>Không học</option>
                                     </select>
                                 </td>
                                 <td>
@@ -863,14 +845,13 @@
                 .then(data => {
                     if (data.success) {
                         const stats = data.stats;
-                        const totalAttendance = stats.present + stats.absent + stats.late;
+                        const totalAttendance = stats.present + stats.absent;
                         const attendanceRate = totalAttendance > 0 ? ((stats.present / totalAttendance) * 100).toFixed(1) : '0.0';
                         
                         // Cập nhật giao diện
                         document.getElementById(`total-${studentId}`).innerHTML = `<span class="badge bg-primary">${totalAttendance}</span>`;
                         document.getElementById(`present-${studentId}`).innerHTML = `<span class="badge bg-success">${stats.present}</span>`;
                         document.getElementById(`absent-${studentId}`).innerHTML = `<span class="badge bg-danger">${stats.absent}</span>`;
-                        document.getElementById(`late-${studentId}`).innerHTML = `<span class="badge bg-warning">${stats.late}</span>`;
                         
                         // Cập nhật progress bar
                         document.getElementById(`progress-${studentId}`).style.width = `${attendanceRate}%`;
@@ -885,7 +866,6 @@
                     document.getElementById(`total-${studentId}`).innerHTML = '<span class="text-danger">Lỗi</span>';
                     document.getElementById(`present-${studentId}`).innerHTML = '<span class="text-danger">Lỗi</span>';
                     document.getElementById(`absent-${studentId}`).innerHTML = '<span class="text-danger">Lỗi</span>';
-                    document.getElementById(`late-${studentId}`).innerHTML = '<span class="text-danger">Lỗi</span>';
                     document.getElementById(`progress-container-${studentId}`).style.display = 'none';
                     document.getElementById(`progress-text-${studentId}`).innerText = 'Lỗi dữ liệu';
                 });

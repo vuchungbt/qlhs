@@ -2563,15 +2563,11 @@ exports.getTuitionReport = async (req, res) => {
       monthlyStats[monthKey] = {
         totalAmount: monthTuitions.reduce((sum, t) => sum + (t.amount || 0), 0),
         paidAmount: monthTuitions.filter(t => t.status === 'paid').reduce((sum, t) => sum + (t.amount || 0), 0),
-        pendingAmount: monthTuitions.filter(t => t.status === 'pending').reduce((sum, t) => sum + (t.amount || 0), 0),
-        overdueAmount: monthTuitions.filter(t => {
-          return t.status === 'pending' && new Date(t.dueDate) < new Date();
-        }).reduce((sum, t) => sum + (t.amount || 0), 0),
+        pendingAmount: monthTuitions.filter(t => t.status === 'pending' && new Date(t.dueDate) >= new Date()).reduce((sum, t) => sum + (t.amount || 0), 0),
+        overdueAmount: monthTuitions.filter(t => (t.status === 'overdue') || (t.status === 'pending' && new Date(t.dueDate) < new Date())).reduce((sum, t) => sum + (t.amount || 0), 0),
         paidCount: monthTuitions.filter(t => t.status === 'paid').length,
-        pendingCount: monthTuitions.filter(t => t.status === 'pending').length,
-        overdueCount: monthTuitions.filter(t => {
-          return t.status === 'pending' && new Date(t.dueDate) < new Date();
-        }).length,
+        pendingCount: monthTuitions.filter(t => t.status === 'pending' && new Date(t.dueDate) >= new Date()).length,
+        overdueCount: monthTuitions.filter(t => (t.status === 'overdue') || (t.status === 'pending' && new Date(t.dueDate) < new Date())).length,
         totalCount: monthTuitions.length
       };
       
@@ -2583,15 +2579,11 @@ exports.getTuitionReport = async (req, res) => {
     const totalStats = {
       totalAmount: tuitions.reduce((sum, t) => sum + (t.amount || 0), 0),
       paidAmount: tuitions.filter(t => t.status === 'paid').reduce((sum, t) => sum + (t.amount || 0), 0),
-      pendingAmount: tuitions.filter(t => t.status === 'pending').reduce((sum, t) => sum + (t.amount || 0), 0),
-      overdueAmount: tuitions.filter(t => {
-        return t.status === 'pending' && new Date(t.dueDate) < new Date();
-      }).reduce((sum, t) => sum + (t.amount || 0), 0),
+      pendingAmount: tuitions.filter(t => t.status === 'pending' && new Date(t.dueDate) >= new Date()).reduce((sum, t) => sum + (t.amount || 0), 0),
+      overdueAmount: tuitions.filter(t => (t.status === 'overdue') || (t.status === 'pending' && new Date(t.dueDate) < new Date())).reduce((sum, t) => sum + (t.amount || 0), 0),
       paidCount: tuitions.filter(t => t.status === 'paid').length,
-      pendingCount: tuitions.filter(t => t.status === 'pending').length,
-      overdueCount: tuitions.filter(t => {
-        return t.status === 'pending' && new Date(t.dueDate) < new Date();
-      }).length,
+      pendingCount: tuitions.filter(t => t.status === 'pending' && new Date(t.dueDate) >= new Date()).length,
+      overdueCount: tuitions.filter(t => (t.status === 'overdue') || (t.status === 'pending' && new Date(t.dueDate) < new Date())).length,
       totalCount: tuitions.length
     };
     

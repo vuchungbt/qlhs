@@ -3,6 +3,8 @@ const Teacher = require('../models/Teacher');
 const Student = require('../models/Student');
 const Enrollment = require('../models/Enrollment');
 const moment = require('moment');
+const Attendance = require('../models/Attendance');
+const Tuition = require('../models/Tuition');
 
 // Lấy danh sách lịch học
 exports.getSchedules = async (req, res) => {
@@ -164,11 +166,25 @@ exports.deleteSchedule = async (req, res) => {
     if (!schedule) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy lịch học' });
     }
+
+    // Xóa tất cả bản ghi điểm danh liên quan
+    await Attendance.deleteMany({ class: id });
+    console.log(`Đã xóa điểm danh của lớp ${schedule.name}`);
+
+    // Xóa tất cả bản ghi học phí liên quan
+    await Tuition.deleteMany({ schedule: id });
+    console.log(`Đã xóa học phí của lớp ${schedule.name}`);
+
+    // Xóa tất cả bản ghi ghi danh liên quan
+    await Enrollment.deleteMany({ class: id });
+    console.log(`Đã xóa ghi danh của lớp ${schedule.name}`);
     
+    // Xóa lịch học
     await Schedule.findByIdAndDelete(id);
+    console.log(`Đã xóa lớp ${schedule.name}`);
     
     // Trả về JSON thay vì redirect vì frontend dùng fetch API
-    res.status(200).json({ success: true, message: 'Lịch học đã được xóa thành công' });
+    res.status(200).json({ success: true, message: 'Lịch học và các bản ghi liên quan đã được xóa thành công' });
   } catch (error) {
     console.error('Lỗi khi xóa lịch học:', error);
     res.status(500).json({ success: false, message: 'Không thể xóa lịch học' });

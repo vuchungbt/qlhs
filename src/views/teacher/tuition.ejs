@@ -1131,10 +1131,28 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert(data.message);
-                    // Đóng modal và reload trang
+                    // Lấy card cần xóa
+                    const card = document.querySelector(`[data-id="${tuitionId}"]`).closest('.col-md-3');
+                    
+                    // Xóa card khỏi DOM
+                    card.style.opacity = '0';
+                    setTimeout(() => {
+                        card.remove();
+                        
+                        // Cập nhật thống kê sau khi xóa
+                        updateStats();
+                        
+                        // Nếu không còn card nào, reload trang
+                        if (document.querySelectorAll('.tuition-card').length === 0) {
+                            window.location.reload();
+                        }
+                    }, 300);
+                    
+                    // Đóng modal
                     bootstrap.Modal.getInstance(document.getElementById('deleteTuitionModal')).hide();
-                    window.location.reload();
+                    
+                    // Hiển thị thông báo thành công
+                    alert(data.message);
                 } else {
                     alert('Lỗi: ' + data.message);
                 }
@@ -1144,6 +1162,46 @@
                 alert('Đã xảy ra lỗi khi xóa học phí');
             });
         });
+        
+        // Hàm cập nhật thống kê
+        function updateStats() {
+            // Cập nhật số lượng đã thanh toán, chưa thanh toán, quá hạn
+            const paidCount = document.querySelectorAll('.badge-paid').length;
+            const overdueCount = document.querySelectorAll('.badge-overdue').length;
+            const totalCount = document.querySelectorAll('.tuition-card').length;
+            const pendingCount = totalCount - paidCount - overdueCount;
+            
+            // Tính tổng học phí đã thanh toán, chưa thanh toán và quá hạn
+            let paidAmount = 0;
+            let pendingAmount = 0;
+            let overdueAmount = 0;
+            
+            document.querySelectorAll('.tuition-card').forEach(card => {
+                const amountText = card.querySelector('.student-info div:first-child').textContent;
+                const amount = parseInt(amountText.replace(/[^\d]/g, ''));
+                const badge = card.querySelector('.badge');
+                
+                if (badge.classList.contains('badge-paid')) {
+                    paidAmount += amount;
+                } else if (badge.classList.contains('badge-overdue')) {
+                    overdueAmount += amount;
+                } else if (badge.classList.contains('badge-pending')) {
+                    pendingAmount += amount;
+                }
+            });
+            
+            // Cập nhật UI thống kê
+            const totalAmount = paidAmount + pendingAmount + overdueAmount;
+            
+            // Cập nhật các thẻ thống kê
+            document.querySelector('.card-tuition h3').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalAmount);
+            document.querySelector('.card-paid h3').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(paidAmount);
+            document.querySelector('.card-paid p small').textContent = `${paidCount} phiếu học phí`;
+            document.querySelector('.card-pending h3').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(pendingAmount);
+            document.querySelector('.card-pending p small').textContent = `${pendingCount} phiếu học phí`;
+            document.querySelector('.card-overdue h3').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(overdueAmount);
+            document.querySelector('.card-overdue p small').textContent = `${overdueCount} phiếu học phí`;
+        }
         
         // Khi người dùng nhấp vào biểu tượng ghi chú
         document.querySelectorAll('.edit-note').forEach(button => {

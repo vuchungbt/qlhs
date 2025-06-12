@@ -41,26 +41,32 @@
                                             <td class="fw-medium"><%= cls.className %></td>
                                             <td>
                                                 <% 
-                                                let days = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
                                                 let dayText = '';
                                                 
                                                 if (cls.days && cls.days.length > 0) {
                                                     // Nếu lịch học được lưu dưới dạng chuỗi (monday, tuesday...)
-                                                    let dayIndexes = cls.days.map(day => {
-                                                        const dayMap = {
-                                                            'monday': 1, 'tuesday': 2, 'wednesday': 3, 
-                                                            'thursday': 4, 'friday': 5, 'saturday': 6, 'sunday': 0
-                                                        };
-                                                        return dayMap[day.toLowerCase()] || 0;
-                                                    });
-                                                    dayText = dayIndexes.map(idx => days[idx]).join(', ');
-                                                } else if (cls.dayOfWeek) {
-                                                    // Nếu dayOfWeek là mảng
+                                                    const dayMap = {
+                                                        'monday': 'Thứ 2',
+                                                        'tuesday': 'Thứ 3', 
+                                                        'wednesday': 'Thứ 4',
+                                                        'thursday': 'Thứ 5',
+                                                        'friday': 'Thứ 6',
+                                                        'saturday': 'Thứ 7',
+                                                        'sunday': 'Chủ nhật'
+                                                    };
+                                                    dayText = cls.days.map(day => dayMap[day.toLowerCase()] || day).join(' & ');
+                                                } else if (cls.dayOfWeek && cls.dayOfWeek.length > 0) {
+                                                    const daysOfWeek = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+                                                    
                                                     if (Array.isArray(cls.dayOfWeek)) {
-                                                        dayText = cls.dayOfWeek.map(day => days[day]).join(', ');
+                                                        dayText = cls.dayOfWeek.map(day => {
+                                                            // Xử lý trường hợp day là số
+                                                            const index = parseInt(day);
+                                                            return isNaN(index) ? day : daysOfWeek[index];
+                                                        }).join(' & ');
                                                     } else {
-                                                        // Nếu dayOfWeek là số đơn lẻ
-                                                        dayText = days[cls.dayOfWeek];
+                                                        // Xử lý trường hợp dayOfWeek là số đơn lẻ
+                                                        dayText = daysOfWeek[cls.dayOfWeek];
                                                     }
                                                 } else {
                                                     dayText = 'Chưa cập nhật';

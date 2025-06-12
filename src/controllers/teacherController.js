@@ -88,7 +88,8 @@ exports.showDashboard = async (req, res) => {
       return {
         _id: schedule._id,
         className: schedule.name,
-        dayOfWeek: schedule.dayOfWeek ? schedule.dayOfWeek[0] : (schedule.days ? schedule.days[0] : 0),
+        days: schedule.days,
+        dayOfWeek: schedule.dayOfWeek,
         startTime: schedule.startTime || (schedule.time ? schedule.time.start : ''),
         endTime: schedule.endTime || (schedule.time ? schedule.time.end : ''),
         studentCount: activeEnrollments

@@ -124,7 +124,14 @@
                                     <% todaySchedules.forEach(function(schedule) { %>
                                         <tr>
                                             <td><a href="/academic/schedule/<%= schedule._id %>" class="text-decoration-none fw-medium"><%= schedule.name %></a></td>
-                                            <td><%= schedule.startTime %> - <%= schedule.endTime %></td>
+                                            <td>
+                                                <a href="/academic/attendance?classId=<%= schedule._id %>&date=<%= new Date().toISOString().split('T')[0] %>" 
+                                                   class="text-decoration-none fw-medium text-primary" 
+                                                   title="Click để điểm danh lớp học này">
+                                                    <%= schedule.startTime %> - <%= schedule.endTime %>
+                                                    <i class="bi bi-calendar-check ms-1 small"></i>
+                                                </a>
+                                            </td>
                                             <td><%= schedule.teacher ? schedule.teacher.name : 'Chưa phân công' %></td>
                                             <td><%= schedule.location || 'Chưa cập nhật' %></td>
                                             <td>

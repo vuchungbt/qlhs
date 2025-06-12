@@ -421,4 +421,12 @@ exports.getScheduleStudentsData = async (req, res) => {
     console.error('Lỗi khi lấy danh sách học sinh cho lịch học:', error);
     res.status(500).json({ success: false, message: 'Lỗi server khi lấy danh sách học sinh' });
   }
-}; 
+};
+
+async function cleanOrphanTuitions() {
+  const validSchedules = await Schedule.find().distinct('_id');
+  const result = await Tuition.deleteMany({ schedule: { $nin: validSchedules } });
+  console.log('Đã xoá', result.deletedCount, 'bản ghi học phí không còn lớp.');
+}
+
+cleanOrphanTuitions(); 

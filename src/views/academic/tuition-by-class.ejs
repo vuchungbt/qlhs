@@ -700,7 +700,7 @@
       $('#paymentDate').val(today);
       
       // Khi thay đổi bộ lọc, tự động submit form
-      $('#month, #year, #status').change(function() {
+      $('#filterForm #month, #filterForm #year, #filterForm #status').change(function() {
         $('#filterForm').submit();
       });
       

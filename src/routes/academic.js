@@ -3,6 +3,7 @@ const router = express.Router();
 const academicController = require('../controllers/academicController');
 const scheduleController = require('../controllers/scheduleController');
 const { ensureAuthenticated } = require('../config/auth');
+const Tuition = require('../models/Tuition');
 
 // Middleware để log request body cho debugging
 const logRequestBody = (req, res, next) => {
@@ -88,5 +89,41 @@ router.post('/tuition/payment', ensureAuthenticated, academicController.recordTu
 router.get('/tuition/class/:id', ensureAuthenticated, academicController.getTuitionByClass);
 router.post('/tuition/generate', ensureAuthenticated, academicController.generateTuition);
 router.get('/tuition/report/class/:id', ensureAuthenticated, academicController.getTuitionReport);
+
+// Route lấy danh sách học phí theo trạng thái
+router.get('/tuition/list/:status', async (req, res) => {
+    try {
+        const { status } = req.params;
+        const { month, year } = req.query;
+        if (!month || !year) {
+            return res.json({ success: false, message: 'Thiếu tham số tháng/năm' });
+        }
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+        const today = new Date();
+        let query = {
+            dueDate: { $gte: startDate, $lte: endDate }
+        };
+        if (status === 'pending') {
+            query.status = 'pending';
+            query.dueDate.$gte = today;
+        } else if (status === 'overdue') {
+            query.$or = [
+                { status: 'pending', dueDate: { $lt: today, $gte: startDate, $lte: endDate } },
+                { status: 'overdue', dueDate: { $gte: startDate, $lte: endDate } }
+            ];
+            delete query.dueDate;
+        } else {
+            return res.json({ success: false, message: 'Trạng thái không hợp lệ' });
+        }
+        const tuitions = await Tuition.find(query)
+            .populate('student')
+            .populate('schedule')
+            .sort({ dueDate: 1 });
+        res.json({ success: true, tuitions });
+    } catch (err) {
+        res.json({ success: false, message: err.message });
+    }
+});
 
 module.exports = router;

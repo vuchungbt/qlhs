@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const teacherController = require('../controllers/teacherController');
 const { isTeacher, isTeacherOfClass } = require('./auth');
+const Tuition = require('../models/Tuition');
 
 // Middleware để kiểm tra giáo viên đã đăng nhập
 const ensureTeacherLoggedIn = (req, res, next) => {
@@ -52,6 +53,43 @@ router.post('/tuition/create-manual', ensureTeacherLoggedIn, teacherController.c
 router.post('/tuition/update', ensureTeacherLoggedIn, teacherController.updateTuition);
 router.post('/tuition/update-note', ensureTeacherLoggedIn, teacherController.updateTuitionNote);
 router.post('/tuition/delete', ensureTeacherLoggedIn, teacherController.deleteTuition);
+
+// Route lấy danh sách học phí theo trạng thái
+router.get('/tuition/list/:status', async (req, res) => {
+    try {
+        const { status } = req.params;
+        const { month, year, scheduleId } = req.query;
+        if (!month || !year || !scheduleId) {
+            return res.json({ success: false, message: 'Thiếu tham số' });
+        }
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+        const today = new Date();
+        let query = {
+            schedule: scheduleId,
+            dueDate: { $gte: startDate, $lte: endDate }
+        };
+        if (status === 'pending') {
+            query.status = 'pending';
+            query.dueDate.$gte = today;
+        } else if (status === 'overdue') {
+            query.$or = [
+                { schedule: scheduleId, status: 'pending', dueDate: { $lt: today, $gte: startDate, $lte: endDate } },
+                { schedule: scheduleId, status: 'overdue', dueDate: { $gte: startDate, $lte: endDate } }
+            ];
+            delete query.dueDate;
+            delete query.schedule;
+        } else {
+            return res.json({ success: false, message: 'Trạng thái không hợp lệ' });
+        }
+        const tuitions = await Tuition.find(query)
+            .populate('student')
+            .sort({ dueDate: 1 });
+        res.json({ success: true, tuitions });
+    } catch (err) {
+        res.json({ success: false, message: err.message });
+    }
+});
 
 // Quản lý học sinh
 router.get('/students', ensureTeacherLoggedIn, teacherController.showMyStudents);

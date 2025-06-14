@@ -601,6 +601,38 @@
     </div>
 </div>
 
+<!-- Modal hiển thị danh sách học phí chưa thanh toán/quá hạn -->
+<div class="modal fade" id="tuitionListModal" tabindex="-1" aria-labelledby="tuitionListModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tuitionListModalLabel">Danh sách học phí</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Học sinh</th>
+                                <th>Số tiền</th>
+                                <th>Hạn thanh toán</th>
+                                <th>Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tuitionListBody">
+                            <!-- Dữ liệu sẽ được thêm vào đây bằng JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Khắc phục vấn đề focus trap trong bootstrap modal
@@ -1265,6 +1297,106 @@
                     return 'Không xác định';
             }
         }
+
+        // Thêm xử lý click cho thẻ thống kê
+        const pendingCard = document.querySelector('.card-pending');
+        if (pendingCard) {
+            pendingCard.style.cursor = 'pointer';
+            pendingCard.addEventListener('click', function() {
+                showTuitionList('pending');
+            });
+        }
+
+        // Xử lý click vào thẻ quá hạn
+        const overdueCard = document.querySelector('.card-overdue');
+        if (overdueCard) {
+            overdueCard.style.cursor = 'pointer';
+            overdueCard.addEventListener('click', function() {
+                showTuitionList('overdue');
+            });
+        }
+
+        // Hàm hiển thị danh sách học phí
+        function showTuitionList(status) {
+            const modal = new bootstrap.Modal(document.getElementById('tuitionListModal'));
+            const modalTitle = document.getElementById('tuitionListModalLabel');
+            const tableBody = document.getElementById('tuitionListBody');
+            
+            // Lấy giá trị từ form
+            const month = document.getElementById('month').value;
+            const year = document.getElementById('year').value;
+            const scheduleId = document.getElementById('scheduleId').value;
+            
+            // Cập nhật tiêu đề modal
+            modalTitle.textContent = status === 'pending' ? 'Danh sách học phí chưa thanh toán' : 'Danh sách học phí quá hạn';
+            
+            // Hiển thị loading
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Đang tải danh sách...</p>
+                    </td>
+                </tr>
+            `;
+            
+            // Hiển thị modal trước khi load dữ liệu
+            modal.show();
+            
+            // Lấy danh sách học phí từ server
+            fetch(`/teacher/tuition/list/${status}?month=${month}&year=${year}&scheduleId=${scheduleId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Xóa dữ liệu cũ
+                        tableBody.innerHTML = '';
+                        
+                        if (data.tuitions && data.tuitions.length > 0) {
+                            // Thêm dữ liệu mới
+                            data.tuitions.forEach(tuition => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${tuition.student ? tuition.student.name : 'Không xác định'}</td>
+                                    <td>${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tuition.amount)}</td>
+                                    <td>${new Date(tuition.dueDate).toLocaleDateString('vi-VN')}</td>
+                                    <td>${tuition.notes || ''}</td>
+                                `;
+                                tableBody.appendChild(row);
+                            });
+                        } else {
+                            // Hiển thị thông báo không có dữ liệu
+                            tableBody.innerHTML = `
+                                <tr>
+                                    <td colspan="6" class="text-center">
+                                        <p class="text-muted">Không có học phí nào trong danh sách này.</p>
+                                    </td>
+                                </tr>
+                            `;
+                        }
+                    } else {
+                        throw new Error(data.message || 'Không thể lấy danh sách học phí');
+                    }
+                })
+                .catch(error => {
+                    console.error('Lỗi khi lấy danh sách học phí:', error);
+                    // Hiển thị thông báo lỗi trong bảng
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center text-danger">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                Đã xảy ra lỗi khi tải danh sách: ${error.message}
+                            </td>
+                        </tr>
+                    `;
+                });
+        }
     });
 </script>
 
@@ -1366,6 +1498,36 @@
     
     .tuition-actions .btn i {
         font-size: 0.9rem;
+    }
+
+    /* Thêm style cho thẻ thống kê có thể click */
+    .card-pending, .card-overdue {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .card-pending:hover, .card-overdue:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Style cho bảng trong modal */
+    #tuitionListModal .table {
+        margin-bottom: 0;
+    }
+
+    #tuitionListModal .table th {
+        background-color: #f8f9fa;
+        border-top: none;
+    }
+
+    #tuitionListModal .table td {
+        vertical-align: middle;
+    }
+
+    #tuitionListModal .badge {
+        padding: 5px 10px;
+        font-weight: 500;
     }
 </style>
 

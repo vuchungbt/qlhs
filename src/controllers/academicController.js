@@ -854,7 +854,9 @@ exports.getAttendanceByClassDetail = async (req, res) => {
     const attendanceMap = {};
     if (attendanceRecord && attendanceRecord.students) {
       attendanceRecord.students.forEach(studentAttendance => {
-        attendanceMap[studentAttendance.student._id.toString()] = studentAttendance;
+        if (studentAttendance.student && studentAttendance.student._id) {
+          attendanceMap[studentAttendance.student._id.toString()] = studentAttendance;
+        }
       });
     }
     

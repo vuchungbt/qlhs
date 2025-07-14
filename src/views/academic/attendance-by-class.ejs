@@ -54,7 +54,9 @@
             <div>
                 <button 
                     class="btn btn-primary" 
-                    onclick="window.location.href='/academic/attendance/class/<%= selectedClassId %>?date=<%= moment().format('YYYY-MM-DD') %>'">
+                    data-class-id="<%= selectedClassId %>"
+                    data-date="<%= moment().format('YYYY-MM-DD') %>"
+                    onclick="goToTodayAttendance(this)">
                     <i class="bi bi-calendar-check me-1"></i> Điểm danh hôm nay
                 </button>
             </div>
@@ -231,6 +233,12 @@
 </style>
 
 <script>
+    function goToTodayAttendance(button) {
+        const classId = button.getAttribute('data-class-id');
+        const date = button.getAttribute('data-date');
+        window.location.href = '/academic/attendance/class/' + classId + '?date=' + date;
+    }
+    
     document.addEventListener('DOMContentLoaded', function() {
         // Gửi form khi thay đổi lớp học
         document.getElementById('classFilter').addEventListener('change', function() {

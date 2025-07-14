@@ -1530,20 +1530,43 @@ exports.updateTuition = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Không tìm thấy bản ghi học phí' });
     }
 
-    // Kiểm tra nếu chỉ cập nhật ghi chú (chỉ có tuitionId và notes trong request)
-    const isOnlyNotesUpdate = Object.keys(req.body).length === 2 && tuitionId && notes !== undefined;
+    // Kiểm tra nếu chỉ cập nhật ghi chú và/hoặc số tiền (không có các trường khác)
+    const hasOnlyBasicFields = Object.keys(req.body).length <= 3 && tuitionId && 
+                              (notes !== undefined || amount !== undefined) &&
+                              !month && !year && !status && !paymentDate && !paymentMethod;
     
     // Kiểm tra nếu đang cập nhật trạng thái thanh toán
     const isPaymentStatusUpdate = status === 'paid' && (req.body.status || paymentDate);
     
-    if (isOnlyNotesUpdate) {
-      // Chỉ cập nhật ghi chú mà không thay đổi các trường khác
-      tuition.notes = notes;
-      console.log('Chỉ cập nhật ghi chú, giữ nguyên trạng thái:', tuition.status);
-    } else {
-      // Cập nhật thông tin học phí
+    if (hasOnlyBasicFields) {
+      // Chỉ cập nhật ghi chú và/hoặc số tiền mà không thay đổi các trường khác
+      if (notes !== undefined) {
+        tuition.notes = notes;
+      }
       if (amount && !isNaN(parseFloat(amount))) {
-        tuition.amount = parseFloat(amount);
+        const parsedAmount = parseFloat(amount);
+        if (parsedAmount > 0) {
+          tuition.amount = parsedAmount;
+        } else {
+          return res.status(400).json({ 
+            success: false, 
+            message: 'Số tiền phải lớn hơn 0' 
+          });
+        }
+      }
+      console.log('Chỉ cập nhật ghi chú và/hoặc số tiền, giữ nguyên trạng thái:', tuition.status);
+    } else {
+      // Cập nhật thông tin học phí đầy đủ
+      if (amount && !isNaN(parseFloat(amount))) {
+        const parsedAmount = parseFloat(amount);
+        if (parsedAmount > 0) {
+          tuition.amount = parsedAmount;
+        } else {
+          return res.status(400).json({ 
+            success: false, 
+            message: 'Số tiền phải lớn hơn 0' 
+          });
+        }
       }
       
       if (month && !isNaN(parseInt(month))) {
@@ -1596,7 +1619,8 @@ exports.updateTuition = async (req, res) => {
       id: tuition._id,
       status: tuition.status,
       notes: tuition.notes,
-      isOnlyNotesUpdate,
+      amount: tuition.amount,
+      hasOnlyBasicFields,
       paymentDate: tuition.paymentDate
     });
 
@@ -1606,6 +1630,7 @@ exports.updateTuition = async (req, res) => {
       tuition: {
         _id: tuition._id,
         amount: tuition.amount,
+        amountFormatted: tuition.amount.toLocaleString('vi-VN'),
         status: tuition.status,
         notes: tuition.notes,
         paymentDate: tuition.paymentDate,

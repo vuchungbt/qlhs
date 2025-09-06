@@ -87,6 +87,7 @@
                                 <th style="font-weight: 500">Họ tên</th>
                                 <th style="width: 100px; text-align: center; font-weight: 500">Tổng buổi</th>
                                 <th style="width: 100px; text-align: center; font-weight: 500">Có mặt</th>
+                                <th style="width: 100px; text-align: center; font-weight: 500">Không học</th>
                                 <th style="width: 100px; text-align: center; font-weight: 500">Vắng mặt</th>
                                 <th style="width: 200px; font-weight: 500">Tỷ lệ có mặt</th>
                                 <th style="width: 100px; font-weight: 500">Thao tác</th>
@@ -111,6 +112,11 @@
                                     </td>
                                     <td class="text-center" id="present-<%= student._id %>">
                                         <div class="spinner-border spinner-border-sm text-success" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center" id="not-studying-<%= student._id %>">
+                                        <div class="spinner-border spinner-border-sm text-secondary" role="status">
                                             <span class="visually-hidden">Loading...</span>
                                         </div>
                                     </td>
@@ -202,6 +208,17 @@
                             </div>
                         </div>
                         <div class="col-4">
+                            <div class="attendance-stat late-stat">
+                                <div class="stat-icon">
+                                    <i class="bi bi-pause-circle-fill"></i>
+                                </div>
+                                <div class="stat-value">
+                                    <%= stats.late || 0 %>
+                                </div>
+                                <div class="stat-label">Không học</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
                             <div class="attendance-stat absent-stat">
                                 <div class="stat-icon">
                                     <i class="bi bi-x-circle-fill"></i>
@@ -263,6 +280,7 @@
                                     <select class="form-select form-select-sm status-select <%= record.status === 'absent' ? 'absent-select' : '' %>"
                                         data-original="<%= record.status %>" data-status="<%= record.status %>">
                                         <option value="present" <%= record.status === 'present' ? 'selected' : '' %>>Có mặt</option>
+                                        <option value="late" <%= record.status === 'late' ? 'selected' : '' %>>Không học</option>
                                         <option value="absent" <%= record.status === 'absent' ? 'selected' : '' %>>Vắng mặt</option>
                                     </select>
                                 </td>
@@ -340,6 +358,7 @@
         background-color: rgba(243, 156, 18, 0.1);
     }
     
+    
     .stat-icon {
         font-size: 1.5rem;
         margin-bottom: 5px;
@@ -356,6 +375,7 @@
     .late-stat .stat-icon {
         color: #f39c12;
     }
+    
     
     .stat-value {
         font-size: 1.8rem;
@@ -462,6 +482,11 @@
         background-color: rgba(243, 156, 18, 0.1);
     }
     
+    .status-select[data-status="late"] {
+        background-color: rgba(243, 156, 18, 0.1);
+        border-color: rgba(243, 156, 18, 0.3);
+    }
+    
     .attendance-stats {
         display: flex;
         gap: 1rem;
@@ -493,6 +518,7 @@
         border: 1px solid #ff9800;
     }
     
+    
     .avatar-circle {
         width: 35px;
         height: 35px;
@@ -521,6 +547,10 @@
                     row.classList.add('absent-highlight');
                     this.classList.add('absent-select');
                     this.setAttribute('data-status', 'absent');
+                } else if (this.value === 'late') {
+                    this.setAttribute('data-status', 'late');
+                } else if (this.value === 'present') {
+                    this.setAttribute('data-status', 'present');
                 }
                 
                 // Kiểm tra sự thay đổi để hiển thị nút cập nhật
@@ -845,12 +875,13 @@
                 .then(data => {
                     if (data.success) {
                         const stats = data.stats;
-                        const totalAttendance = stats.present + stats.absent;
+                        const totalAttendance = stats.present + stats.absent + (stats.late || 0);
                         const attendanceRate = totalAttendance > 0 ? ((stats.present / totalAttendance) * 100).toFixed(1) : '0.0';
                         
                         // Cập nhật giao diện
                         document.getElementById(`total-${studentId}`).innerHTML = `<span class="badge bg-primary">${totalAttendance}</span>`;
                         document.getElementById(`present-${studentId}`).innerHTML = `<span class="badge bg-success">${stats.present}</span>`;
+                        document.getElementById(`not-studying-${studentId}`).innerHTML = `<span class="badge bg-warning">${stats.late || 0}</span>`;
                         document.getElementById(`absent-${studentId}`).innerHTML = `<span class="badge bg-danger">${stats.absent}</span>`;
                         
                         // Cập nhật progress bar
@@ -865,6 +896,7 @@
                     // Hiển thị thông báo lỗi
                     document.getElementById(`total-${studentId}`).innerHTML = '<span class="text-danger">Lỗi</span>';
                     document.getElementById(`present-${studentId}`).innerHTML = '<span class="text-danger">Lỗi</span>';
+                    document.getElementById(`not-studying-${studentId}`).innerHTML = '<span class="text-danger">Lỗi</span>';
                     document.getElementById(`absent-${studentId}`).innerHTML = '<span class="text-danger">Lỗi</span>';
                     document.getElementById(`progress-container-${studentId}`).style.display = 'none';
                     document.getElementById(`progress-text-${studentId}`).innerText = 'Lỗi dữ liệu';

@@ -1960,7 +1960,12 @@ exports.getTuitionByClass = async (req, res) => {
       totalCount: studentCount, // Sử dụng số học sinh từ enrollments
       paidCount: 0,
       pendingCount: 0,
-      overdueCount: 0
+      overdueCount: 0,
+      // Thống kê mới
+      totalInvoices: 0,
+      studentsWithOneInvoice: 0,
+      studentsWithMultipleInvoices: 0,
+      activeStudentsWithoutInvoices: 0
     };
     
     tuitions.forEach(tuition => {
@@ -1987,6 +1992,35 @@ exports.getTuitionByClass = async (req, res) => {
         }
       }
     });
+    
+    // Tính toán thống kê chi tiết học phí
+    tuitionStats.totalInvoices = tuitions.length;
+    
+    // Đếm số học sinh có 1 phiếu và nhiều phiếu
+    const studentInvoiceCounts = {};
+    tuitions.forEach(tuition => {
+      if (tuition.student && tuition.student._id) {
+        const studentId = tuition.student._id.toString();
+        studentInvoiceCounts[studentId] = (studentInvoiceCounts[studentId] || 0) + 1;
+      }
+    });
+    
+    // Đếm học sinh có 1 phiếu và nhiều phiếu
+    Object.values(studentInvoiceCounts).forEach(count => {
+      if (count === 1) {
+        tuitionStats.studentsWithOneInvoice++;
+      } else if (count > 1) {
+        tuitionStats.studentsWithMultipleInvoices++;
+      }
+    });
+    
+    // Đếm học sinh đang học nhưng không có phiếu học phí
+    const studentsWithInvoices = new Set(Object.keys(studentInvoiceCounts));
+    tuitionStats.activeStudentsWithoutInvoices = enrollments.filter(enrollment => {
+      return enrollment.student && 
+             enrollment.student.status === 'active' && 
+             !studentsWithInvoices.has(enrollment.student._id.toString());
+    }).length;
     
     // Danh sách tất cả các lịch học/lớp học
     const schedules = await Schedule.find({}).populate('teacher').sort({ name: 1 });

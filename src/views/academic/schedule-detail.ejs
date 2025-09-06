@@ -100,7 +100,6 @@
                                     <thead>
                                         <tr>
                                             <th>Tên học sinh</th> 
-                                            <th>Trạng thái</th>
                                             <th>Thao tác</th>
                                         </tr>
                                     </thead>
@@ -108,13 +107,6 @@
                                         <% schedule.students.forEach(function(student) { %>
                                             <tr>
                                                 <td><%= student.name %></td> 
-                                                <td>
-                                                   <% if(student.status === 'active') { %>
-                                                       <span class="badge bg-success rounded-pill">Đang học</span>
-                                                   <% } else { %>
-                                                       <span class="badge bg-danger rounded-pill">Đã nghỉ học</span>
-                                                   <% } %>
-                                                </td>
                                                 <td>
                                                     <a href="/academic/students/<%= student._id %>" class="btn btn-sm btn-outline-primary">
                                                         <i class="bi bi-eye"></i>

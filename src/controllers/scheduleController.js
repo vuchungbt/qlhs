@@ -372,7 +372,11 @@ exports.getScheduleDetail = async (req, res) => {
     const schedule = await Schedule.findById(id)
       .populate('teacher', 'name email phone')
       .populate('assistantTeachers', 'name email phone')
-      .populate('students', 'name class dateOfBirth status');
+      .populate({
+        path: 'students',
+        match: { status: 'active' },
+        select: 'name class dateOfBirth status'
+      });
       
     if (!schedule) {
       req.flash('error', 'Không tìm thấy lịch học');
@@ -399,6 +403,7 @@ exports.getScheduleStudentsData = async (req, res) => {
     const { id } = req.params;
     const schedule = await Schedule.findById(id).populate({
       path: 'students',
+      match: { status: 'active' },
       select: 'name dateOfBirth status note' // Chọn các trường cần thiết
     });
 

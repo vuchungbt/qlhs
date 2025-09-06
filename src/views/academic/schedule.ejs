@@ -404,21 +404,15 @@
                                 <th>STT</th>
                                 <th>Họ Tên</th>
                                 <th>Ngày Sinh</th>
-                                <th>Trạng Thái</th>
                                 <th>Ghi Chú</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${students.map((student, index) => {
-                                const statusBadge = student.status === 'active' 
-                                    ? '<span class="badge bg-success rounded-pill">Đang học</span>' 
-                                    : '<span class="badge bg-danger rounded-pill">Đã nghỉ học</span>';
-                                    
                                 return `<tr>
                                     <td>${index + 1}</td>
                                     <td>${student.name || '-'}</td>
                                     <td>${student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString('vi-VN') : '-'}</td>
-                                    <td>${statusBadge}</td>
                                     <td>${student.note || '-'}</td>
                                 </tr>`;
                             }).join('')}

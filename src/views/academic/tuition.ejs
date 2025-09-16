@@ -367,9 +367,23 @@
         const modalTitle = document.getElementById('tuitionListModalLabel');
         const tableBody = document.getElementById('tuitionListBody');
         
-        // Lấy giá trị từ form
+        // Lấy giá trị từ form và lớp học được chọn
         const month = $('#month').val();
         const year = $('#year').val();
+        const selectedSchedule = $('table tbody tr:first-child').find('a[href*="/academic/tuition/class/"]').attr('href');
+        const scheduleId = selectedSchedule ? selectedSchedule.split('/')[4].split('?')[0] : null;
+
+        if (!scheduleId) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center text-warning">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Vui lòng chọn một lớp học
+                    </td>
+                </tr>
+            `;
+            return;
+        }
         
         // Cập nhật tiêu đề modal
         modalTitle.textContent = status === 'pending' ? 'Danh sách học phí chưa thanh toán' : 'Danh sách học phí quá hạn';
@@ -395,7 +409,8 @@
             method: 'GET',
             data: {
                 month: month,
-                year: year
+                year: year,
+                scheduleId: scheduleId
             },
             success: function(data) {
                 if (data.success) {

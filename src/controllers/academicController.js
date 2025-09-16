@@ -1435,15 +1435,20 @@ exports.getTuition = async (req, res) => {
       console.log(`Số học sinh trong lớp ${schedule.name} (từ Enrollment): ${schedule.studentCount}`);
     }
     
-    // Tính toán thống kê học phí
+    // Tính toán thống kê học phí (căn theo logic modal/list)
+    const now = new Date();
+    const isPaid = (t) => t.status === 'paid';
+    const isPendingActive = (t) => t.status === 'pending' && new Date(t.dueDate) >= now;
+    const isOverdueEffective = (t) => (t.status === 'overdue') || (t.status === 'pending' && new Date(t.dueDate) < now);
+
     const stats = {
       totalAmount: tuitions.reduce((sum, t) => sum + (t.amount || 0), 0),
-      paidAmount: tuitions.filter(t => t.status === 'paid').reduce((sum, t) => sum + (t.amount || 0), 0),
-      pendingAmount: tuitions.filter(t => t.status === 'pending').reduce((sum, t) => sum + (t.amount || 0), 0),
-      overdueAmount: tuitions.filter(t => t.status === 'overdue').reduce((sum, t) => sum + (t.amount || 0), 0),
-      paidCount: tuitions.filter(t => t.status === 'paid').length,
-      pendingCount: tuitions.filter(t => t.status === 'pending').length,
-      overdueCount: tuitions.filter(t => t.status === 'overdue').length
+      paidAmount: tuitions.filter(isPaid).reduce((sum, t) => sum + (t.amount || 0), 0),
+      pendingAmount: tuitions.filter(isPendingActive).reduce((sum, t) => sum + (t.amount || 0), 0),
+      overdueAmount: tuitions.filter(isOverdueEffective).reduce((sum, t) => sum + (t.amount || 0), 0),
+      paidCount: tuitions.filter(isPaid).length,
+      pendingCount: tuitions.filter(isPendingActive).length,
+      overdueCount: tuitions.filter(isOverdueEffective).length
     };
     
     // Truyền thông tin người dùng vào template

@@ -128,13 +128,29 @@ exports.getDashboard = async (req, res) => {
     
     // Lấy lịch học hôm nay
     const today = moment().locale('vi').format('DD/MM/YYYY');
-    const currentDay = moment().format('dddd').toLowerCase();
     
-    // Lấy lịch học của ngày hôm nay - xử lý cả trường hợp days và dayOfWeek
+    // Lấy số thứ tự ngày trong tuần (0 = Chủ nhật, 1 = Thứ 2, ..., 6 = Thứ 7)
+    const dayOfWeekNumber = moment().day();
+    
+    // Map số thứ tự sang tên ngày tiếng Anh lowercase (theo định dạng trong database)
+    const dayNameMap = {
+      0: 'sunday',    // Chủ nhật
+      1: 'monday',    // Thứ 2
+      2: 'tuesday',   // Thứ 3
+      3: 'wednesday', // Thứ 4
+      4: 'thursday',  // Thứ 5
+      5: 'friday',    // Thứ 6
+      6: 'saturday'   // Thứ 7
+    };
+    
+    const currentDayName = dayNameMap[dayOfWeekNumber];
+    
+    // Lấy lịch học của ngày hôm nay - tìm trong mảng days hoặc dayOfWeek
+    // MongoDB tự động tìm trong mảng khi so sánh trực tiếp
     const todaySchedules = await Schedule.find({
       $or: [
-        { days: { $regex: new RegExp(currentDay, 'i') } },
-        { dayOfWeek: { $regex: new RegExp(currentDay, 'i') } }
+        { days: currentDayName },
+        { dayOfWeek: currentDayName }
       ]
     }).populate('teacher', 'name').limit(5);
     

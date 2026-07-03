@@ -205,6 +205,49 @@
       </div>
     </div>
     
+    <!-- Thống kê chi tiết học phí -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="card summary-card">
+          <div class="card-body text-center">
+            <h5 class="card-title">Tổng Số Phiếu</h5>
+            <h3 class="text-info"><%= tuitionStats.totalInvoices || 0 %></h3>
+            <p class="text-muted mb-0">phiếu học phí</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3">
+        <div class="card summary-card">
+          <div class="card-body text-center">
+            <h5 class="card-title">Học Sinh 1 Phiếu</h5>
+            <h3 class="text-success"><%= tuitionStats.studentsWithOneInvoice || 0 %></h3>
+            <p class="text-muted mb-0">học sinh</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3">
+        <div class="card summary-card">
+          <div class="card-body text-center">
+            <h5 class="card-title">Học Sinh Nhiều Phiếu</h5>
+            <h3 class="text-warning"><%= tuitionStats.studentsWithMultipleInvoices || 0 %></h3>
+            <p class="text-muted mb-0">học sinh</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3">
+        <div class="card summary-card">
+          <div class="card-body text-center">
+            <h5 class="card-title">Chưa Có Phiếu</h5>
+            <h3 class="text-danger"><%= tuitionStats.activeStudentsWithoutInvoices || 0 %></h3>
+            <p class="text-muted mb-0">học sinh đang học</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <!-- Bộ lọc -->
     <div class="filter-section">
       <form id="filterForm" method="GET" action="/academic/tuition/class/<%= schedule._id %>">
@@ -1136,7 +1179,7 @@
           }
         });
         
-        // Cập nhật UI thống kê
+        // Cập nhật UI thống kê cũ
         $('.summary-card:nth-child(2) h3').text(paidAmount.toLocaleString('vi-VN') + ' ₫');
         $('.summary-card:nth-child(2) p').text(paidCount + ' học sinh');
         
@@ -1145,6 +1188,40 @@
         
         $('.summary-card:nth-child(4) h3').text(overdueAmount.toLocaleString('vi-VN') + ' ₫');
         $('.summary-card:nth-child(4) p').text(overdueCount + ' học sinh');
+        
+        // Cập nhật thống kê mới
+        updateNewStats();
+      }
+      
+      // Hàm cập nhật thống kê mới
+      function updateNewStats() {
+        const totalInvoices = $('.tuition-card').length;
+        
+        // Đếm số học sinh có 1 phiếu và nhiều phiếu
+        const studentInvoiceCounts = {};
+        $('.tuition-card').each(function() {
+          const studentName = $(this).find('h6').text().trim();
+          studentInvoiceCounts[studentName] = (studentInvoiceCounts[studentName] || 0) + 1;
+        });
+        
+        let studentsWithOneInvoice = 0;
+        let studentsWithMultipleInvoices = 0;
+        
+        Object.values(studentInvoiceCounts).forEach(count => {
+          if (count === 1) {
+            studentsWithOneInvoice++;
+          } else if (count > 1) {
+            studentsWithMultipleInvoices++;
+          }
+        });
+        
+        // Cập nhật UI thống kê mới (các card thứ 2)
+        $('.row:nth-child(2) .summary-card:nth-child(1) h3').text(totalInvoices);
+        $('.row:nth-child(2) .summary-card:nth-child(2) h3').text(studentsWithOneInvoice);
+        $('.row:nth-child(2) .summary-card:nth-child(3) h3').text(studentsWithMultipleInvoices);
+        
+        // Số học sinh không có phiếu cần được tính từ server, tạm thời giữ nguyên
+        // $('.row:nth-child(2) .summary-card:nth-child(4) h3').text(activeStudentsWithoutInvoices);
       }
       
       // Hàm tạo học phí - Thêm để sửa lỗi "generateTuition is not defined"
@@ -1190,6 +1267,9 @@
           $(this).addClass('status-overdue-card');
         }
       });
+      
+      // Khởi tạo thống kê mới khi trang được tải
+      updateNewStats();
       
       // Xử lý sự kiện thêm học phí thủ công
       $('#addManualTuitionBtn').click(function() {

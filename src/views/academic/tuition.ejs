@@ -171,10 +171,14 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <div id="tuitionListSearchWrap" class="mb-3" style="display: none;">
+                    <input type="text" id="tuitionListSearch" class="form-control"
+                           placeholder="Tìm theo lớp, học sinh, ghi chú...">
+                </div>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
-                            <tr>
+                            <tr id="tuitionListHead">
                                 <th>Lớp</th>
                                 <th>Học sinh</th>
                                 <th>Số tiền</th>
@@ -256,14 +260,23 @@
   }
 
   /* Thêm style cho thẻ thống kê có thể click */
-  .card-pending, .card-overdue {
+  .card-paid, .card-pending, .card-overdue {
     cursor: pointer;
     transition: all 0.3s ease;
   }
 
-  .card-pending:hover, .card-overdue:hover {
+  .card-paid:hover, .card-pending:hover, .card-overdue:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  #tuitionListModal th.sortable {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  #tuitionListModal th.sortable:hover {
+    background-color: #e9ecef;
   }
 
   /* Style cho bảng trong modal */
@@ -361,23 +374,175 @@
       editTuitionModal.show();
     });
 
+    let paidTuitionData = [];
+    let paidSortKey = 'dueDate';
+    let paidSortDir = 'asc';
+
+    const PAID_COLUMNS = [
+      { key: 'className', label: 'Lớp', type: 'text' },
+      { key: 'studentName', label: 'Học sinh', type: 'text' },
+      { key: 'amount', label: 'Số tiền', type: 'number' },
+      { key: 'dueDate', label: 'Hạn thanh toán', type: 'date' },
+      { key: 'paymentDate', label: 'Ngày thanh toán', type: 'date' },
+      { key: 'notes', label: 'Ghi chú', type: 'text' }
+    ];
+
+    function removeDiacritics(str) {
+      return (str || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .toLowerCase();
+    }
+
+    function normalizePaidTuition(tuition) {
+      return {
+        ...tuition,
+        className: tuition.schedule ? tuition.schedule.name : 'Không xác định',
+        studentName: tuition.student ? tuition.student.name : 'Không xác định',
+        notes: tuition.notes || ''
+      };
+    }
+
+    function setupDefaultModalHead() {
+      const thead = document.getElementById('tuitionListHead');
+      thead.innerHTML = `
+        <th>Lớp</th>
+        <th>Học sinh</th>
+        <th>Số tiền</th>
+        <th>Hạn thanh toán</th>
+        <th>Ghi chú</th>
+      `;
+    }
+
+    function setupPaidModalHead() {
+      const thead = document.getElementById('tuitionListHead');
+      thead.innerHTML = PAID_COLUMNS.map(col => {
+        const arrow = paidSortKey === col.key ? (paidSortDir === 'asc' ? ' ↑' : ' ↓') : '';
+        return `<th class="sortable" data-sort-key="${col.key}">${col.label}${arrow}</th>`;
+      }).join('');
+
+      thead.querySelectorAll('th.sortable').forEach(th => {
+        th.addEventListener('click', function() {
+          const key = this.dataset.sortKey;
+          if (paidSortKey === key) {
+            paidSortDir = paidSortDir === 'asc' ? 'desc' : 'asc';
+          } else {
+            paidSortKey = key;
+            paidSortDir = 'asc';
+          }
+          setupPaidModalHead();
+          applyPaidFilterAndRender();
+        });
+      });
+    }
+
+    function comparePaidItems(a, b, key, type) {
+      if (type === 'number') {
+        return (a.amount || 0) - (b.amount || 0);
+      }
+      if (type === 'date') {
+        if (key === 'paymentDate') {
+          const da = a.paymentDate ? new Date(a.paymentDate).getTime() : null;
+          const db = b.paymentDate ? new Date(b.paymentDate).getTime() : null;
+          if (da === null && db === null) return 0;
+          if (da === null) return 1;
+          if (db === null) return -1;
+          return da - db;
+        }
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      }
+      const va = a[key] || '';
+      const vb = b[key] || '';
+      return va.localeCompare(vb, 'vi');
+    }
+
+    function sortPaidData(data) {
+      const col = PAID_COLUMNS.find(c => c.key === paidSortKey);
+      const sorted = [...data].sort((a, b) => comparePaidItems(a, b, paidSortKey, col ? col.type : 'text'));
+      if (paidSortDir === 'desc') sorted.reverse();
+      return sorted;
+    }
+
+    function renderPaidTuitionTable(data) {
+      const tableBody = document.getElementById('tuitionListBody');
+      const colCount = PAID_COLUMNS.length;
+      tableBody.innerHTML = '';
+
+      if (data.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="${colCount}" class="text-center">
+              <p class="text-muted">Không có học phí nào trong danh sách này.</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      data.forEach(tuition => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${tuition.className}</td>
+          <td>${tuition.studentName}</td>
+          <td>${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tuition.amount)}</td>
+          <td>${new Date(tuition.dueDate).toLocaleDateString('vi-VN')}</td>
+          <td>${tuition.paymentDate ? new Date(tuition.paymentDate).toLocaleDateString('vi-VN') : ''}</td>
+          <td>${tuition.notes}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    function applyPaidFilterAndRender() {
+      const searchTerm = removeDiacritics(document.getElementById('tuitionListSearch').value.trim());
+      let filtered = paidTuitionData;
+      if (searchTerm) {
+        filtered = paidTuitionData.filter(item =>
+          removeDiacritics(item.className).includes(searchTerm) ||
+          removeDiacritics(item.studentName).includes(searchTerm) ||
+          removeDiacritics(item.notes).includes(searchTerm)
+        );
+      }
+      renderPaidTuitionTable(sortPaidData(filtered));
+    }
+
     // Hàm hiển thị danh sách học phí
     function showTuitionList(status) {
         const modal = new bootstrap.Modal(document.getElementById('tuitionListModal'));
         const modalTitle = document.getElementById('tuitionListModalLabel');
         const tableBody = document.getElementById('tuitionListBody');
-        
-        // Lấy giá trị từ form
+        const searchWrap = document.getElementById('tuitionListSearchWrap');
+        const searchInput = document.getElementById('tuitionListSearch');
+
         const month = $('#month').val();
         const year = $('#year').val();
-        
-        // Cập nhật tiêu đề modal
-        modalTitle.textContent = status === 'pending' ? 'Danh sách học phí chưa thanh toán' : 'Danh sách học phí quá hạn';
-        
-        // Hiển thị loading
+        const isPaid = status === 'paid';
+
+        const titles = {
+          pending: 'Danh sách học phí chưa thanh toán',
+          overdue: 'Danh sách học phí quá hạn',
+          paid: 'Danh sách học phí đã thanh toán'
+        };
+        modalTitle.textContent = titles[status] || 'Danh sách học phí';
+
+        searchWrap.style.display = isPaid ? 'block' : 'none';
+        searchInput.value = '';
+
+        if (isPaid) {
+          paidSortKey = 'dueDate';
+          paidSortDir = 'asc';
+          setupPaidModalHead();
+          $('#tuitionListSearch').off('input').on('input', applyPaidFilterAndRender);
+        } else {
+          setupDefaultModalHead();
+          $('#tuitionListSearch').off('input');
+        }
+
+        const colSpan = isPaid ? PAID_COLUMNS.length : 5;
         tableBody.innerHTML = `
             <tr>
-                <td colspan="7" class="text-center">
+                <td colspan="${colSpan}" class="text-center">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
@@ -385,11 +550,9 @@
                 </td>
             </tr>
         `;
-        
-        // Hiển thị modal trước khi load dữ liệu
+
         modal.show();
-        
-        // Lấy danh sách học phí từ server
+
         $.ajax({
             url: `/academic/tuition/list/${status}`,
             method: 'GET',
@@ -399,11 +562,15 @@
             },
             success: function(data) {
                 if (data.success) {
-                    // Xóa dữ liệu cũ
+                    if (isPaid) {
+                        paidTuitionData = (data.tuitions || []).map(normalizePaidTuition);
+                        applyPaidFilterAndRender();
+                        return;
+                    }
+
                     tableBody.innerHTML = '';
-                    
+
                     if (data.tuitions && data.tuitions.length > 0) {
-                        // Thêm dữ liệu mới
                         data.tuitions.forEach(tuition => {
                             const row = document.createElement('tr');
                             row.innerHTML = `
@@ -416,10 +583,9 @@
                             tableBody.appendChild(row);
                         });
                     } else {
-                        // Hiển thị thông báo không có dữ liệu
                         tableBody.innerHTML = `
                             <tr>
-                                <td colspan="7" class="text-center">
+                                <td colspan="5" class="text-center">
                                     <p class="text-muted">Không có học phí nào trong danh sách này.</p>
                                 </td>
                             </tr>
@@ -431,10 +597,9 @@
             },
             error: function(xhr, status, error) {
                 console.error('Lỗi khi lấy danh sách học phí:', error);
-                // Hiển thị thông báo lỗi trong bảng
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="7" class="text-center text-danger">
+                        <td colspan="${colSpan}" class="text-center text-danger">
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             Đã xảy ra lỗi khi tải danh sách: ${error}
                         </td>
@@ -443,6 +608,10 @@
             }
         });
     }
+
+    $('.card-paid').click(function() {
+        showTuitionList('paid');
+    });
 
     // Xử lý click vào thẻ chưa thanh toán
     $('.card-pending').css('cursor', 'pointer').click(function() {

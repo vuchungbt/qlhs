@@ -113,6 +113,8 @@ router.get('/tuition/list/:status', async (req, res) => {
                 { status: 'overdue', dueDate: { $gte: startDate, $lte: endDate } }
             ];
             delete query.dueDate;
+        } else if (status === 'paid') {
+            query.status = 'paid';
         } else {
             return res.json({ success: false, message: 'Trạng thái không hợp lệ' });
         }
